@@ -18,4 +18,34 @@ This function uses the scipy hierarchical clustering to perform clustering of at
 pairwise distance. The same methids as in the scipy.cluster.hierarchy.linkage tollbox are available
 ('single', 'average', 'full').
 
+hbond.py:
+========
+
+This module is a flexible rewrite of HBPlus, allowing to calculate hbond
+conservation between different structures or over a trajectory. 
+It uses customizable dictionaries to define donors and acceptors and can
+account for equivalent HBonds such as involving for example either oxygen atom
+of an Aspartic Acid.
+
+Main available functions are:
+
+- ***GetHbondListFromView(eh,hbond_donor_acceptor_dict={},verbose=True)***:
+Returns a list of hydrogen bonds from an Entity or EntityView.
+
+- ***GetHbondListFromTraj(t,eh,cutoff=0.7,stride=1,swap=False,...)***:
+Returns a list of hydrogen bonds from an Entity or EntityView that are present
+present in a fraction of the frames larger than *cutoff*.
+
+- ***GetHbondListBetweenViews(eh1,eh2,...)***:
+Returns the list of hydrogen bonds formed between two Entity or EntityView.
+
+- ***CalculateHBondScore(ref_eh,eh2,ref_eh2=None,...)***:
+Returns the fraction of H-bonds from ref_eh that are also present in eh2.
+If ref_eh2 is specified, it uses as reference the Hbonds between ref_eh and ref_eh2. 
+This allows to look at H-bonds between specific parts of proteins or so.
+Alternatively ref_eh can be a list of H-bonds.
+
+- ***AnalyzeHBondScore(ref_eh,t,eh2,ref_eh2=None,...)***:
+Returns the same score as CalculateHBondScore, but for a trajectory.
+
 
