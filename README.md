@@ -1,5 +1,16 @@
-This is a set of python modules that can be used to perform various
-analyses on structures and dynamics of proteins and lipids.
+This is a set of python modules that can be used to perform various analyses 
+on structures and dynamics of proteins and lipids in OpenStructure.
+
+The main functionalities are presented below, but more documentation is available
+in the modules themselves. For most functions python's *help(foo)* function will display the
+documentation for *foo*. This is especially useful in OpenStructure's interactive python shell
+which has auto completion, making it easy to see the list of functions available ina  certain module.
+
+To import the modules in OpenStructure:
+
+import sys
+sys.path.append(path_to_module)
+import module
 
 The different modules and their functions are:
 
