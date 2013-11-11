@@ -1,8 +1,13 @@
 from ost import *
 
 """
-This module is used to compute hydrogen bonds from entities and trajectories
-Criteria used are similar to the HBPlus program
+Module written by Niklaus Johner (niklaus.johner@a3.epfl.ch) 2012
+
+This module is a flexible rewrite of HBPlus, allowing to calculate hbond
+conservation between different structures or over a trajectory. 
+It uses customizable dictionaries to define donors and acceptors and can
+account for equivalent HBonds such as involving for example either oxygen atom
+of an Aspartic Acid.
 """
 
 class HBondableAtoms:
@@ -257,7 +262,8 @@ def GetHbondListFromView(eh,hbond_donor_acceptor_dict={},verbose=True):
 
 def GetHbondListFromTraj(t,eh,cutoff=0.7,stride=1,swap=False,donor_swap_dict={},acceptor_swap_dict={},hbond_donor_acceptor_dict={},verbose=True):
   """
-  return a list of hydrogen bonds from an Entity or EntityView.
+  return a list of hydrogen bonds from an Entity or EntityView that are present
+  present in a fraction of the frames larger than *cutoff*.
   if no dictionary for the hbond donors and acceptors is specified
   it will use the standard CHARMM names to determine them
   """
