@@ -8,9 +8,11 @@ which has auto completion, making it easy to see the list of functions available
 
 To import the modules in OpenStructure:
 
+```python
 import sys
 sys.path.append(path_to_module)
 import module
+```python
 
 The different modules and their functions are:
 
