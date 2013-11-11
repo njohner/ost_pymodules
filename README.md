@@ -49,3 +49,22 @@ Alternatively ref_eh can be a list of H-bonds.
 Returns the same score as CalculateHBondScore, but for a trajectory.
 
 
+entity_alg:
+==========
+
+This module contains basic functions to work with structures (Entities and EntityViews).
+It notably includes several functions to work with periodic conditions in orthogonal 
+and non-orthogonal unit cells.
+
+- ***FindWithinWithPBC(eh,pos,radius,cell_center,cell_size)***:
+
+- ***FindWithinWithNonOrthogonalPBC(eh,pos,radius,ucell_vecs,vecs_to_neighbor_ucells=None)***:
+
+- ***ExtendEntityToNeighboringUnitCells(eh,vecs_to_neighbor_ucells)***:
+
+- ***ExtendEntityWithPBC(eh,cell_center,ucell_vecs,extension_size=10)***:
+
+- ***GenerateCrystalPackingFromPDB(pdb_filename,distance_cutoff=20,superpose_sele='aname=CA')***:
+
+
+
