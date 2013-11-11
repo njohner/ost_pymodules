@@ -12,7 +12,7 @@ To import the modules in OpenStructure:
 import sys
 sys.path.append(path_to_module)
 import module
-```python
+```
 
 The different modules and their functions are:
 
@@ -78,6 +78,3 @@ and non-orthogonal unit cells.
 - ***ExtendEntityWithPBC(eh,cell_center,ucell_vecs,extension_size=10)***:
 
 - ***GenerateCrystalPackingFromPDB(pdb_filename,distance_cutoff=20,superpose_sele='aname=CA')***:
-
-
-
