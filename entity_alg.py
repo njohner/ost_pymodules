@@ -5,6 +5,11 @@ This module contains basic functions to work with structures (Entities and Entit
 It notably includes several functions to work with periodic conditions in orthogonal
 and non-orthogonal unit cells
 """
+__all__=('FindClosestAtom','CreateSequenceFromView','CreateEntityFromVec3List','ProjectVectorOnUnitCellVectors',\
+         'GetUCellVectorSizeAndAngles','FindWithinWithPBC','FindWithinWithNonOrthogonalPBC',\
+         'ExtendEntityToNeighboringUnitCells','ExtendEntityWithPBC','WriteFloatPropList',\
+         'AssignFloatPropToEntityResidues','AssignFloatPropToEntity','BuildUnitCellVectors',\
+         'VectorsToNeighboringUnitCells','GenerateSearchVectors','GenerateCrystalPackingFromPDB')
 from ost import *
 import math
 import numpy as npy
