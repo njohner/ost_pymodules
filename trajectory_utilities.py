@@ -24,8 +24,11 @@ def WrapTrajectoryInPeriodicCell(t,centers,cell_sizes=None,cell_angles=None,grou
       if f.GetCellSize()==geom.Vec3(0,0,0):print 'cell size is 0 at step', i
       cell_sizes.append(f.GetCellSize())
   if cell_angles==None:
-    print 'no cell angles provided, considering that the unit cell is orthogonal'
-    cell_angles=geom.Vec3List([geom.Vec3() for i in range(t.GetFrameCount())])
+    cell_angles=geom.Vec3List()
+    for i in range(t.GetFrameCount()):
+      f=t.GetFrame(i)
+      if f.GetCellAngles()==geom.Vec3(0,0,0):print 'cell angles are 0 at step', i, 'will be considered orthogonal'
+      cell_angles.append(f.GetCellAngles())
   for i in range(t.GetFrameCount()):
     t.CopyFrame(i)
     mol.alg.WrapEntityInPeriodicCell(eh,centers[i],cell_sizes[i],cell_angles[i],group_res)
