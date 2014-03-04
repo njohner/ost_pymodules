@@ -133,7 +133,10 @@ def AlignTrajectoryOnDensity(t,density_map,water_sele,not_water_sele=None,initia
     t.Capture(i)
     eh.SetTransform(geom.Transform())
   print 'total time',int(time.time()-t0),'seconds'
-  return xmin_list
+  xmin=[]
+  if skip_first:xmin.append(npy.array([initial_translation[0]/10.,initial_translation[1]/10.,initial_translation[2]/10.,0.0,0.0,0.0]))
+  xmin.extend([xi[0] for xi in xmin_list])
+  return xmin
 
 def AlignTrajectoryOnFirstFrame(t,density_sele,water_sele=None,not_water_sele=None,initial_translation=None,PBC=True\
                                 ,cell_center=None,outdir=None,filename_base='',density_margin=0,density_cutback=False,\
@@ -183,13 +186,11 @@ def AlignTrajectoryOnFirstFrame(t,density_sele,water_sele=None,not_water_sele=No
   if outdir:
     io.SaveMap(den_map_filtered,os.path.join(outdir,filename_base+'density_first_frame_filtered.mrc'))
     io.SaveMap(den_map,os.path.join(outdir,filename_base+'density_first_frame.mrc'))
-  x=AlignTrajectoryOnDensity(t,den_map_filtered,water_sele,not_water_sele,initial_translation,PBC,cell_center,skip_first=True)  
+  xmin=AlignTrajectoryOnDensity(t,den_map_filtered,water_sele,not_water_sele,initial_translation,PBC,cell_center,skip_first=True)  
   if outdir:
     t.CopyFrame(0)
     io.SaveCHARMMTraj(t,os.path.join(outdir,filename_base+'aligned_trajectory.pdb'),\
     os.path.join(outdir,filename_base+'aligned_trajectory.dcd'),profile=io_profile)
-    xmin=[npy.array([initial_translation[0]/10.,initial_translation[1]/10.,initial_translation[2]/10.,0.0,0.0,0.0])]
-    xmin.extend([xi[0] for xi in x])
     file_utilities.WriteListOfListsInLines(['x1','x2','x3','r1','r2','r3'],xmin,os.path.join(outdir,filename_base+'aligned_trajectory_transformations.txt'))
   return xmin
   
