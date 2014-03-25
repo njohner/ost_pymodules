@@ -18,7 +18,7 @@ def GetAxisRotAngleBetweenVec3(v1,v2,axis):
   n1=_geom.Cross(v1,axis)
   n2=_geom.Cross(v2,axis)
   return SignedAngle(n2,n1,axis)
-
+"""
 def FindVec3SuperpositionRotations(v1,v2,axis1,axis2=None):
   if not axis2:axis2=_geom.Cross(v1,axis1)
   a1=GetAxisRotAngleBetweenVec3(v1,v2,axis1)
@@ -27,6 +27,16 @@ def FindVec3SuperpositionRotations(v1,v2,axis1,axis2=None):
   a2=GetAxisRotAngleBetweenVec3(v1,vt,axis2)
   q2=_geom.Quat(a2,axis2)
   return (a1,a2,q1,q2)
+"""
+def FindVec3SuperpositionRotations(v1,v2,axis1,axis2=None):
+  if not axis2:axis2=_geom.Cross(v1,axis1)
+  a2=GetAxisRotAngleBetweenVec3(v1,v2,axis2)
+  q2=_geom.Quat(a2,axis2)
+  vt=q2.ToRotationMatrix()*v2
+  a1=GetAxisRotAngleBetweenVec3(v1,vt,axis1)
+  q1=_geom.Quat(a1,axis1)
+  return (a1,a2,q1,q2)
+
 
 def FindVectorFromPointToLine(v,l):
   d=v-l.origin
@@ -47,8 +57,10 @@ def FindHelixSuperpositionTransformation(helix1,helix2,axis1,axis2=None,return_t
   #print axis1,axis1_rot.GetAxis(),axis1_rot.GetAngle(),axis2,axis2_rot.GetAxis(),axis2_rot.GetAngle()
   vl1=_geom.Vec3List([FindVectorFromPointToLine(a.pos,l1) for a in helix1.atoms])
   vl2=_geom.Vec3List([FindVectorFromPointToLine(a.pos,l2) for a in helix2.atoms])
-  vl2=RotateVec3List(vl2,axis1_rot)
+  #vl2=RotateVec3List(vl2,axis1_rot)
+  #vl2=RotateVec3List(vl2,axis2_rot)
   vl2=RotateVec3List(vl2,axis2_rot)
+  vl2=RotateVec3List(vl2,axis1_rot)
   #angles=_ost.FloatList([_geom.SignedAngle(_geom.Vec2(v1),_geom.Vec2(v2)) for v1,v2 in zip(vl1,vl2)])
   angles=_ost.FloatList([SignedAngle(v1,v2,l1.direction) for v1,v2 in zip(vl1,vl2)])
   helix_axis_rot_angle=-_npy.average(angles)  

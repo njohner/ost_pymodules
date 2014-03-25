@@ -74,6 +74,13 @@ def AnalyzeHelixRigidBodyMotion(t,helix,ref_helix,stride=1):
   axis_rot_angles=[_geom.Dot(axis_rot_axis,v)*a for a,v in zip(axis_rot_angles,axes)]
   return helix_rot_angles,axis_rot_angles,helix_rot_axes,axis_rot_axis,transform_list
 
+def CalculateHelixRigidBodyMotion(helix,ref_helix,stride=1):
+  (helix_trans,helix_rot,axis_rot,T)=FindHelixSuperpositionTransformation(ref_helix,helix,True)
+  axis_rot_axis=_mol.alg.structure_analysis.CalculateHelixAxis(ref_helix).direction
+  axis_rot_angle=_geom.Dot(axis_rot_axis,axis_rot.GetAxis())*axis_rot.GetAngle()
+  return helix_rot.GetAngle(),axis_rot_angle,helix_rot.GetAxis(),axis_rot_axis,T
+
+
 def GetPossibleSeparationList(n_ele,n_sep):
   """
   Returns all the possible separations of a list

@@ -401,7 +401,7 @@ def gauss(x, *p):
 def FindIndexOfClosestValue(l,v):
   return min(enumerate(l), key=lambda x: abs(x[1]-v))[0]
   
-def FitSplayOrTiltDistribution(angles_list,bins=90,outdir='',filename_basis='',gfx_plot=False):
+def FitSplayOrTiltDistribution(angles_list,bins=90,outdir='',filename_basis='',gfx_plot=False,xlabel=True,ylabel=True,title=True):
   from scipy.optimize import curve_fit
   import matplotlib as mpl
   if not gfx_plot:mpl.use('Agg')
@@ -428,14 +428,17 @@ def FitSplayOrTiltDistribution(angles_list,bins=90,outdir='',filename_basis='',g
     plt.figure()
     plt.plot(bincenters,pa[0])
     plt.vlines([bincenters[r1[0]],bincenters[r1[1]]],0,a1,linestyle='--',color='b')
-    plt.xlabel('Angle');plt.ylabel('Probability density')
-    plt.title(filename_basis+' Angle distributions')
+    if xlabel:plt.xlabel('Angle')
+    if ylabel:plt.ylabel('Probability distribution')
+    if title:plt.title(filename_basis+' Angle distributions')
     plt.show();plt.savefig(os.path.join(outdir,filename_basis+'_distribution.png'))
     #We plot fa
     plt.figure()
     plt.plot(bincenters,fa,'o',c='r')
     plt.plot(bincenters,[npy.polyval(res_list[0],xi) for xi in x],'--',c='r',label='K=%.1f $\pm$ %.1f' %(K,DeltaK))
-    plt.xlabel('Angle');plt.ylabel(r'$-\log\left[\frac{P(\alpha)}{\sin(\alpha)}\right]$'),plt.title(filename_basis+' Distribution of angles')
+    if xlabel:plt.xlabel('Angle')
+    if ylabel:plt.ylabel(r'$-\log\left[\frac{P(\alpha)}{\sin(\alpha)}\right]$')
+    if title:plt.title(filename_basis+' Distribution of angles')
     plt.legend(loc='best')
     plt.show()
     plt.savefig(os.path.join(outdir,filename_basis+'_fa_fit.png'))

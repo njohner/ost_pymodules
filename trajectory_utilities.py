@@ -14,7 +14,7 @@ __all__=('CalculateInterfaceFromTraj','CalculateGeneralizedCorrelations','Calcul
         'CreatePerResidueCMTrajectory','ExtendTrajectoryToNeighboringUnitCells','TranslateFrames',\
         'WrapTrajectoryInPeriodicCell')
 
-def WrapTrajectoryInPeriodicCell(t,centers,cell_sizes=None,cell_angles=None,group_res=False):
+def WrapTrajectoryInPeriodicCell(t,centers,cell_sizes=None,cell_angles=None,group_res=False,follow_bonds=False):
   n=t.GetFrameCount()
   eh=t.GetEntity()
   if cell_sizes==None:
@@ -31,7 +31,7 @@ def WrapTrajectoryInPeriodicCell(t,centers,cell_sizes=None,cell_angles=None,grou
       cell_angles.append(f.GetCellAngles())
   for i in range(t.GetFrameCount()):
     t.CopyFrame(i)
-    mol.alg.WrapEntityInPeriodicCell(eh,centers[i],cell_sizes[i],cell_angles[i],group_res)
+    mol.alg.WrapEntityInPeriodicCell(eh,centers[i],cell_sizes[i],cell_angles[i],group_res,follow_bonds)
     t.Capture(i)
   return
 
