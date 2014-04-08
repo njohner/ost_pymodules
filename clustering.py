@@ -40,6 +40,13 @@ def HierarchicalClusteringOnPairwiseDistance(view,dist_cutoff,prop_name='cluster
 
 
 def HoshenKopelman(neighbor_list):
+  """
+  This function performs a clustering using the Hoshen-Kopelman algorithm.
+  It takes as input a list of neighbors, specifically for node i, 
+  neighbor_list[i] is a list of all the neighbors of node i (a list of integers). So if
+  neighbor_list[i]=[2,4,7] means that node i has nodes 2, 4, and 7 as neighbors.
+  It returns a list of integers representing the cluster number for each node
+  """
   node_list=[-1 for el in neighbor_list]
   node_list_labels=[]
   clusters=0
