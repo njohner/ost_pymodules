@@ -64,7 +64,6 @@ def CreateDensityMapFromEntityView(view,sampling=1,resolution=5,margin=0,ucell_c
   den_map=img.CreateImage(map_size)
   den_map.SetAbsoluteOrigin(origin)
   den_map.SetSpatialSampling(geom.Vec3(1./sampling,1./sampling,1./sampling))
-  print 'creating the map'
   mol.alg.EntityToDensityRosetta(view.Select(''), den_map, mol.alg.HIGH_RESOLUTION, resolution)
   #Now we cut the map back to the size of the entity
   if not cut_back:return den_map
