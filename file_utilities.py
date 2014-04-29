@@ -121,7 +121,7 @@ def WriteFloatList(fl,filename,separator=',',column_title=None):
   return
 
 
-def ReadFloatListFile(filename,separator=',',column_titles=True):
+def ReadFloatListFile(filename,separator=',',column_titles=True,comment=None):
   float_list_dict={}
   f=open(filename,'r')
   titles=f.next().rstrip()
@@ -133,6 +133,8 @@ def ReadFloatListFile(filename,separator=',',column_titles=True):
     titles=range(len(titles))
     f.seek(0)
   for l in f:
+    if comment:
+      if l.startswith(comment):continue
     sl=l.split(separator)
     for el,title in zip(sl,titles):float_list_dict[title].append(float(el))
   return float_list_dict
