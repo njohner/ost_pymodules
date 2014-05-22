@@ -25,7 +25,7 @@ def _sign(x):
   if x>=0.0:return 1.
   else: return -1.
   
-def TransformViewWithPeriodicBoundaries(view,x,cell_center=None,ucell_size=None,ucell_angles=None,group_res=False):
+def TransformViewWithPeriodicBoundaries(view,x,cell_center=None,ucell_size=None,ucell_angles=None,group_res=False,follow_bonds=False):
   """
   WARNING: the translational part of x is multiplied by 10 before applying it so it's in [nm]!!
   To make it more stable, we translate the system to the origin, then do the rotation
@@ -44,7 +44,7 @@ def TransformViewWithPeriodicBoundaries(view,x,cell_center=None,ucell_size=None,
   #We center the residues in the cell before the transformation
   edi.SetTransform(TT)
   if (cell_center and ucell_size and ucell_angles):
-    mol.alg.WrapEntityInPeriodicCell(eh,cell_center,ucell_size,ucell_angles,group_res=group_res)
+    mol.alg.WrapEntityInPeriodicCell(eh,cell_center,ucell_size,ucell_angles,group_res=group_res,follow_bonds=follow_bonds)
   edi.SetTransform(ID)
   TCM=geom.Mat4()
   TCM.PasteTranslation(-view.GetCenterOfAtoms())
@@ -193,5 +193,24 @@ def AlignTrajectoryOnFirstFrame(t,density_sele,water_sele=None,not_water_sele=No
     os.path.join(outdir,filename_base+'aligned_trajectory.dcd'),profile=io_profile)
     file_utilities.WriteListOfListsInLines(['x1','x2','x3','r1','r2','r3'],xmin,os.path.join(outdir,filename_base+'aligned_trajectory_transformations.txt'))
   return xmin
-  
+
+
+def WrapTransformedView(eh,x,cell_center,ucell_size,ucell_angles,group_res=False,follow_bonds=False):
+  """
+  This function allows to apply periodic boundaries on a view that has been transformed.
+  It will apply the inverse of the rotation, then wrap around the rotated cell_center,
+  and finally reapply the rotation.
+  """
+  eh=eh.handle
+  edi=eh.EditXCS()
+  ID=geom.Mat4()
+  edi.SetTransform(ID)
+  R=geom.Rotation3(x[3],x[4],x[5])
+  RI=geom.Rotation3(geom.Invert(R.GetRotationMatrix()))
+  TR=geom.Mat4()
+  TR.PasteRotation(RI.GetRotationMatrix())
+  edi.SetTransform(TR)
+  mol.alg.WrapEntityInPeriodicCell(eh,RI.Apply(cell_center),ucell_size,ucell_angles,group_res=group_res,follow_bonds=follow_bonds)
+  edi.SetTransform(ID)
+  return  
   
