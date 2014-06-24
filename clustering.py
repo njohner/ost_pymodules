@@ -9,7 +9,7 @@ The clustering scales linearly with the number of atoms, unlike hierarchical clu
 
 -HierarchichalClusteringOnPairwiseDistance(view,dist_cutoff,prop_name='cluster',method='single'):
 This function uses the scipy hierarchical clustering to perform clustering of atoms based on their
-pairwise distance. The same methids as in the scipy.cluster.hierarchy.linkage tollbox are available
+pairwise distance. The same methods as in the scipy.cluster.hierarchy.linkage toolbox are available
 ('single', 'average', 'full').  
 
 """
