@@ -8,7 +8,7 @@ import numpy as npy
 import os,math
 
 __all__=('CalculateInterfaceFromTraj','CalculateGeneralizedCorrelations','CalculateMutualInformation',\
-        'CalculateCovariance','AverageMembraneThickness','WrapFloatList','RepresentPrincipalComponentOnStruccture',\
+        'CalculateCovariance','AverageMembraneThickness','SmoothAverageMembrane','WrapFloatList','RepresentPrincipalComponentOnStruccture',\
         'ProjectOnPrincipalComponentsAtomWise','ProjectOnPrincipalComponent','ReconstructTrajFromPrincipalComponents',\
         'CalculatePrincipalComponents','GetCellVectorsList','GetCellAnglesList','GetCellSizeList',\
         'CreatePerResidueCMTrajectory','ExtendTrajectoryToNeighboringUnitCells','TranslateFrames',\
@@ -215,7 +215,35 @@ def WrapFloatList(fl,center,period):
     fl[i]=fl[i]-period*round((fl[i]-center)/period)
   return fl
   
-def AverageMembraneThickness(t,upper,lower,step_size=2):
+def AverageMembraneThickness(t,upper,lower,step_size=2,z_midplane=None):
+  """
+  This function creates a discrete mesh in the xy plane and calculates the average
+  z position of the atoms in the upper and lower EntityViews over the trajectory t.
+  Typically upper and lower contain the phosphate atoms of the lipids in the upper and
+  lower leaflets of the membrane.
+  It returns two Entities, representing these average positions in the upper and lower leaflets,
+  as well as two matricies containing the same information.
+  Each atom of the output entities is assigned a FloatProp 'thickness', 
+  representing the local thickness of the membrane, another FloatProp ''
+  'monolayer_thickness' representing the local thickness of the monolayer,
+  an FloatProp 'count' which is the number times that particular bin was sampled and
+  a FloatProp 'count_thickness' which is the min between the counts for this
+  bin and the corresponding bin on the other leaflet.
+  Relevant atoms for which the bin was sampled at least i times 
+  can therefore be selected with eh_upper.Select('gacount>=i')
+  whereas relevant atoms for which the thickness was sampled at least i times 
+  can therefore be selected with eh_upper.Select('gacount_thickness>=i')
+  Input:   -t          : CoordGroup, the trajectory
+           -upper      : EntityView, the upper membrane leaflet
+           -lower      : EntityView, the lower membrane leaflet 
+           -step_size  : size of the bins in xy
+           -z_midplane : average height of the midplane
+           
+  Output:  -eh_upper   : EntityHandle, average membrane upper leaflet
+           -eh_lower   : EntityHandle, average membrane lower leaflet
+           -zu         : numpy matrix, binned average z positions upper leaflet
+           -zl         : numpy matrix, binned average z positions lower leaflet
+  """
   if not _import_numpy:return False
   import entity_alg
   step_size=float(step_size)
@@ -252,7 +280,12 @@ def AverageMembraneThickness(t,upper,lower,step_size=2):
     cl[(p[0]-xmin)/step_size,(p[1]-ymin)/step_size]+=1
   zu=zu/cu
   zl=zl/cl
+  zu=npy.where(npy.isnan(zu),0.0,zu)
+  zl=npy.where(npy.isnan(zl),0.0,zl)
   thickness=zu-zl
+  if not z_midplane:z_midplane=0.5*(npy.average(zu,weights=cu)+npy.average(zl,weights=cl))
+  thickness_upper=zu-z_midplane
+  thickness_lower=z_midplane-zl
   #Now we create Vec3Lists with the positions of the beads for the lower and upper leaflets
   pu=geom.Vec3List()
   pl=geom.Vec3List()
@@ -269,18 +302,72 @@ def AverageMembraneThickness(t,upper,lower,step_size=2):
       eh_upper.atoms[n1*i+j].SetFloatProp('count',cu[i,j])
       eh_lower.atoms[n1*i+j].SetFloatProp('thickness',thickness[i,j])
       eh_lower.atoms[n1*i+j].SetFloatProp('count',cl[i,j])
-  #we clean the entities:
-  edi=eh_upper.EditXCS(mol.BUFFERED_EDIT)
-  v=mol.Difference(eh_upper.Select(''),eh_upper.Select('(z>=0 or z<0)'))
-  for a in v.atoms:
-    edi.DeleteAtom(a.handle)
-  edi.ForceUpdate()
-  edi=eh_lower.EditXCS(mol.BUFFERED_EDIT)
-  v=mol.Difference(eh_lower.Select(''),eh_lower.Select('(z>=0 or z<0)'))
-  for a in v.atoms:
-    edi.DeleteAtom(a.handle)
-  edi.ForceUpdate()
-  return (eh_lower,eh_upper)
+      eh_upper.atoms[n1*i+j].SetFloatProp('count_thickness',min(cu[i,j],cl[i,j]))
+      eh_lower.atoms[n1*i+j].SetFloatProp('count_thickness',min(cu[i,j],cl[i,j]))
+      eh_upper.atoms[n1*i+j].SetFloatProp('monolayer_thickness',thickness_upper[i,j])
+      eh_lower.atoms[n1*i+j].SetFloatProp('monolayer_thickness',thickness_lower[i,j])
+  return (eh_upper,eh_lower,zu,zl)
+
+def _gaussxy(p,refp,sigma):
+  return npy.exp(geom.Length(geom.Vec2(p.x,p.y)-geom.Vec2(refp.x,refp.y))**2.0/(2.0*sigma))
+
+def SmoothAverageMembrane(eh_upper,eh_lower,zu,zl,smooth_sigma=2.0,smooth_sampling_cutoff=5,z_midplane=None):
+  """
+  This function smoothes a membane surface obtained from the
+  AverageMembraneThickness function.
+  Input:   -eh_upper   : EntityHandle, average membrane upper leaflet
+           -eh_lower   : EntityHandle, average membrane lower leaflet
+           -zu         : numpy matrix, binned average z positions upper leaflet
+           -zl         : numpy matrix, binned average z positions lower leaflet
+           -smooth_sigma: standard deviation of the gaussian used for smoothing
+           -smooth_sampling_cutoff: atoms with FloatProp 'count' smaller than this
+                                    do not participate in smoothing of their neighboring atoms
+           -z_midplane : average height of the midplane
+                      
+  Output:  -eh_upper_smooth : EntityHandle, smoothed average membrane upper leaflet
+           -eh_lower_smooth : EntityHandle, smoothed average membrane lower leaflet
+  """
+  if z_midplane==None:
+    z1=npy.average(npy.array([a.pos.z for a in eh_upper.atoms]),weights=npy.array([a.GetFloatProp('count') for a in eh_upper.atoms]))
+    z2=npy.average(npy.array([a.pos.z for a in eh_lower.atoms]),weights=npy.array([a.GetFloatProp('count') for a in eh_lower.atoms]))
+    z_midplane=0.5*(z1+z2)
+  smooth_cutoff=2.0*smooth_sigma
+  eh_upper_smooth=eh_upper.Copy()
+  eh_lower_smooth=eh_lower.Copy()
+  edi_upper=eh_upper_smooth.EditXCS(mol.BUFFERED_EDIT)
+  edi_lower=eh_lower_smooth.EditXCS(mol.BUFFERED_EDIT)
+  n1=zu.shape[0]
+  vu=eh_upper.Select('gacount>=1')
+  vl=eh_lower.Select('gacount>=1')
+  vua=mol.AtomHandleList([a.handle for a in vu.atoms])
+  vla=mol.AtomHandleList([a.handle for a in vl.atoms])
+  vus=eh_upper.Select('gacount>={0}'.format(smooth_sampling_cutoff))
+  vls=eh_lower.Select('gacount>={0}'.format(smooth_sampling_cutoff))
+  for i in range(zu.shape[0]):
+    for j in range(zu.shape[1]):
+      au=eh_upper.atoms[n1*i+j]
+      al=eh_lower.atoms[n1*i+j]
+      if au in vua:
+        within=mol.AtomHandleList([a.handle for a in vus.FindWithin(au.pos,smooth_cutoff)])
+        if not au.handle in within:within.append(au)
+        pu=npy.average([a.pos.z for a in within],weights=[_gaussxy(a.pos,au.pos,smooth_sigma) for a in within])
+      else:pu=npy.nan
+      if al in vla:
+        within=mol.AtomHandleList([a.handle for a in vls.FindWithin(al.pos,smooth_cutoff)])
+        if not al.handle in within:within.append(al)
+        pl=npy.average([a.pos.z for a in within],weights=[_gaussxy(a.pos,al.pos,smooth_sigma) for a in within])
+      else:pl=npy.nan
+      if not (pu==npy.nan or pl==npy.nan):thickness=pu-pl
+      else:thickness=npy.nan
+      au2=eh_upper_smooth.atoms[n1*i+j]
+      al2=eh_lower_smooth.atoms[n1*i+j]
+      edi_upper.SetAtomPos(au2,geom.Vec3(au2.pos.x,au2.pos.y,pu))
+      edi_lower.SetAtomPos(al2,geom.Vec3(al2.pos.x,al2.pos.y,pl))
+      au2.SetFloatProp('thickness',thickness)
+      al2.SetFloatProp('thickness',thickness)
+      au2.SetFloatProp('monolayer_thickness',au2.pos.z-z_midplane)
+      al2.SetFloatProp('monolayer_thickness',z_midplane-al2.pos.z)
+  return (eh_upper_smooth,eh_lower_smooth)
 
 def _import_numpy():
   try:
