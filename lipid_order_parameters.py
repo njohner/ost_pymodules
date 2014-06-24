@@ -1,7 +1,6 @@
 """
 Module written by Niklaus Johner (niklaus.johner@a3.epfl.ch) 01.2013
-This module contains functions to determine lipid tilt and splay angles and
-Calculate the elastic properties of the membrane from there
+This module contains functions to calculate lipid order parameters.
 """
 try:
   from ost import *
