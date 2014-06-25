@@ -185,7 +185,7 @@ def CalculateVolumeFromDensityMap(den_map,cutoff=0.1):
   return c*v
 
 
-def GetBoundaryBetweenDensities(den_map1,den_map2,cutoff=0.05,PBC=False,cell_center=None,cell_size=None,sampling=None):
+def GetBoundaryBetweenDensities(den_map1,den_map2,cutoff=0.05,PBC=False,cell_center=None,cell_size=None,sampling=None,density_ratio=1.0):
   """
   This function returns a set of points at the the boundary between
   Two density maps. The boundary is determined as the set of points where
@@ -237,13 +237,13 @@ def GetBoundaryBetweenDensities(den_map1,den_map2,cutoff=0.05,PBC=False,cell_cen
     d1=den_map1.GetReal(img.Point(den_map1.CoordToIndex(c)))
     if d1<cutoff:continue
     d2=den_map2.GetReal(img.Point(den_map2.CoordToIndex(c)))
-    if (not d1>d2) or (d2<cutoff):continue
+    if (not density_ratio*d1>d2) or (d2<cutoff):continue
     for (l,m,n) in [(1,0,0),(-1,0,0),(0,1,0),(0,-1,0),(0,0,1),(0,0,-1)]:
       if PBC:p=geom.WrapVec3(den_map1.IndexToCoord(img.Point(i+l,j+m,k+n)),cell_center,cell_size)
       else:p=den_map1.IndexToCoord(img.Point(i+l,j+m,k+n))
       d1=den_map1.GetReal(img.Point(den_map1.CoordToIndex(p)))
       d2=den_map2.GetReal(img.Point(den_map2.CoordToIndex(p)))
-      if d2>d1:
+      if d2>density_ratio*d1:
         boundary.append(c)
         break
   return boundary
