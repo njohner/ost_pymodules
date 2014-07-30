@@ -268,9 +268,9 @@ def GenerateSearchVectors(v1,v2,v3,level=4,dist_cutoff=None,delta=0.0001):
   v=geom.Vec3(0,0,0)
   if all(geom.Length(v3-v)>delta for v3 in vl_b):vl_b.append(geom.Vec3(0,0,0))
   return vl_b
-  
 
-def GenerateCrystalPackingFromPDB(pdb_filename,distance_cutoff=20,superpose_sele='aname=CA'):
+
+def GenerateCrystalPackingFromPDB(pdb_filename,distance_cutoff=20,vec_search_level=4,vec_search_cutoff=None,superpose_sele='aname=CA'):
   """
   This function loads a pdb and generates the crystal packing around the initial structure, including
   all structures within *distance_cutoff* of the initial structure.
@@ -282,7 +282,7 @@ def GenerateCrystalPackingFromPDB(pdb_filename,distance_cutoff=20,superpose_sele
   trans=file_utilities.ReadSymmetryFromPDB(pdb)
   uc=file_utilities.ReadUnitCellFromPDB(pdb)
   (v1,v2,v3)=BuildUnitCellVectors(uc[0],uc[1],uc[2],uc[3],uc[4],uc[5])
-  vl=GenerateSearchVectors(v1,v2,v3)
+  vl=GenerateSearchVectors(v1,v2,v3,dist_cutoff=vec_search_cutoff,level=vec_search_level)
   ref_eh=io.LoadPDB(pdb_filename)
   ref_sele=ref_eh.Select(superpose_sele)
   ref_CM=ref_eh.GetCenterOfMass()
