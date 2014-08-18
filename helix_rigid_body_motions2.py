@@ -9,8 +9,8 @@ import numpy as _npy
 
 def SignedAngle(v1,v2,plane_normal):
   a=_geom.Angle(v1,v2)
-  if a==0.0:return a
   n=_geom.Cross(v1,v2)
+  if _geom.Length(n)==0:return 0.0
   s=_geom.Dot(n,plane_normal)
   return s/abs(s)*a
 
