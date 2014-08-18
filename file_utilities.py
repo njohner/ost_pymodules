@@ -48,7 +48,58 @@ def ReadSymmetryFromPDB(file):
       else: continue
     except: continue
   return transformation_list
+
+def FindLines(file,search_list,break_list):
+  """
+  returns a list of lines in the file which have as successive elements
+  the elements in search_list
+  """
+  file.seek(0)
+  lines=[]
+  ns=len(search_list)
+  for line in file:
+    sl=line.split()
+    nl=len(sl)
+    if len(sl)==0:continue
+    if sl[0] in break_list:return lines
+    if nl<ns:continue
+    if all([sli==el for sli,el in zip(sl,search_list)]):lines.append(line)
+  return lines
+
+def FindBioUnitTransformations(file):
+  lines_temp=FindLines(file,['REMARK','350'],['ATOM'])
+  lines=[]
+  for l in lines_temp:
+    if 'BIOMOLECULE:2' in ''.join(l.split()):break
+    lines.append(l)
+  for i,line in enumerate(lines):
+    if 'APPLY THE FOLLOWING TO CHAINS' in line:
+      sl=line.split(':')
+      cnames=[el.strip() for el in sl[1].split(',')]
+  if not 'cnames' in locals():
+    print 'Chains to apply transformations to are not defined in record'
+    cnames=[]
+  Tl=[]
+  for i,line in enumerate(lines):
+    sl=line.split()
+    if len(sl)<6:continue
+    if 'BIOMT1'==sl[2]:
+      il=[]
+      for j in range(3):
+        l=lines[i+j]
+        sl=l.split()
+        if not sl[2]=='BIOMT{0}'.format(j+1):
+          print 'problem in BIOMT record'
+          return Tl,cnames
+        for k in range(4):il.append(float(sl[4+k]))
+      il.extend([0.0,0.0,0.0,1.0])
+      M=geom.Mat4(*il)
+      T=geom.Transform()
+      T.SetMatrix(M)
+      Tl.append(T)
+  return Tl,cnames
   
+    
 def ParsePDBForCubicPhase(file):
   file.seek(0)
   search_lines=['REMARK','280']
