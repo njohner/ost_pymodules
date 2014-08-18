@@ -269,6 +269,24 @@ def GenerateSearchVectors(v1,v2,v3,level=4,dist_cutoff=None,delta=0.0001):
   if all(geom.Length(v3-v)>delta for v3 in vl_b):vl_b.append(geom.Vec3(0,0,0))
   return vl_b
 
+def GenerateBioUnit(pdb_filename):
+  """
+  This function generates the biological unit from a pdb file
+  by applying the transformations found in the REMARK 350 record of the PDB
+  """
+  pdb=open(pdb_filename,'r')
+  Tl,cnames=file_utilities.FindBioUnitTransformations(pdb)
+  eh=io.LoadPDB(pdb_filename)
+  eh2=mol.CreateEntity()
+  edi=eh2.EditXCS()
+  for i,T in enumerate(Tl):
+    for cname in cnames:
+      if i>0:cname_new=cname+str(i)
+      else:cname_new=cname
+      c=eh.FindChain(cname)
+      eh.SetTransform(T)
+      edi.InsertChain(cname_new,c,deep=True)
+  return eh2
 
 def GenerateCrystalPackingFromPDB(pdb_filename,distance_cutoff=20,vec_search_level=4,vec_search_cutoff=None,superpose_sele='aname=CA'):
   """
