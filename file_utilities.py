@@ -204,5 +204,6 @@ def ReadFile(filename,format,separator=',',column_titles=True):
   for title,f in zip(titles,format):
     if f in ['float','f']:float_list_dict[title]=FloatList([float(el) for el in float_list_dict[title]])
     if f in ['int','i']:float_list_dict[title]=IntList([int(el) for el in float_list_dict[title]])
+    if f in ['bool','b']:float_list_dict[title]=[bool(el) for el in float_list_dict[title]]
   return float_list_dict
 
