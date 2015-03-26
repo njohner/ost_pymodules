@@ -11,6 +11,7 @@ import numpy as npy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import sys
+import ost.bindings
 
 if not hasattr(ost.bindings,'dssp'):print 'DSSP is not found'
 
