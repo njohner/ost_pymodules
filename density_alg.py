@@ -131,7 +131,6 @@ def CreateDensityMapFromTrajectoryWithPBC(traj, sele_view, sampling=2, stride=1,
   m=geom.Vec3(margin+5,margin+5,margin+5)
   (vmin,vmax)=(vmin-m,vmax+m)
   real_size=vmax-vmin#+geom.Vec3(margin+10,margin+10,margin+10)
-  #print vmin,vmax,real_size
   map_size=img.Size(int(real_size.x/sampling), int(real_size.y/sampling), int(real_size.z/sampling))
   den_map=img.CreateImage(map_size)
   den_map.SetSpatialSampling(sampling)
@@ -141,32 +140,11 @@ def CreateDensityMapFromTrajectoryWithPBC(traj, sele_view, sampling=2, stride=1,
 
   #Now we go through all frames and for each frame we extract the density and add it up
   N=0
-  #vec_list=_VecToNeighborCells(cell_size)
-  #print vec_list
-  #sele_chain='x<'+str(vmax.x)+' and y<'+str(vmax.y)+' and z<'+str(vmax.z)
-  #sele_chain=sele_chain+' and x>'+str(vmin.x)+' and y>'+str(vmin.y)+' and z>'+str(vmin.z)
-  #print sele_chain
   for i in range(0,t.GetFrameCount()):
-    #print i
     T=geom.Mat4()
     edi_ref.SetTransform(T)
     t.CopyFrame(i)
     extended_eh=entity_alg.ExtendEntityWithPBC(sele_view,cell_centers[i],cell_vectors[i],margin)
-    #extended_eh=mol.CreateEntity()
-    #mol.CreateEntityFromView(sele_view,1,extended_eh)
-    #edi_extended=extended_eh.EditXCS()
-    #for j,vec in enumerate(vec_list):
-    #  T=geom.Mat4()
-    #  T.PasteTranslation(vec)
-    #  edi_ref.SetTransform(T)
-    #  boundary_atoms=sele_view.Select(sele_chain)
-    #  c=edi_extended.InsertChain('T'+str(j))
-    #  for r in boundary_atoms.residues:
-    #    edi_extended.AppendResidue(c,r.name)
-    #    r2=c.residues[-1]
-    #    for a in r.atoms:
-    #      edi_extended.InsertAtom(r2,a.name,a.pos,a.element)  
-    #print 'extended',extended_eh.GetAtomCount()
     mol.alg.EntityToDensityRosetta(extended_eh.Select(''), den_map, mol.alg.HIGH_RESOLUTION, resolution)
     N+=1
   for p in den_map:
