@@ -107,17 +107,19 @@ def CreateDensityMapFromTrajectory(traj, sele_view, sampling=0.5, stride=1,resol
     den_map.SetReal(p,den_map.GetReal(p)/float(N))
   return den_map
 
-def CreateDensityMapFromTrajectoryWithPBC(traj, sele_view, sampling=2, stride=1,resolution=2.0, cell_center=None,cell_size=None,margin=10):
+def CreateDensityMapFromTrajectoryWithPBC(traj, sele_view, sampling=2, stride=1,resolution=2.0, cell_centers=None,cell_vectors=None,margin=10):
   """
   This function creates a density map for the position of the atoms of an EntityView during a trajectory
   It returns a map and uses periodic boundary conditions while generating the map
   """
-  if not cell_center:
-    print 'EntityView bounds center used as cell_center'
-    cell_center=sele_view.bounds.center
-  if not cell_size:
-    print 'EntityView bounds size used as cell_size'
-    cell_size=sele_view.bounds.size
+  try:import entity_alg,trajectory_utilities
+  except:print 'could not load entity_alg and trajectory_utilities'
+  if not cell_centers:
+    print 'Extracting cell centers from the center of mass of the sele_view over the trajectory'
+    cell_centers=mol.alg.AnalyzeCenterOfMassPos(traj,sele_view)
+  if not cell_vectors:
+    print 'Extracting cell vectors from the unit cell information in the trajectory'
+    cell_vectors=trajectory_utilities.GetCellVectorsList(traj)
   #For speed we filter the trajectory
   t=traj.Filter(sele_view,stride=stride)
   sele_view=t.GetEntity().CreateFullView()
@@ -139,30 +141,31 @@ def CreateDensityMapFromTrajectoryWithPBC(traj, sele_view, sampling=2, stride=1,
 
   #Now we go through all frames and for each frame we extract the density and add it up
   N=0
-  vec_list=_VecToNeighborCells(cell_size)
+  #vec_list=_VecToNeighborCells(cell_size)
   #print vec_list
-  sele_chain='x<'+str(vmax.x)+' and y<'+str(vmax.y)+' and z<'+str(vmax.z)
-  sele_chain=sele_chain+' and x>'+str(vmin.x)+' and y>'+str(vmin.y)+' and z>'+str(vmin.z)
+  #sele_chain='x<'+str(vmax.x)+' and y<'+str(vmax.y)+' and z<'+str(vmax.z)
+  #sele_chain=sele_chain+' and x>'+str(vmin.x)+' and y>'+str(vmin.y)+' and z>'+str(vmin.z)
   #print sele_chain
   for i in range(0,t.GetFrameCount()):
     #print i
     T=geom.Mat4()
     edi_ref.SetTransform(T)
     t.CopyFrame(i)
-    extended_eh=mol.CreateEntity()
-    mol.CreateEntityFromView(sele_view,1,extended_eh)
-    edi_extended=extended_eh.EditXCS()
-    for j,vec in enumerate(vec_list):
-      T=geom.Mat4()
-      T.PasteTranslation(vec)
-      edi_ref.SetTransform(T)
-      boundary_atoms=sele_view.Select(sele_chain)
-      c=edi_extended.InsertChain('T'+str(j))
-      for r in boundary_atoms.residues:
-        edi_extended.AppendResidue(c,r.name)
-        r2=c.residues[-1]
-        for a in r.atoms:
-          edi_extended.InsertAtom(r2,a.name,a.pos,a.element)  
+    extended_eh=entity_alg.ExtendEntityWithPBC(sele_view,cell_centers[i],cell_vectors[i],margin)
+    #extended_eh=mol.CreateEntity()
+    #mol.CreateEntityFromView(sele_view,1,extended_eh)
+    #edi_extended=extended_eh.EditXCS()
+    #for j,vec in enumerate(vec_list):
+    #  T=geom.Mat4()
+    #  T.PasteTranslation(vec)
+    #  edi_ref.SetTransform(T)
+    #  boundary_atoms=sele_view.Select(sele_chain)
+    #  c=edi_extended.InsertChain('T'+str(j))
+    #  for r in boundary_atoms.residues:
+    #    edi_extended.AppendResidue(c,r.name)
+    #    r2=c.residues[-1]
+    #    for a in r.atoms:
+    #      edi_extended.InsertAtom(r2,a.name,a.pos,a.element)  
     #print 'extended',extended_eh.GetAtomCount()
     mol.alg.EntityToDensityRosetta(extended_eh.Select(''), den_map, mol.alg.HIGH_RESOLUTION, resolution)
     N+=1
