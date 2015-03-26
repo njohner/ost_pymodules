@@ -269,13 +269,13 @@ def GenerateSearchVectors(v1,v2,v3,level=4,dist_cutoff=None,delta=0.0001):
   if all(geom.Length(v3-v)>delta for v3 in vl_b):vl_b.append(geom.Vec3(0,0,0))
   return vl_b
 
-def GenerateBioUnit(pdb_filename):
+def GenerateBioUnit(pdb_filename,biounit_id=1):
   """
   This function generates the biological unit from a pdb file
   by applying the transformations found in the REMARK 350 record of the PDB
   """
   pdb=open(pdb_filename,'r')
-  Tl,cnames=file_utilities.FindBioUnitTransformations(pdb)
+  Tl,cnames=file_utilities.FindBioUnitTransformations(pdb,biounit_id)
   eh=io.LoadPDB(pdb_filename)
   eh2=mol.CreateEntity()
   edi=eh2.EditXCS()

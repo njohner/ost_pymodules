@@ -66,12 +66,14 @@ def FindLines(file,search_list,break_list):
     if all([sli==el for sli,el in zip(sl,search_list)]):lines.append(line)
   return lines
 
-def FindBioUnitTransformations(file):
+def FindBioUnitTransformations(file,biounit_id=1):
   lines_temp=FindLines(file,['REMARK','350'],['ATOM'])
   lines=[]
-  for l in lines_temp:
-    if 'BIOMOLECULE:2' in ''.join(l.split()):break
-    lines.append(l)
+  for i,l in enumerate(lines_temp):
+    if not 'BIOMOLECULE:{0}'.format(biounit_id) in ''.join(l.split()):continue
+    for j,l2 in enumerate(lines_temp[i+1:]):
+      if 'BIOMOLECULE:{0}'.format(biounit_id+1) in ''.join(l2.split()):break
+      lines.append(l2)
   for i,line in enumerate(lines):
     if 'APPLY THE FOLLOWING TO CHAINS' in line:
       sl=line.split(':')
