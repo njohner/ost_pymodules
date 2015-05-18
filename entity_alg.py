@@ -111,12 +111,17 @@ def GenerateCrystalPackingFromPDB(pdb_filename,distance_cutoff=20,vec_search_lev
   ref_sele is used to test if a certain structure coming form symmetry operations and translations
   is already present in the crystal packing being generated.
   """
+  try: import pbc_utilities
+  except:
+    print "could not load the pbc_utilities module"
+    print "This module is needed in the function GenerateCrystalPackingFromPDB"
+    return None
   reload(file_utilities)
   pdb=open(pdb_filename,'r')
   trans=file_utilities.ReadSymmetryFromPDB(pdb)
   uc=file_utilities.ReadUnitCellFromPDB(pdb)
-  (v1,v2,v3)=BuildUnitCellVectors(uc[0],uc[1],uc[2],uc[3],uc[4],uc[5])
-  vl=GenerateSearchVectors(v1,v2,v3,dist_cutoff=vec_search_cutoff,level=vec_search_level)
+  (v1,v2,v3)=pbc_utilities.BuildUnitCellVectors(uc[0],uc[1],uc[2],uc[3],uc[4],uc[5])
+  vl=pbc_utilities.GenerateSearchVectors(v1,v2,v3,dist_cutoff=vec_search_cutoff,level=vec_search_level)
   ref_eh=io.LoadPDB(pdb_filename)
   ref_sele=ref_eh.Select(superpose_sele)
   ref_CM=ref_eh.GetCenterOfMass()

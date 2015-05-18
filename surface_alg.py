@@ -11,7 +11,7 @@ from scipy import optimize
 import time
 import sys
 sys.path.append('/Work/python_modules/')
-import entity_alg
+import pbc_utilities
 
 __all__=('CalculateSurface','CalculateSurface2','CalculateNormals','CalculateNormalsFast2',\
         'CalculateNormalsFast','OrientNormalsAlongDensity','OrientNormalsFast','OrientNormals'\
@@ -42,7 +42,7 @@ def CalculateSurface2(eh,within_size=5,PBC=False,cell_center=None,cell_size=None
   ds=math.pi*within_size*within_size
   s=0.
   for a in eh.atoms:
-    if PBC:within=entity_alg.FindWithinWithPBC(eh,a.pos,within_size,cell_center,cell_size)
+    if PBC:within=pbc_utilities.FindWithinWithPBC(eh,a.pos,within_size,cell_center,cell_size)
     else:within=mol.CreateViewFromAtoms([a2 for a2 in eh.FindWithin(a.pos,within_size)])
     s+=ds/float(within.GetAtomCount())
     if float_prop_key:a.SetFloatProp(float_prop_key,ds/float(within.GetAtomCount()))
@@ -68,7 +68,7 @@ def CalculateNormals(eh,within_size=5,PBC=False,cell_center=False,cell_size=Fals
   for a in eh.atoms:
     count+=1
     count_tot+=1
-    if PBC:within=entity_alg.FindWithinWithPBC(eh,a.pos,within_size,cell_center,cell_size)
+    if PBC:within=pbc_utilities.FindWithinWithPBC(eh,a.pos,within_size,cell_center,cell_size)
     else:within=mol.CreateViewFromAtoms([a2 for a2 in eh.FindWithin(a.pos,within_size)]).Select('')
     vl=geom.Vec3List()
     for a2 in within.atoms:
@@ -104,15 +104,15 @@ def CalculateNormalsFast2(eh,within_size=5,PBC=False,cell_center=False,cell_size
   print 'set done to False',time.time()-t1
   for ref_a in eh.atoms:
     if ref_a.GetBoolProp('done'):continue
-    if PBC:within_zone=entity_alg.FindWithinWithPBC(eh,ref_a.pos,2.*within_size,cell_center,cell_size)
+    if PBC:within_zone=pbc_utilities.FindWithinWithPBC(eh,ref_a.pos,2.*within_size,cell_center,cell_size)
     else:within_zone=mol.CreateViewFromAtoms([a2 for a2 in eh.FindWithin(ref_a.pos,2.*within_size)]).Select('')
-    if PBC:within2=entity_alg.FindWithinWithPBC(within_zone,ref_a.pos,within_size,cell_center,cell_size)
+    if PBC:within2=pbc_utilities.FindWithinWithPBC(within_zone,ref_a.pos,within_size,cell_center,cell_size)
     else:within2=mol.CreateViewFromAtoms([a2 for a2 in within_zone.FindWithin(ref_a.pos,within_size)]).Select('')    
     for a in within2.atoms:
       if a.GetBoolProp('done'):continue
       count+=1
       count_tot+=1
-      if PBC:within=entity_alg.FindWithinWithPBC(within_zone,a.pos,within_size,cell_center,cell_size)
+      if PBC:within=pbc_utilities.FindWithinWithPBC(within_zone,a.pos,within_size,cell_center,cell_size)
       else:within=mol.CreateViewFromAtoms([a2 for a2 in within_zone.FindWithin(a.pos,within_size)]).Select('')
       vl=geom.Vec3List()
       for a2 in within.atoms:
@@ -150,14 +150,14 @@ def CalculateNormalsFast(eh,within_size=15,within_size2=7,PBC=False,cell_center=
   
   for a in eh.atoms:
     if a.GetBoolProp('done'):continue
-    if PBC:within=entity_alg.FindWithinWithPBC(eh,a.pos,within_size,cell_center,cell_size)
+    if PBC:within=pbc_utilities.FindWithinWithPBC(eh,a.pos,within_size,cell_center,cell_size)
     else:within=mol.CreateViewFromAtoms([a2 for a2 in eh.FindWithin(a.pos,within_size)]).Select('')
     vl=geom.Vec3List()
     for a2 in within.atoms:
       vl.append(a2.pos)
     if PBC:vl=geom.WrapVec3List(vl,a.pos,cell_size)
     n=vl.principal_axes.GetRow(0)
-    if PBC:within=entity_alg.FindWithinWithPBC(eh,a.pos,within_size2,cell_center,cell_size)
+    if PBC:within=pbc_utilities.FindWithinWithPBC(eh,a.pos,within_size2,cell_center,cell_size)
     else:within=mol.CreateViewFromAtoms([a2 for a2 in eh.FindWithin(a.pos,within_size2)]).Select('')
     a.SetFloatProp('nx',n.x)
     a.SetFloatProp('ny',n.y)
@@ -221,7 +221,7 @@ def OrientNormalsFast(eh,within_size=15,PBC=False,cell_center=None,cell_size=Non
   print grid_size,'number of atoms in ref view',ref_view.GetAtomCount()
   print 'start orientation correction for ref view',time.time()-t1 
   starting_point=ref_view.bounds.min+cell_size/4.
-  within=entity_alg.FindWithinWithPBC(ref_view,starting_point,within_size,cell_center,cell_size)
+  within=pbc_utilities.FindWithinWithPBC(ref_view,starting_point,within_size,cell_center,cell_size)
   if not within.IsValid():within=ref_view.CreateEmptyView()
   if within.GetAtomCount()==0:
     print 'start from random point'
@@ -231,7 +231,7 @@ def OrientNormalsFast(eh,within_size=15,PBC=False,cell_center=None,cell_size=Non
   print 'start orientation correction for the other atoms',time.time()-t1 
   for ref_a in ref_view.atoms:
     ref_n=geom.Vec3(ref_a.GetFloatProp('nx'),ref_a.GetFloatProp('ny'),ref_a.GetFloatProp('nz'))
-    if PBC:within=entity_alg.FindWithinWithPBC(eh.Select('gadone!=1'),ref_a.pos,within_size,cell_center,cell_size)
+    if PBC:within=pbc_utilities.FindWithinWithPBC(eh.Select('gadone!=1'),ref_a.pos,within_size,cell_center,cell_size)
     else:within=mol.CreateViewFromAtoms([a for a in eh.Select('gadone!=1').FindWithin(ref_a.pos,within_size)]).Select('')
     if not within.IsValid():within=eh.CreateEmptyView()
     for a in within.atoms:
@@ -262,7 +262,7 @@ def OrientNormals(eh,starting_point,within_size=10,PBC=False,cell_center=None,ce
   n_atoms=eh.GetAtomCount()
   total_atoms=0
   print 'start orientation correction'  
-  if PBC:within=entity_alg.FindWithinWithPBC(eh,starting_point,within_size,cell_center,cell_size)
+  if PBC:within=pbc_utilities.FindWithinWithPBC(eh,starting_point,within_size,cell_center,cell_size)
   else:within=mol.CreateViewFromAtoms([a for a in eh.FindWithin(starting_point,within_size)])
   if not within.IsValid():within=eh.CreateEmptyView()
   if within.GetAtomCount()==0:
@@ -288,8 +288,8 @@ def OrientNormals(eh,starting_point,within_size=10,PBC=False,cell_center=None,ce
     radius=within_size*i
     ref_radius=within_size*(i-1)
     if PBC:
-      within=entity_alg.FindWithinWithPBC(eh,starting_point,radius,cell_center,cell_size)
-      ref_within=entity_alg.FindWithinWithPBC(eh,starting_point,ref_radius,cell_center,cell_size)
+      within=pbc_utilities.FindWithinWithPBC(eh,starting_point,radius,cell_center,cell_size)
+      ref_within=pbc_utilities.FindWithinWithPBC(eh,starting_point,ref_radius,cell_center,cell_size)
     else:
       within=mol.CreateViewFromAtoms([a for a in eh.FindWithin(starting_point,radius)]).Select('')
       ref_within=mol.CreateViewFromAtoms([a for a in eh.FindWithin(starting_point,ref_radius)]).Select('')
@@ -300,12 +300,12 @@ def OrientNormals(eh,starting_point,within_size=10,PBC=False,cell_center=None,ce
     for a in complement.atoms:
       count+=1
       if count%5000==0:print count,'out of',n_atoms
-      if PBC:within2=entity_alg.FindWithinWithPBC(ref_within,a.pos,within_size,cell_center,cell_size)
+      if PBC:within2=pbc_utilities.FindWithinWithPBC(ref_within,a.pos,within_size,cell_center,cell_size)
       else:within2=mol.CreateViewFromAtoms([a2 for a2 in ref_within.FindWithin(a.pos,within_size)])
       if not within2.IsValid():within2=ref_within.CreateEmptyView()
       if within2.GetAtomCount()==0:
         count2+=1
-        if PBC:within2=entity_alg.FindWithinWithPBC(ref_within,a.pos,radius,cell_center,cell_size)
+        if PBC:within2=pbc_utilities.FindWithinWithPBC(ref_within,a.pos,radius,cell_center,cell_size)
         else:within2=mol.CreateViewFromAtoms([a2 for a2 in ref_within.FindWithin(a.pos,radius)]).Select('')
         if not within2.IsValid():within2=ref_within.CreateEmptyView()
       try:a2=within2.atoms[0]
@@ -386,9 +386,9 @@ def CleanMaxDensitySurface2(eh,den_map,clean_length=10,step_size=1,r=0.7,PBC=Fal
   print 'set done to False',time.time()-t1
   for ref_a in eh.atoms:
     if ref_a.GetBoolProp('done') or ref_a.GetFloatProp('delete'):continue
-    if PBC:within_zone=entity_alg.FindWithinWithPBC(eh,ref_a.pos,2.*(clean_length+r),cell_center,cell_size)
+    if PBC:within_zone=pbc_utilities.FindWithinWithPBC(eh,ref_a.pos,2.*(clean_length+r),cell_center,cell_size)
     else:within_zone=mol.CreateViewFromAtoms([a2 for a2 in eh.FindWithin(ref_a.pos,2.*(clean_length+r))]).Select('')
-    if PBC:within2=entity_alg.FindWithinWithPBC(within_zone,ref_a.pos,(clean_length+r),cell_center,cell_size)
+    if PBC:within2=pbc_utilities.FindWithinWithPBC(within_zone,ref_a.pos,(clean_length+r),cell_center,cell_size)
     else:within2=mol.CreateViewFromAtoms([a2 for a2 in within_zone.FindWithin(ref_a.pos,(clean_length+r))]).Select('')    
     #print ref_a, ref_a.pos,within_zone.GetAtomCount()
     for a in within2.atoms:
@@ -404,14 +404,14 @@ def CleanMaxDensitySurface2(eh,den_map,clean_length=10,step_size=1,r=0.7,PBC=Fal
         else:
           x1=p+i*step_size*n
           x2=p-i*step_size*n  
-        if PBC:w2=entity_alg.FindWithinWithPBC2(within_zone,x1,r,cell_center,cell_size).Select('gadelete=0')
+        if PBC:w2=pbc_utilities.FindWithinWithPBC(within_zone,x1,r,cell_center,cell_size).Select('gadelete=0')
         else:w2=mol.CreateViewFromAtoms([a2 for a2 in within_zone.FindWithin(x1,r)]).Select('gadelete=0')    
         #return (i,within_zone,x1,r,cell_center,cell_size)
         for a2 in w2.atoms:
           d2=den_map.GetReal(img.Point(den_map.CoordToIndex(a2.pos)))
           if d2>d1:a.SetFloatProp('delete',1)
           elif d2<d1:a2.SetFloatProp('delete',1)
-        if PBC:w2=entity_alg.FindWithinWithPBC2(within_zone,x2,r,cell_center,cell_size).Select('gadelete=0')
+        if PBC:w2=pbc_utilities.FindWithinWithPBC(within_zone,x2,r,cell_center,cell_size).Select('gadelete=0')
         else:w2=mol.CreateViewFromAtoms([a2 for a2 in within_zone.FindWithin(x2,r)]).Select('gadelete=0')    
         for a2 in w2.atoms:
           d2=den_map.GetReal(img.Point(den_map.CoordToIndex(a2.pos)))
@@ -448,7 +448,7 @@ def CalculateCurvature(eh,within_size=5,normal_corr=False,PBC=False,cell_center=
   for a in eh.atoms:
     try:
       ai=a.GetIndex()
-      if PBC:within=entity_alg.FindWithinWithPBC(eh,a.pos,within_size,cell_center,cell_size)
+      if PBC:within=pbc_utilities.FindWithinWithPBC(eh,a.pos,within_size,cell_center,cell_size)
       else:within=mol.CreateViewFromAtoms([a2 for a2 in eh.FindWithin(a.pos,within_size)]).Select('')
       count+=1
       count_tot+=1

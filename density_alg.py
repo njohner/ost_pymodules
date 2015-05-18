@@ -49,12 +49,12 @@ def CreateDensityMapFromEntityView(view,sampling=1,resolution=5,margin=0,ucell_c
   basis_vec=view.bounds.size
   if not ucell_center:ucell_center=view.bounds.center
   if margin!=0:
-    try: import entity_alg
-    except:'needs the entity_alg module to use PBC'
+    try: import pbc_utilities
+    except:'needs the pbc_utilities module to use PBC'
     if not ucell_vecs:
       print 'unit cell vectors needed when margin>0 to extend the entity'
       return None
-    view=entity_alg.ExtendEntityWithPBC(view,ucell_center,ucell_vecs,margin)
+    view=pbc_utilities.ExtendEntityWithPBC(view,ucell_center,ucell_vecs,margin)
   basis_vec_ext=view.bounds.size
   box_center=view.bounds.center
   origin=box_center-basis_vec_ext/2.
@@ -112,8 +112,8 @@ def CreateDensityMapFromTrajectoryWithPBC(traj, sele_view, sampling=2, stride=1,
   This function creates a density map for the position of the atoms of an EntityView during a trajectory
   It returns a map and uses periodic boundary conditions while generating the map
   """
-  try:import entity_alg,trajectory_utilities
-  except:print 'could not load entity_alg and trajectory_utilities'
+  try:import pbc_utilities,trajectory_utilities
+  except:print 'could not load pbc_utilities and trajectory_utilities'
   if not cell_centers:
     print 'Extracting cell centers from the center of mass of the sele_view over the trajectory'
     cell_centers=mol.alg.AnalyzeCenterOfMassPos(traj,sele_view)
@@ -144,7 +144,7 @@ def CreateDensityMapFromTrajectoryWithPBC(traj, sele_view, sampling=2, stride=1,
     T=geom.Mat4()
     edi_ref.SetTransform(T)
     t.CopyFrame(i)
-    extended_eh=entity_alg.ExtendEntityWithPBC(sele_view,cell_centers[i],cell_vectors[i],margin)
+    extended_eh=pbc_utilities.ExtendEntityWithPBC(sele_view,cell_centers[i],cell_vectors[i],margin)
     mol.alg.EntityToDensityRosetta(extended_eh.Select(''), den_map, mol.alg.HIGH_RESOLUTION, resolution)
     N+=1
   for p in den_map:

@@ -69,7 +69,7 @@ def ExtendTrajectoryToNeighboringUnitCells(t,vecs_to_neighbor_ucells_list,cell_s
   :type vecs_to_neighbor_ucells_list: :class:`list` (:class:`~ost.geom.Vec3List`)
   :type cell_size_mult_factors: :class:`~ost.geom.Vec3`
   """
-  import entity_alg
+  import pbc_utilities
   if not len(vecs_to_neighbor_ucells_list)==t.GetFrameCount():
     print 'you should provide a list of vectors for each frame'
   nreplicas=len(vecs_to_neighbor_ucells_list[0])
@@ -77,7 +77,7 @@ def ExtendTrajectoryToNeighboringUnitCells(t,vecs_to_neighbor_ucells_list,cell_s
     print 'Needs the same number of vectors for each frame'
   cell_size_mult_factors=geom.Vec3(*cell_size_mult_factors)
   eh=t.GetEntity()
-  extended_eh=entity_alg.ExtendEntityToNeighboringUnitCells(eh,vecs_to_neighbor_ucells_list[0])
+  extended_eh=pbc_utilities.ExtendEntityToNeighboringUnitCells(eh,vecs_to_neighbor_ucells_list[0])
   extended_t=mol.CreateCoordGroup(extended_eh.atoms)
   for i in range(t.GetFrameCount()):
     T=geom.Transform()
