@@ -46,7 +46,7 @@ ResNameToOneLetterCode['TYR']='Y'
 
 def FindClosestAtom(v1,v2):
   """
-  v1 and v2 needs to be an Entity, EntityView, ChainView, ResidueView, ChainHandle or ResidueHandle
+  v1 and v2 need to be an Entity, EntityView, ChainView, ResidueView, ChainHandle or ResidueHandle
   Returns the atom of v2 that is closest to v1 (minimal distance to any atom in v1).
   """
   if not type(v2)==mol.EntityView:v2=mol.CreateViewFromAtoms(v2.atoms)
@@ -153,6 +153,12 @@ def ExtendEntityToNeighboringUnitCells(eh,vecs_to_neighbor_ucells):
   For each replica the chains will have the same name as in the original Entity followed by a number
   corresponding to the index of the vector used for the translation (starting at 1). 
   The translations can be obtained for example from the function VectorsToNeighboringUnitCells().
+  
+  :param eh: The *Entity* or *EntityView* to be extended
+  :param vecs_to_neighbor_ucells: List of translations used to extend the entity.
+
+  :type eh: :class:`~ost.mol.EntityView`
+  :type vecs_to_neighbor_ucells: :class:`~ost.geom.Vec3List`
   """
   if type(eh)==mol.EntityView:eh=mol.CreateEntityFromView(eh,1)
   eh_extended=eh.Copy()

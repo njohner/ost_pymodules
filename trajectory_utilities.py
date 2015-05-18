@@ -50,13 +50,32 @@ def TranslateFrames(t,trans_list):
     t.Capture(i)
   return
 
-def ExtendTrajectoryToNeighboringUnitCells(t,vecs_to_neighbor_ucells_list,cell_size_mult_factor=1):
+def ExtendTrajectoryToNeighboringUnitCells(t,vecs_to_neighbor_ucells_list,cell_size_mult_factors=(1,1,1)):
+  """
+  This function is used to extend a trajectory to its neighboring unit cells.
+  Specifically, it will copy and translate the simulation box for each frame *i* by each
+  vector in **vecs_to_neighbor_ucells_list[i]**. 
+  It will also reset the cell size for each frame by multiplying it by **cell_size_mult_factors**.
+  Specifically, the unit cell is specified by the length of the 3 unit cell vectors and 3 angles.
+  So for each frame *i*, the size of each of the unit cell vectors will be multiplied by the corresponding
+  component of **cell_size_mult_factors[i]**.
+
+  :param t: the trajectory
+  :param vecs_to_neighbor_ucells_list: The list of :class:`Vec3List` used to translate the 
+    unit cell. This list should contain one :class:`Vec3List` for each frame in the trajectory.
+  :param cell_size_mult_factors:
+
+  :type t: :class:`~ost.mol.CoordGroupHandle`
+  :type vecs_to_neighbor_ucells_list: :class:`list` (:class:`~ost.geom.Vec3List`)
+  :type cell_size_mult_factors: :class:`~ost.geom.Vec3`
+  """
   import entity_alg
   if not len(vecs_to_neighbor_ucells_list)==t.GetFrameCount():
     print 'you should provide a list of vectors for each frame'
   nreplicas=len(vecs_to_neighbor_ucells_list[0])
   if not all([len(vl)==nreplicas for vl in vecs_to_neighbor_ucells_list]):
     print 'Needs the same number of vectors for each frame'
+  cell_size_mult_factors=geom.Vec3(*cell_size_mult_factors)
   eh=t.GetEntity()
   extended_eh=entity_alg.ExtendEntityToNeighboringUnitCells(eh,vecs_to_neighbor_ucells_list[0])
   extended_t=mol.CreateCoordGroup(extended_eh.atoms)
@@ -69,7 +88,9 @@ def ExtendTrajectoryToNeighboringUnitCells(t,vecs_to_neighbor_ucells_list,cell_s
       T.SetTrans(v)
       eh.SetTransform(T)
       vl.extend(eh.GetAtomPosList())
-    extended_t.AddFrame(vl,cell_size_mult_factor*t.GetFrame(i).GetCellSize(),t.GetFrame(i).GetCellAngles())
+    cell_size=t.GetFrame(i).GetCellSize()
+    new_cell_size=geom.CompMultiply(cell_size_mult_factors,cell_size)
+    extended_t.AddFrame(vl,new_cell_size,t.GetFrame(i).GetCellAngles())
   return extended_t
 
 def CreatePerResidueCMTrajectory(eh,t,cm_sele_list=[],atom_name_list=[],superposition_view=None):
@@ -378,10 +399,14 @@ def CalculateInterfaceFromTraj(t,waters,lipids,PBC=False,cell_center=None,cell_s
   import density_alg
   (PBC,cell_center,cell_size)=_SetPBC(waters,PBC,cell_center,cell_size)
   if PBC:
+    print "Generating water density"
     water_den=density_alg.CreateDensityMapFromTrajectoryWithPBC(t,waters,cell_center=cell_center,cell_size=cell_size,stride=stride)
+    print "Generating lipid density"
     lipid_den=density_alg.CreateDensityMapFromTrajectoryWithPBC(t,lipids,cell_center=cell_center,cell_size=cell_size,stride=stride)
   else:
+    print "Generating water density"
     water_den=density_alg.CreateDensityMapFromTrajectory(t,waters,stride=stride)
+    print "Generating lipid density"
     lipid_den=density_alg.CreateDensityMapFromTrajectory(t,lipids,stride=stride)
   water_filtered=water_den.Apply(img.alg.LowPassFilter(low_pass_filter_length))
   lipid_filtered=lipid_den.Apply(img.alg.LowPassFilter(low_pass_filter_length))

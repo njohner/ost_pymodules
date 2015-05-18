@@ -1,7 +1,21 @@
 """
 Module written by Niklaus Johner (niklaus.johner@a3.epfl.ch) 01.2013
 This module contains functions to determine lipid tilt and splay angles and
-Calculate the elastic properties of the membrane from there
+Calculate the elastic properties of the membrane from there.
+
+If you use this code please cite ref.1, where the method and its implementation 
+is described in details. An example of the application
+
+To ensure proper treatment of the periodic boundayr conditions, the trajectory
+should first be extended to neighboring unit cells, and then aligned.
+The tilts and splays are then calculated only for the central cell, the others 
+being only used to ascertain correct treatment of the PBCs.
+
+References
+===============
+1. Release note
+2. 
+
 """
 try:
   from ost import *
@@ -18,14 +32,34 @@ except:
   print 'could not import at least one of the modules nedded: ost, time, numpy, os, math, entity_alg,trajectory_utilities,surface_alg,file_utilities'
 
 
-__all__=('CalculateSplayAngle','AssignNormalsFromSurfaceToResidues','CalculateTilts',\
-        'GetBoundaryBetweenViews','AssignNormalsToLipids','AnalyzeLipidTilts',\
-        'AnalyzeLipidSplay','AnalyzeLipidTiltAndSplayGeneral',\
-        'WriteTiltDict','WriteSplayDict','OrientNormalsAlongVector',\
+__all__=('GetBoundaryBetweenViews','AssignNormalsToLipids','AnalyzeLipidTilts',\
+        'AnalyzeLipidSplays','AnalyzeLipidTiltAndSplay',\
+        'WriteTiltDict','WriteSplayDict',\
         'FitTiltDistribution','FitSplayDistribution','AnalyzeAreaPerLipid')
 
 
-def CalculateSplayAngle(v11,v12,v21,v22,v1p,v2p,n1,n2,distance_cutoff):
+def _CalculateSplayAngle(v11,v12,v21,v22,v1p,v2p,n1,n2,distance_cutoff):
+  """
+  Calculates the splay angle for a pair of lipids.
+
+  :param v11: headgroup of the first lipid
+  :param v12: terminal tail atoms of the first lipid
+  :param v21: headgroup of the second lipid
+  :param v22: terminal tail atoms of the second lipid
+  :param v1p: Atoms of the first lipid situated at the neutral/pivotal plane
+  :param v1p: Atoms of the second lipid situated at the neutral/pivotal plane
+  :param distance_cutoff: The maximal distance between lipids considered for splay calculation.
+
+  :type v11: :class:`~ost.mol.EntityView`
+  :type v12: :class:`~ost.mol.EntityView`
+  :type v21: :class:`~ost.mol.EntityView`
+  :type v22: :class:`~ost.mol.EntityView`
+  :type v1p: :class:`~ost.mol.EntityView`
+  :type v2p: :class:`~ost.mol.EntityView`
+  :type distance_cutoff: :class: `float`
+
+  :return: returns a tuple of floats composed of the splay angle and the distance between the lipids
+  """
   if geom.Dot(n1,n2)<0:return None
   x=v2p.GetCenterOfMass()-v1p.GetCenterOfMass()
   d=geom.Length(x)
@@ -37,12 +71,30 @@ def CalculateSplayAngle(v11,v12,v21,v22,v1p,v2p,n1,n2,distance_cutoff):
   v2=geom.Normalize(v21.GetCenterOfMass()-v22.GetCenterOfMass())
   #x=geom.Normalize(v2p.GetCenterOfMass()-v1p.GetCenterOfMass())
   #d=geom.Length(v2p.GetCenterOfMass()-v1p.GetCenterOfMass())
-  return [(geom.Dot(v2,x)-geom.Dot(v1,x)-geom.Dot(n2,x)+geom.Dot(n1,x))/d,d]
+  return ((geom.Dot(v2,x)-geom.Dot(v1,x)-geom.Dot(n2,x)+geom.Dot(n1,x))/d,d)
   
 
 CalculateInterfaceFromTraj=trajectory_utilities.CalculateInterfaceFromTraj
 
-def AssignNormalsFromSurfaceToResidues(t,sele,surface,within_size=10):
+def _AssignNormalsFromSurfaceToResidues(t,sele,surface,within_size=10):
+  """
+  This function assigns a normal vector to each residue for each frame of a trajectory
+  from the closest point on the surface.
+  
+  :param t: the trajectory
+  :param sele: the selection to which normals will be assigned.
+  :param surface: the surface. Each atom of the surface should have an associated
+                  normal vector as float properties "nx","ny" and "nz".
+  :param within_size: Size of surrounding used to find the closest atom on the surface.
+                      This parameter only optimizes the speed of the calculation
+
+  :type t: :class:`~ost.mol.CoordGroupHandle`
+  :type sele: :class:`~ost.mol.EntityView`
+  :type surface: :class:`~ost.mol.EntityView`
+  :type within_size: :class:`float`
+
+  :return: A list containing one **Vec3List** for each residue in **sele**.
+  """
   surface=surface.Select('')#Make sure we don't have to make that selection each time
   ln=[geom.Vec3List() for r in sele.residues]
   res_view_list=[r.Select('') for r in sele.residues]
@@ -55,7 +107,27 @@ def AssignNormalsFromSurfaceToResidues(t,sele,surface,within_size=10):
       ln[j].append(geom.Vec3(a.GetFloatProp('nx'),a.GetFloatProp('ny'),a.GetFloatProp('nz')))
   return ln
 
-def CalculateTilts(t,lipids,normals,head_sele,tail_sele,prot_cm=None,bool_prop=''):
+def _CalculateTilts(t,lipids,normals,head_sele,tail_sele,prot_cm=None,bool_prop=''):
+  """
+  This function calculates the lipid tilts.
+  :param t: the trajectory
+  :param lipids: the selection for which tilts will be calculated.
+  :param head_sele: the selection used for the headgroups.
+  :param tail_sele: the selection used for the tails. 
+  :param prot_cm: A point from which the distance will be calculated for each tilt.
+                  This is typically the position of the center of mass of a protein.
+
+  :type t: :class:`~ost.mol.CoordGroupHandle`
+  :type lipids: :class:`~ost.mol.EntityView`
+  :type head_sele: :class:`str`
+  :type tail_sele: :class:`str`
+  :type bool_prop: :class:`str`
+  :type prot_cm: :class:`~ost.mol.EntityView`
+  
+  :return: A tuple of arrays **(tilts, prot_dist)**. Each array has the shape N\ :subscript:`Lipids`\ x N\ :subscript:`Frames`\
+   If **prot_cm** is **None**, the second list is empty.
+  :rtype: (:class:`npy.array`,:class:`npy.array`)
+  """
   tilts=[]
   prot_dist=[]
   for i,r in enumerate(lipids.residues):
@@ -68,21 +140,46 @@ def CalculateTilts(t,lipids,normals,head_sele,tail_sele,prot_cm=None,bool_prop='
       prot_dist.append([min(geom.Length(geom.Vec2(cm-el1)),geom.Length(geom.Vec2(cm-el2))) for cm,el1,el2 in zip(prot_cm,p1,p2)])
   return (npy.array(tilts),npy.array(prot_dist))
 
-def GetBoundaryBetweenViews(t,lipid_names,water_name='TIP3',outdir='',PBC=False,cell_center=None,cell_size=None,
-                            den_cutoff=None,density_stride=1,within_size_normals=5.0,filename_basis=''):
+def GetBoundaryBetweenViews(t,waters,lipids,outdir='',density_cutoff=None,stride=1,within_size_normals=5.0,filename_basis=''):
+  """
+  This function determines the interface between two views, typically the lipid-water interface and assigns normals 
+  to every point on the surface.
+
+  :param t: the trajectory
+  :param waters: First view
+  :param lipids: Second view
+  :param outdir: Path to output directory
+  :param density_cutoff: Interface will not be calculated for regions where the density is lower than this cutoff.
+  :param stride: stride used to calculate the average density from the trajectory.
+  :param within_size_normals: radius of the patch used to determine the normals on the water-lipid interface.
+  :param filename_basis: used as first part in the name of all the files generated.
+
+  :type t: :class:`~ost.mol.CoordGroupHandle`
+  :type waters: :class:`~ost.mol.EntityView`
+  :type lipids: :class:`~ost.mol.EntityView`
+  :type outdir: :class:`str`
+  :type density_cutoff: :class:`float`
+  :type stride: :class:`int`
+  :type within_size: :class:`float`
+  :type filename_basis: :class:`str`
+  
+  :return: A tuple **(water_filtered,lipid_filtered,b_eh)** containing the density for 
+  the first and second views and an entity for the boundary between the two views.
+  Every atom in the boundary has an associated normal vector set as a Vec3 property 'n'.
+
+  WARNING: Interface was changed. Taking 2 views instead of a list of lipid names and water name.
+  The order of the two views was also inversed. I also removed the PBC, cell_center and cell_size parameters
+
+  """
+
   t0=time.time()
   eh=t.GetEntity()
-  t2=t.Filter(eh.Select(''),stride=density_stride)
-  #first we build the interafce between water and membrane
-  lipid_sele='rname='+','.join(lipid_names)
-  water_sele='rname='+water_name
-  lipids=eh.Select(lipid_sele)
-  waters=eh.Select(water_sele)
+  t2=t.Filter(eh.Select(''),stride=stride)
   print 'Calculating densities on',t2.GetFrameCount(),'frames'
-  (water_filtered,lipid_filtered,boundary_filtered)=CalculateInterfaceFromTraj(t2,waters,lipids,PBC,cell_center,cell_size,10,den_cutoff,outdir,filename_basis)
+  (water_filtered,lipid_filtered,boundary_filtered)=CalculateInterfaceFromTraj(t2,waters,lipids,False,None,None,10,density_cutoff,outdir,filename_basis)
   b_eh=entity_alg.CreateEntityFromVec3List(boundary_filtered)
   print 'calculating the normals',time.time()-t0
-  surface_alg.CalculateNormals(b_eh,within_size_normals,PBC,cell_center,cell_size)
+  surface_alg.CalculateNormals(b_eh,within_size_normals,False,None,None)
   surface_alg.OrientNormalsAlongDensity(b_eh,lipid_filtered)
   if outdir:
     io.SavePDB(b_eh,os.path.join(outdir,filename_basis+'boundary.pdb'))
@@ -90,6 +187,25 @@ def GetBoundaryBetweenViews(t,lipid_names,water_name='TIP3',outdir='',PBC=False,
   return (water_filtered,lipid_filtered,b_eh)
       
 def AssignNormalsToLipids(t,eh,b_eh,lipid_names,head_group_dict):
+  """
+  :param t: The trajectory
+  :param eh: The associated entity
+  :param b_eh: The surface from which the normals will get assigned to the lipids.
+  :param lipid_names: a list of the lipid residue names to which normals will be assigned.
+  :param head_group_dict: a dictionary containing the selections defining the headgroup 
+   for each lipid type. There should be one entry for each residue name in **lipid_names**
+
+  :type t: :class:`~ost.mol.CoordGroupHandle`
+  :type eh: :class:`~ost.mol.Entity`
+  :type b_eh: :class:`~ost.mol.Entity`
+  :type lipid_names: :class:`list`
+  :type head_group_dict: :class:`dict`
+  
+  :return: A dictionary with one entry for each residue name in **lipid_names**.
+   Each element in the dictionary is a list of **Vec3List**. Each element in the list
+   corresponds to one residue and each *Vec3* in the Vec3List is the normal for one frame
+   of the trajectory.
+  """
   t0=time.time()
   #Now we assign a normal for each lipid in each frame
   print 'assigning normals to lipids',lipid_names
@@ -99,7 +215,7 @@ def AssignNormalsToLipids(t,eh,b_eh,lipid_names,head_group_dict):
     t0=time.time()
     lipids=eh.Select('rname='+lipid_name+' and '+head_group_dict[lipid_name])
     print lipids.GetResidueCount()
-    lipid_normal_dict[lipid_name]=AssignNormalsFromSurfaceToResidues(t,lipids,b_eh)
+    lipid_normal_dict[lipid_name]=_AssignNormalsFromSurfaceToResidues(t,lipids,b_eh)
     print 'done for',lipid_name,'in',time.time()-t0,'seconds'
   return lipid_normal_dict
 
@@ -107,11 +223,14 @@ def AnalyzeLipidTilts(t,eh,lipid_names,lipid_normal_dict,head_group_dict,tail_di
   lipid_tilt_dict={}
   for ln in lipid_names:
     lipids=eh.Select('rname='+ln)
-    lipid_tilt_dict[ln]=CalculateTilts(t,lipids,lipid_normal_dict[ln],head_group_dict[ln],tail_dict[ln],prot_cm,bool_prop)
+    lipid_tilt_dict[ln]=_CalculateTilts(t,lipids,lipid_normal_dict[ln],head_group_dict[ln],tail_dict[ln],prot_cm,bool_prop)
   return lipid_tilt_dict
   
 
-def AnalyzeLipidSplay(t,eh,lipid_names,head_group_dict,tail_dict,lipid_normal_dict,lipid_tilt_dict,distance_sele_dict,distance_cutoff=10,bool_prop='',patch=False):
+def AnalyzeLipidSplays(t,eh,lipid_names,head_group_dict,tail_dict,lipid_normal_dict,lipid_tilt_dict,distance_sele_dict,distance_cutoff=10,bool_prop='',patch=False):
+  """
+  WARNING: Changed the name of that function from AnalyzeLipidSplay to AnalyzeLipidSplays.
+  """
   nframes=t.GetFrameCount()
   t0=time.time()
   splay_dict={}
@@ -161,7 +280,7 @@ def AnalyzeLipidSplay(t,eh,lipid_names,head_group_dict,tail_dict,lipid_normal_di
         n2=lipid_normal_dict[ln2][j][f]
         a2=lipid_tilt_dict[ln2][0][j][f]
         if a1>0.8 or a2>0.8:continue
-        s=CalculateSplayAngle(v11,v12,v21,v22,v13,v23,n1,n2,distance_cutoff)
+        s=_CalculateSplayAngle(v11,v12,v21,v22,v13,v23,n1,n2,distance_cutoff)
         if s:splay_dict[ln1+'-'+ln2].append(s)
   #We finalize the dictionary by merging equivalent entries
   nsplays=0
@@ -177,9 +296,62 @@ def AnalyzeLipidSplay(t,eh,lipid_names,head_group_dict,tail_dict,lipid_normal_di
   print 'done in {0} seconds. Computed {1} splays'.format(time.time()-t0,nsplays)
   return splay_dict_def
 
-def AnalyzeLipidTiltAndSplayGeneral(t,lipid_names,head_group_dict,tail_dict,distance_cutoff=10.0,within_size_normals=5.0
-                      ,distance_sele_dict={},water_name='TIP3',outdir='',PBC=False,cell_center=None,cell_size=None,den_cutoff=None
+def AnalyzeLipidTiltAndSplay(t,lipid_names,head_group_dict,tail_dict,distance_cutoff=10.0,within_size_normals=5.0
+                      ,distance_sele_dict={},water_name='TIP3',outdir='',density_cutoff=None
                       ,prot_sele=None,density_stride=10,tilt_bool_prop='',splay_bool_prop='',filename_basis='',sele_dict={}):
+  """
+  This function is a wrapper to determine the membrane elastic moduli from the lipid titls and splays.
+  Periodic boundary conditions are not treated explicitely here and should be treated as suggested in the
+  description of this module.
+
+  :param t: The trajectory
+  :param lipid_names: List of the residue names of the different lipids in the system
+  :param head_group_dict: Dictionary containing a selection string for each lipid type
+   that is used to determine the position of the lipid headgroups (center of mass of the selection).
+  :param tail_dict: Dictionary containing a selection string for each lipid type
+   that is used to determine the position of the lipid tails (center of mass of the selection).
+  :param distance_cutoff: Lipid pairs further apart than this distance will not be considered for splay calculation.
+  :param within_size_normals: radius of the patch used to determine the normals on the water-lipid interface.
+  :param distance_sele_dict: Dictionary containing a selection string for each lipid type that is used
+   to calculate the distance between lipids (center of mass distance). The center of mass of these selections should lie
+   on the neutral plane.
+  :param water_name:Residue name of the waters (used to calculate the water-lipid interface).
+  :param outdir: Path to output directory. If none, no files will be written.
+  :param density_cutoff: Interface will not be calculated for regions where the density is lower than this cutoff.
+  :param prot_sele: Selection string used to determine the position of the protein. This is used to calculate the distance
+   between lipids and the protein which will be returned together with splays and tilts and can be used to determine the vatiation
+   in membrane properties around a protein
+  :param density_stride: Stride to be used for the calculation of the average lipid and water densities used to determine the interface.
+   Using every single frame can slow down the calculation.
+  :param tilt_bool_prop: Boolean property assigned to lipids to determine whether they should be considered in the titl calculations.
+   This is typically used to treat the periodic boundary conditions, to differentiate lipids from the central unit cell, for which tilt and 
+   splay are calculated, from the lipids from neighboring unit cells, used only to ensure correct treatment of PBC.
+  :param splay_bool_prop: Same as **tilt_bool_prop** but for the calculation of splays
+  :param filename_basis: used as first part in the name of all the files generated.
+  :param sele_dict: Dictionary containing selection strings used to separate the system in several parts for the calculation
+   This can be used for example to make the tilt and splay calculations separately for each leaflet of a bilayer.
+   In such a case **sele_dict** would be something like **sele_dict={"upper":"z>0","lower":"z<0"}**
+
+  :type t: :class:`~ost.mol.CoordGroupHandle`
+  :type lipid_names: :class:`str`
+  :type head_group_dict: :class:`dict`
+  :type tail_dict: :class:`dict`
+  :type distance_cutoff: :class:`float`
+  :type within_size_normals: :class:`float`
+  :type distance_sele_dict: :class:`dict`
+  :type outdir: :class:`str`
+  :type density_cutoff: :class:`float`
+  :type prot_sele: :class:`str`
+  :type density_stride: :class:`int`
+  :type tilt_bool_prop: :class:`bool`
+  :type splay_bool_prop: :class:`bool`
+  :type filename_basis: :class:`str`
+  :type sele_dict: :class:`dict`
+
+  :return:
+
+  WARNIGN: Removed parameters PBC, cell_center, cell_size
+  """
   import time
   t0=time.time()
   eh=t.GetEntity()
@@ -187,8 +359,12 @@ def AnalyzeLipidTiltAndSplayGeneral(t,lipid_names,head_group_dict,tail_dict,dist
   #first we build the interafce between water and membrane
   #and assign a normal for each lipid in each frame
   print 'Generating the water and lipid densities and boundary surface'
-  (water_filtered,lipid_filtered,b_eh)=GetBoundaryBetweenViews(t,lipid_names,water_name,outdir,PBC,cell_center,cell_size,
-                                                              den_cutoff,density_stride,within_size_normals,filename_basis)
+  lipid_sele='rname='+','.join(lipid_names)
+  water_sele='rname='+water_name
+  lipids=eh.Select(lipid_sele)
+  waters=eh.Select(water_sele)
+  (water_filtered,lipid_filtered,b_eh)=GetBoundaryBetweenViews(t,waters,lipids,outdir,density_cutoff,
+                                                               density_stride,within_size_normals,filename_basis)
   #Protein center of mass
   if prot_sele:prot_cm=mol.alg.AnalyzeCenterOfMassPos(t,eh.Select(prot_sele))
   else:prot_cm=None
@@ -225,7 +401,7 @@ def AnalyzeLipidTiltAndSplayGeneral(t,lipid_names,head_group_dict,tail_dict,dist
     print 'Done in',time.time()-t0,'seconds'
     t0=time.time()
     print 'calculating splay for',sele
-    splay_dict[sele_name]=AnalyzeLipidSplay(t,eh.Select(lipid_sele,mol.MATCH_RESIDUES),lipid_names,head_group_dict,tail_dict,
+    splay_dict[sele_name]=AnalyzeLipidSplays(t,eh.Select(lipid_sele,mol.MATCH_RESIDUES),lipid_names,head_group_dict,tail_dict,
                                             lipid_normal_dict[sele_name],lipid_tilt_dict[sele_name],distance_sele_dict,distance_cutoff,splay_bool_prop)
     print 'Done in',time.time()-t0,'seconds'
     if outdir:
@@ -237,6 +413,19 @@ def AnalyzeLipidTiltAndSplayGeneral(t,lipid_names,head_group_dict,tail_dict,dist
   else: return (lipid_tilt_dict,lipid_normal_dict,splay_dict,b_eh)
 
 def WriteTiltDict(lipid_tilt_dict,outdir,filename_basis=''):
+  """
+  This function writes out the *lipid_tilt_dict* to the firectory *outdir*.
+  It writes out one file for every key in *lipid_tilt_dict*, i.e. for every lipid type.
+  Filenames are preceded by the *filename_basis*.
+
+  :param lipid_tilt_dict: the lipid tilt dictionary as produced by :func:`AnalyzeLipidTiltAndSplay`.
+  :param outdir: the directory to which the files will be written
+  :param filename_basis: Will be prepended to all file names.
+
+  :type lipid_tilt_dict: :class:`dict`
+  :type outdir: :class:`str`
+  :type filename_basis: :class:`str`
+  """
   for ln in lipid_tilt_dict:
     tl=[180.*el/math.pi  for lt in lipid_tilt_dict[ln][0] for el in lt]
     dl=[el  for lt in lipid_tilt_dict[ln][1] for el in lt]
@@ -250,6 +439,19 @@ def WriteTiltDict(lipid_tilt_dict,outdir,filename_basis=''):
     file_utilities.WriteListOfListsInColumns(titles,ll,os.path.join(outdir,filename_basis+'tilt_'+ln+'.txt'))
 
 def WriteSplayDict(splay_dict,outdir,filename_basis):
+  """
+  This function writes out the *splay_dict* to the firectory *outdir*.
+  It writes out one file for every key in *splay_dict*, i.e. for every lipid type pair.
+  Filenames are preceded by the *filename_basis*.
+
+  :param splay_dict: the lipid splay dictionary as produced by :func:`AnalyzeLipidTiltAndSplay`.
+  :param outdir: the directory to which the files will be written
+  :param filename_basis: Will be prepended to all file names.
+
+  :type splay_dict: :class:`dict`
+  :type outdir: :class:`str`
+  :type filename_basis: :class:`str`
+  """
   if len(splay_dict.keys())==0:return
   for ln in splay_dict:
     if len(splay_dict[ln])==0:continue
@@ -263,28 +465,20 @@ def WriteSplayDict(splay_dict,outdir,filename_basis):
       file_utilities.WriteListOfListsInLines(['splay','dist'],sl,os.path.join(outdir,filename_basis+'splay_'+ln+'.txt'))
   return
 
-def OrientNormalsAlongVector(eh,v=geom.Vec3(0,0,1)):
-  for a in eh.atoms:
-    n=geom.Vec3(a.GetFloatProp('nx'),a.GetFloatProp('ny'),a.GetFloatProp('nz'))
-    if geom.Dot(v,n)<0.0:
-      a.SetFloatProp('nx',-n.x)
-      a.SetFloatProp('ny',-n.y)
-      a.SetFloatProp('nz',-n.z)
-  return
 
-def gauss(x, *p):
+def _gauss(x, *p):
   A, mu, sigma = p
   return A*npy.exp(-(x-mu)**2/(2.*sigma**2))
 
-def parabole(x,*p):
+def _parabole(x,*p):
   a,b,x0=p
   return a+b*(x-x0)**2.0
   
-def centered_parabole(x,*p):
+def _centered_parabole(x,*p):
   a,b=p
   return a+b*x**2.0
 
-def FindIndexOfClosestValue(l,v):
+def _FindIndexOfClosestValue(l,v):
   return min(enumerate(l), key=lambda x: abs(x[1]-v))[0]
 
 
@@ -292,33 +486,34 @@ def _FitGaussian(bincenters,pa):
   mu0=npy.sum(bincenters*pa)/npy.sum(pa)
   A0=max(pa)
   sigma0=npy.sqrt(npy.sum(((bincenters-mu0)**2.0)*pa)/npy.sum(pa))
-  (A,mu,sigma),v=curve_fit(gauss,bincenters,pa,[A0,mu0,sigma0])
-  print A0,mu0,sigma0,A,mu,abs(sigma)
+  (A,mu,sigma),v=curve_fit(_gauss,bincenters,pa,[A0,mu0,sigma0])
+  #print A0,mu0,sigma0,A,mu,abs(sigma)
   return A,mu,abs(sigma)
 
 def _PlotGaussian(bincenters,pa,A,mu,sigma,outfile,title='',xlabel=''):
   plt.figure()
   plt.plot(bincenters,pa,'o')
-  plt.plot(bincenters,gauss(bincenters,A,mu,sigma),'-',color='g',label='$\mu={0}\ ;\ \sigma={1}$'.format(round(mu,int(1/mu)+1),round(sigma,int(1/sigma)+1)))
+  plt.plot(bincenters,_gauss(bincenters,A,mu,sigma),'-',color='g',label='$\mu={0}\ ;\ \sigma={1}$'.format(round(mu,int(1/mu)+1),round(sigma,int(1/sigma)+1)))
   plt.vlines(mu,0,plt.ylim()[1],linestyle='--',color='r')
   plt.vlines([mu+sigma,mu-sigma],0,plt.ylim()[1],linestyle='--',color='c')
   plt.title(title)
   plt.xlabel(xlabel)
   plt.ylabel('Probability')
-  plt.show()
+  #plt.show()
   plt.savefig(outfile)
+  plt.close()
   
-def _FitParabole(bincenters,fa,range,centered=False):
-  first=FindIndexOfClosestValue(bincenters,range[0])
-  last=FindIndexOfClosestValue(bincenters,range[1])
+def _FitParabole(bincenters,fa,fitting_range,centered=False):
+  first=_FindIndexOfClosestValue(bincenters,fitting_range[0])
+  last=_FindIndexOfClosestValue(bincenters,fitting_range[1])
   mask=fa!=npy.inf
   a=min(fa)
   x0=bincenters[npy.argmin(fa)]
   xm=bincenters[mask][npy.argmax(fa[mask])]
   fm=max(fa[mask])
   b=(fm-a)/(xm-x0)**2.0
-  if centered:r,v=curve_fit(centered_parabole,bincenters[first:last],fa[first:last],[a,b])
-  else:r,v=curve_fit(parabole,bincenters[first:last],fa[first:last],[a,b,x0])
+  if centered:r,v=curve_fit(_centered_parabole,bincenters[first:last],fa[first:last],[a,b])
+  else:r,v=curve_fit(_parabole,bincenters[first:last],fa[first:last],[a,b,x0])
   return r
 
 def _PlotParabola(bincenters,fa,a,b,x0,fitting_range,outfile,title='',xlabel='',ylabel='',fit_label=''):
@@ -326,18 +521,46 @@ def _PlotParabola(bincenters,fa,a,b,x0,fitting_range,outfile,title='',xlabel='',
   plt.plot(bincenters,fa,'o')
   ymax=plt.ylim()[1]
   ymin=plt.ylim()[0]
-  plt.plot(bincenters,[parabole(xi,a,b,x0) for xi in bincenters],'--',color='r',label=fit_label)
+  plt.plot(bincenters,[_parabole(xi,a,b,x0) for xi in bincenters],'--',color='r',label=fit_label)
   plt.xlabel(xlabel)
   plt.ylabel(ylabel)
   plt.title(title)
   if fit_label:plt.legend(loc='best')
   plt.vlines(fitting_range,ymin,ymax,linestyle='--',color='c')
   plt.ylim(ymin,ymax)
-  plt.show()
+  #plt.show()
   plt.savefig(outfile)
+  plt.close()
   return
 
-def FitSplayDistribution(splay_list,lipid_area,factor=2,nbins=100,xrange=None,outdir='',filename_basis='',title_complement=''):  
+def FitSplayDistribution(splay_list,lipid_area,nbins=100,xrange=None,outdir='',filename_basis='',title_complement=''):  
+  """
+  This function extracts the bending modulus from a list of splays.
+  It will first fit a gaussian y=A exp[(x-mu)/sigma^2] to the distribution of splays to determine
+  the fitting range used to fit the potential of mean force (PMF).
+  Different fitting ranges are used to estimate the error on the extracted bending rigidity
+
+  :param splay_list: A list of lipid splays.
+  :param lipid_area: The area per lipid.
+  :param nbins:   The number of bins used when determining the distribution of splays
+  :param xrange:  The range in which the distribution will be calculated. Defaults to [mean-3*std,mean+3*std].
+  :param outdir:  the directory to which output files will be written, i.e. plots of splay distribution and PMF.
+                  if it is not defined, plots will not be generated
+  :param filename_basis: Will be prepended to all file names.
+  :param title_complement: will be added in the title of the plots
+
+  :type splay_list: :class:`list`
+  :type lipid_area: :class:`float`
+  :type nbins: :class:`int`
+  :type xrange: :class:`tuple` of 2 floats
+  :type outdir: :class:`str`
+  :type filename_basis: :class:`str`
+  :type title_complement: :class:`str`
+
+  :return: A tuple **(K, DeltaK,K_list)**, containing the bending rigidity *K*,
+           the estimated uncertainty on *K*, and the list of *K* values obtained from the different fitting ranges.
+  :rtype: (:class:`float`,:class:`float`,:class:`list`)
+  """
   if not xrange:
     w=npy.std(splay_list)
     m=npy.average(splay_list)
@@ -346,15 +569,15 @@ def FitSplayDistribution(splay_list,lipid_area,factor=2,nbins=100,xrange=None,ou
   bincenters=0.5*(pa[1][1:]+pa[1][:-1])
   fa=-npy.log(pa[0])
   A,mu,sigma=_FitGaussian(bincenters,pa[0])
-  #ranges=[(mu-i*sigma,mu+i*sigma) for i in [1,0.75,0.5,1.5,2]]
   ranges=[(mu-i*sigma,mu+i*sigma) for i in [1,1.25,1.5,1.75,2]]
+  print "Gaussian y=A exp[(x-mu)/sigma^2] fitted to tilt distribution with A={0},mu={1} and sigma={2}".format(round(A,2),round(mu,2),round(sigma,2))
+  print "Using the following ranges to fit the PMF:",ranges
   res_list=[]
-  for range in ranges:
-    try:r=_FitParabole(bincenters,fa,range)
+  for fitting_range in ranges:
+    try:r=_FitParabole(bincenters,fa,fitting_range)
     except:r=[0,0]
     res_list.append(r)
-  K_list=[factor*r[1]/lipid_area for r in res_list]
-  #K_list=[2.*r[1] for r in res_list]
+  K_list=[2.*r[1]/lipid_area for r in res_list]
   DeltaK=npy.std([el for el in K_list if not el==0.0])
   K=K_list[0]
   if outdir:
@@ -365,21 +588,50 @@ def FitSplayDistribution(splay_list,lipid_area,factor=2,nbins=100,xrange=None,ou
     outfile=os.path.join(outdir,'_'.join([filename_basis,'splay','fit'])+'.png')
     a,b,x0=res_list[0]
     _PlotParabola(bincenters,fa,a,b,x0,ranges[0],outfile,title,'Splay',r'$-\log\left[P(\alpha)\right]$','$K={0}\pm {1}$'.format(round(K,int(-math.log10(K))+1),round(DeltaK,int(-math.log10(DeltaK))+1)))
-  return K_list,DeltaK
+  return K,DeltaK,K_list
   
-def FitTiltDistribution(tilt_list,nbins=90,range=None,outdir='',filename_basis='',title_complement='',degrees=False):
+def FitTiltDistribution(tilt_list,nbins=90,xrange=None,outdir='',filename_basis='',title_complement='',degrees=False):
+  """
+  This function extracts the tilt modulus from a list of lipid tilts.
+  It will first fit a gaussian y=A exp[(x-mu)/sigma^2] to the distribution of tilts to determine
+  the fitting range used to fit the potential of mean force (PMF).
+  Different fitting ranges are used to estimate the error on the extracted tilt modulus
+
+  :param tilt_list: A list of lipid splays.
+  :param nbins:   The number of bins used when determining the distribution of splays
+  :param xrange:  The range in which the distribution will be calculated. Defaults to [mean-3*std,mean+3*std].
+  :param outdir:  the directory to which output files will be written, i.e. plots of splay distribution and PMF.
+                  if it is not defined, plots will not be generated
+  :param filename_basis: Will be prepended to all file names.
+  :param title_complement: will be added in the title of the plots
+  :param degrees: Whether plots should be in degrees or radians.
+
+  :type splay_list: :class:`list`
+  :type lipid_area: :class:`float`
+  :type nbins: :class:`int`
+  :type xrange: :class:`tuple` of 2 floats
+  :type outdir: :class:`str`
+  :type filename_basis: :class:`str`
+  :type title_complement: :class:`str`
+  :type degrees: :class:`bool`
+
+  :return: A tuple **(Chi, DeltaChi,Chi_list)**, containing the tilt modulus *Chi*,
+           the estimated uncertainty on *Chi*, and the list of *Chi* values obtained from the different fitting ranges.
+  :rtype: (:class:`float`,:class:`float`,:class:`list`)
+  """
   if degrees:ac=math.pi/180.
   else:ac=1
   if None:range=[0,math.pi/(2.*ac)]
-  pa=npy.histogram(tilt_list,nbins,range=range,density=True)
+  pa=npy.histogram(tilt_list,nbins,range=xrange,density=True)
   bincenters=0.5*(pa[1][1:]+pa[1][:-1])
   pa=pa[0]
   pa2=pa/npy.sin(bincenters*ac)
   fa=-npy.log(pa2)
   A,mu,sigma=_FitGaussian(bincenters,pa)
-  #ranges=[(max(mu-i*sigma,0),mu+i*sigma) for i in [1,0.75,0.5,1.5,2]]
   ranges=[(max(mu-i*sigma,0),mu+i*sigma) for i in [1,1.25,1.5,1.75,2.0]]
-  res_list=[_FitParabole(bincenters,fa,range,centered=True) for range in ranges]
+  print "Gaussian y=A exp[(x-mu)/sigma^2] fitted to tilt distribution with A={0},mu={1} and sigma={2}".format(round(A,2),round(mu,2),round(sigma,2))
+  print "Using the following ranges to fit the PMF:",ranges
+  res_list=[_FitParabole(bincenters,fa,fitting_range,centered=True) for fitting_range in ranges]
   K_list=[2.*r[1]/(ac*ac) for r in res_list]
   DeltaK=npy.std(K_list)
   K=K_list[0]
@@ -392,10 +644,25 @@ def FitTiltDistribution(tilt_list,nbins=90,range=None,outdir='',filename_basis='
     a,b=res_list[0]
     r=[el for el in ranges[0]]
     _PlotParabola(bincenters,fa,a,b,0.0,r,outfile,title,'tilt',r'$-\log\left[\frac{P(\alpha)}{\sin(\alpha)}\right]$','$\chi={0}\pm {1}$'.format(round(K,int(-math.log10(K))+1),round(DeltaK,int(-math.log10(DeltaK))+1)))
-  return K_list,DeltaK
+  return K,DeltaK,K_list
 
 
 def AnalyzeAreaPerLipid(t,lipids):
+  """
+  This function calculates the area per lipid simply from the number of lipids
+  and the size of the simulation box.
+  The area per lipid is calculated for each frame in the simulation and the average
+  is returned. **This is only suitable for bilayers**
+
+  :param t: The trajectory
+  :param lipids: Selection of the lipids in the system
+
+  :type t: :class:`~ost.mol.CoordGroupHandle`
+  :type lipid: :class:`~ost.mol.EntityView`
+
+  :return: The area per lipid
+  :rtype: :class:`float`
+  """
   n=lipids.GetResidueCount()
   Al=FloatList()
   for i in range(t.GetFrameCount()):
