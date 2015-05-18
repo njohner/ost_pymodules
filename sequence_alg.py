@@ -4,10 +4,19 @@ Module written by Niklaus Johner (niklaus.johner@a3.epfl.ch) 01.2013
 This module contains basic functions to work with sequences
 """
 
-__all__=('FindMotif')
+__all__=('FindMotif','CreateSequenceFromView')
 
 import ost as _ost
 import random
+
+def CreateSequenceFromView(eh,seq_name):
+  """
+  Returns the sequence of the view *eh*, named *seq_name*.
+  """
+  s=''
+  for r in eh.residues:
+    s+=conop.ResidueNameToOneLetterCode(r.name)
+  return seq.CreateSequence(seq_name,s)
 
 def FindMotif(motif,sequence):
   s=sequence.GetGaplessString()

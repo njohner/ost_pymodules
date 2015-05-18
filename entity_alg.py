@@ -5,7 +5,7 @@ This module contains basic functions to work with structures (Entities and Entit
 It notably includes several functions to work with periodic conditions in orthogonal
 and non-orthogonal unit cells
 """
-__all__=('FindClosestAtom','CreateSequenceFromView','CreateEntityFromVec3List','ProjectVectorOnUnitCellVectors',\
+__all__=('FindClosestAtom','CreateEntityFromVec3List','ProjectVectorOnUnitCellVectors',\
          'GetUCellVectorSizeAndAngles','FindWithinWithPBC','FindWithinWithNonOrthogonalPBC',\
          'ExtendEntityToNeighboringUnitCells','ExtendEntityWithPBC','WriteFloatPropList',\
          'AssignFloatPropToEntityResidues','AssignFloatPropToEntity','BuildUnitCellVectors',\
@@ -30,15 +30,6 @@ def FindClosestAtom(v1,v2):
   (i,j)=geom.MinDistanceIndices(mol.alg.GetPosListFromView(v1),mol.alg.GetPosListFromView(v2))
   return v2.atoms[j]
 
-
-def CreateSequenceFromView(eh,seq_name):
-  """
-  Returns the sequence of the view *eh*, named *seq_name*.
-  """
-  s=''
-  for r in eh.residues:
-    s+=conop.ResidueNameToOneLetterCode(r.name)
-  return seq.CreateSequence(seq_name,s)
 
 def CreateEntityFromVec3List(pos_list,chain_name='A',rname='b',aname_base='C',atom_element='C'):
   """
