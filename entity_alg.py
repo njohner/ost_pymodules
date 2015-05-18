@@ -20,30 +20,6 @@ import sys
 sys.path.append('/work/python_modules')
 import file_utilities
 
-ResNameToOneLetterCode={}
-ResNameToOneLetterCode['ALA']='A'
-ResNameToOneLetterCode['CYS']='C'
-ResNameToOneLetterCode['ASP']='D'
-ResNameToOneLetterCode['GLU']='E'
-ResNameToOneLetterCode['PHE']='F'
-ResNameToOneLetterCode['GLY']='G'
-ResNameToOneLetterCode['HIS']='H'
-ResNameToOneLetterCode['HSE']='H'
-ResNameToOneLetterCode['HSD']='H'
-ResNameToOneLetterCode['ILE']='I'
-ResNameToOneLetterCode['LYS']='K'
-ResNameToOneLetterCode['LEU']='L'
-ResNameToOneLetterCode['MET']='M'
-ResNameToOneLetterCode['ASN']='N'
-ResNameToOneLetterCode['PRO']='P'
-ResNameToOneLetterCode['GLN']='Q'
-ResNameToOneLetterCode['ARG']='R'
-ResNameToOneLetterCode['SER']='S'
-ResNameToOneLetterCode['THR']='T'
-ResNameToOneLetterCode['VAL']='V'
-ResNameToOneLetterCode['TRP']='W'
-ResNameToOneLetterCode['TYR']='Y'
-
 def FindClosestAtom(v1,v2):
   """
   v1 and v2 need to be an Entity, EntityView, ChainView, ResidueView, ChainHandle or ResidueHandle
@@ -61,7 +37,7 @@ def CreateSequenceFromView(eh,seq_name):
   """
   s=''
   for r in eh.residues:
-    s+=ResNameToOneLetterCode[r.name]
+    s+=conop.ResidueNameToOneLetterCode(r.name)
   return seq.CreateSequence(seq_name,s)
 
 def CreateEntityFromVec3List(pos_list,chain_name='A',rname='b',aname_base='C',atom_element='C'):
