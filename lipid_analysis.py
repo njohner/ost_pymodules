@@ -228,7 +228,7 @@ def AnalyzeLipidTilts(t,eh,lipid_names,lipid_normal_dict,head_group_dict,tail_di
   return lipid_tilt_dict
   
 
-def AnalyzeLipidSplays(t,eh,lipid_names,head_group_dict,tail_dict,lipid_normal_dict,lipid_tilt_dict,distance_sele_dict,distance_cutoff=10,bool_prop='',patch=False):
+def AnalyzeLipidSplays(t,eh,lipid_names,head_group_dict,tail_dict,lipid_normal_dict,lipid_tilt_dict,distance_sele_dict,distance_cutoff=10,bool_prop=''):
   """
   This function calculates the lipid splays from a trajectory.
 
