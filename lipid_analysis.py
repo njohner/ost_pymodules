@@ -59,6 +59,7 @@ def _CalculateSplayAngle(v11,v12,v21,v22,v1p,v2p,n1,n2,distance_cutoff):
   :type distance_cutoff: :class: `float`
 
   :return: returns a tuple of floats composed of the splay angle and the distance between the lipids
+  :rtype: (:class:`float`,:class:`float`)
   """
   if geom.Dot(n1,n2)<0:return None
   x=v2p.GetCenterOfMass()-v1p.GetCenterOfMass()
@@ -164,8 +165,8 @@ def GetBoundaryBetweenViews(t,waters,lipids,outdir='',density_cutoff=None,stride
   :type filename_basis: :class:`str`
   
   :return: A tuple **(water_filtered,lipid_filtered,b_eh)** containing the density for 
-  the first and second views and an entity for the boundary between the two views.
-  Every atom in the boundary has an associated normal vector set as a Vec3 property 'n'.
+    the first and second views and an entity for the boundary between the two views.
+    Every atom in the boundary has an associated normal vector set as a Vec3 property 'n'.
 
   WARNING: Interface was changed. Taking 2 views instead of a list of lipid names and water name.
   The order of the two views was also inversed. I also removed the PBC, cell_center and cell_size parameters
@@ -202,8 +203,8 @@ def AssignNormalsToLipids(t,eh,b_eh,lipid_names,head_group_dict):
   :type head_group_dict: :class:`dict`
   
   :return: A dictionary with one entry for each residue name in **lipid_names**.
-   Each element in the dictionary is a list of **Vec3List**. Each element in the list
-   corresponds to one residue and each *Vec3* in the Vec3List is the normal for one frame
+   Each element in the dictionary is a :class:`list`\ (:class:`~ost.geom.Vec3List`\ ). Each element in the list
+   corresponds to one residue and each :class:`~ost.geom.Vec3` in the :class:`~ost.geom.Vec3List` is the normal for one frame
    of the trajectory.
   """
   t0=time.time()
@@ -229,6 +230,29 @@ def AnalyzeLipidTilts(t,eh,lipid_names,lipid_normal_dict,head_group_dict,tail_di
 
 def AnalyzeLipidSplays(t,eh,lipid_names,head_group_dict,tail_dict,lipid_normal_dict,lipid_tilt_dict,distance_sele_dict,distance_cutoff=10,bool_prop='',patch=False):
   """
+  This function calculates the lipid splays from a trajectory.
+
+  :param t: The trajectory
+  :param eh: The associated entity
+  :param lipid_names: A list of the residue names of the different lipids in the system
+  :param head_group_dict: Dictionary containing a selection string for each lipid type
+   that is used to determine the position of the lipid headgroups (center of mass of the selection).
+  :param tail_dict: Dictionary containing a selection string for each lipid type
+   that is used to determine the position of the lipid tails (center of mass of the selection).
+  :param lipid_normal_dict: Dictionary of normal vectors. One entry for every lipid type (element in lipid_names)
+                            Every entry is a :class:`list`\ (:class:`~ost.geom.Vec3List`\ ) of normals for every frame for every lipid of that type (size of list:Nlipids x NFrames).
+  :param lipid_tilt_dict: Dictionary of lipid tilts. One entry for every lipid type (element in lipid_names)
+                          Every entry is a :class:`list`\ (:class:`~ost.geom.FloatList`\ ) of tilts for every frame for every lipid of that type (size of list:Nlipids x NFrames).
+  :param distance_sele_dict: Dictionary containing a selection string for each lipid type that is used
+   to calculate the distance between lipids (center of mass distance). The center of mass of these selections should lie
+   on the neutral plane.
+  :param distance_cutoff: Lipid pairs further apart than this distance will not be considered for splay calculation.
+  :param bool_prop: Boolean property assigned to lipids to determine whether they should be considered in the splay calculations.
+   This is typically used to treat the periodic boundary conditions, to differentiate lipids from the central unit cell, for which tilt and 
+   splay are calculated, from the lipids from neighboring unit cells, used only to ensure correct treatment of PBC.
+
+  :return: Dictionary of splays, containing one entry for each possible lipid pairs
+  
   WARNING: Changed the name of that function from AnalyzeLipidSplay to AnalyzeLipidSplays.
   """
   nframes=t.GetFrameCount()
@@ -315,7 +339,7 @@ def AnalyzeLipidTiltAndSplay(t,lipid_names,head_group_dict,tail_dict,distance_cu
   :param distance_sele_dict: Dictionary containing a selection string for each lipid type that is used
    to calculate the distance between lipids (center of mass distance). The center of mass of these selections should lie
    on the neutral plane.
-  :param water_name:Residue name of the waters (used to calculate the water-lipid interface).
+  :param water_name: Residue name of the waters (used to calculate the water-lipid interface).
   :param outdir: Path to output directory. If none, no files will be written.
   :param density_cutoff: Interface will not be calculated for regions where the density is lower than this cutoff.
   :param prot_sele: Selection string used to determine the position of the protein. This is used to calculate the distance
@@ -348,7 +372,9 @@ def AnalyzeLipidTiltAndSplay(t,lipid_names,head_group_dict,tail_dict,distance_cu
   :type filename_basis: :class:`str`
   :type sele_dict: :class:`dict`
 
-  :return:
+  :return: A tuple **(lipid_tilt_dict,lipid_normal_dict,splay_dict,b_eh)**, where **lipid_tilt_dict**,
+          **lipid_notmal_dict** and **lipid_splay_dict** are dictionaries with keys corresponding to the elements
+          in **sele_dict**.  
 
   WARNIGN: Removed parameters PBC, cell_center, cell_size
   """

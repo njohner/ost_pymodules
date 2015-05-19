@@ -103,6 +103,9 @@ def FindWithinBox(eh,xmin,xmax):
   :type eh: :class:`~ost.mol.EntityView`
   :type xmin: :class:`~ost.geom.Vec3`
   :type xmax: :class:`~ost.geom.Vec3`
+
+  :return: Selection of all atoms in the box
+  :rtype: :class:`~ost.mol.EntityView`
   """
   sele='x>'+str(xmin[0])+' and y>'+str(xmin[1])+' and z>'+str(xmin[2])
   sele+=' and x<'+str(xmax[0])+' and y<'+str(xmax[1])+' and z<'+str(xmax[2])
