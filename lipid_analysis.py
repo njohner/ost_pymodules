@@ -1,9 +1,10 @@
 """
 Module written by Niklaus Johner (niklaus.johner@a3.epfl.ch) 01.2013
+
 This module contains functions to determine lipid tilt and splay angles and
 Calculate the elastic properties of the membrane from there.
 
-If you use this code please cite ref.1, where the method and its implementation 
+If you use this code please cite ref. 1, where the method and its implementation 
 is described in details. An example of the application
 
 To ensure proper treatment of the periodic boundayr conditions, the trajectory
@@ -12,9 +13,8 @@ The tilts and splays are then calculated only for the central cell, the others
 being only used to ascertain correct treatment of the PBCs.
 
 References
-===============
+-------------
 1. Release note
-2. 
 
 """
 try:

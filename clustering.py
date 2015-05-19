@@ -1,5 +1,6 @@
 """
 Module written by Niklaus Johner (niklaus.johner@a3.epfl.ch) 01.2013
+
 This module contains functions for clustering
 
 -ClusterOnPairwiseDistance(view,dist_cutoff=3,prop_name='cluster'):
