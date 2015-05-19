@@ -7,9 +7,6 @@ __all__=('ProjectVectorOnUnitCellVectors','GetUCellVectorSizeAndAngles','FindWit
          'ExtendEntityToNeighboringUnitCells','ExtendEntityWithPBC','BuildUnitCellVectors','VectorsToNeighboringUnitCells','GenerateSearchVectors')
 from ost import *
 import math
-import numpy as npy
-import scipy
-from scipy import optimize
 import time
 import sys
 sys.path.append('/work/python_modules')
