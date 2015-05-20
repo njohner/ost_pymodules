@@ -53,12 +53,20 @@ class ThreeDWidget(QGLWidget):
     if handler:
       handler()
 
+  def mouseDoubleClickEvent(self,event):
+    self._last_pos = QPoint(event.x(), event.y())
+    gfx_obj, atom=gfx.PickAtom(gfx.Scene(), event.x(),
+                               self.height()-event.y())
+    if gfx_obj:
+      gfx.Scene().SetCenter(atom.pos)
+
   def mousePressEvent(self, event):
     self._last_pos = QPoint(event.x(), event.y())
     gfx_obj, atom=gfx.PickAtom(gfx.Scene(), event.x(),
                                self.height()-event.y())
     if gfx_obj:
       print 'picked: ', gfx_obj.name, atom
+
   def mouseMoveEvent(self, event):
     """
     Handles translation and rotation of the scene...
@@ -66,6 +74,9 @@ class ThreeDWidget(QGLWidget):
     delta = QPoint(event.x(), event.y()) - self._last_pos
     if event.buttons() & Qt.LeftButton:
       self._RotateDelta(delta)
+
+    if event.buttons() & Qt.RightButton:
+      self._TranslateDelta(delta)
 
     self._last_pos = QPoint(event.x(), event.y())
   def wheelEvent(self, event):
@@ -77,6 +88,20 @@ class ThreeDWidget(QGLWidget):
                                      -0.1*event.delta()), False)
     self.update()
 
+  def _TranslateDelta(self, delta):
+    """
+    Responds to a change in mouse position of delta.
+    """
+    if delta.y()!=0:
+      gfx.Scene().Apply(gfx.InputEvent(gfx.INPUT_DEVICE_MOUSE,
+                                       gfx.INPUT_COMMAND_TRANSY,
+                                       -delta.y()*0.5), False)
+    if delta.x()!=0:
+      gfx.Scene().Apply(gfx.InputEvent(gfx.INPUT_DEVICE_MOUSE,
+                                       gfx.INPUT_COMMAND_TRANSX,
+                                       delta.x()*0.5), False)
+    self.update()
+  
   def _RotateDelta(self, delta):
     """
     Responds to a change in mouse position of delta.
