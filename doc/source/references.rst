@@ -1,2 +1,0 @@
-.. [Johner2015_ReleaseNote] Release note of the lipid tilt and splay code
-.. [Biasini2013_OST] M. Biasini, T. Schmidt, S. Bienert, V. Mariani, G. Studer, J. Haas, N. Johner, A.D. Schenk, A. Philippsen and T. Schwede, OpenStructure: an integrated software framework for computational structural biology, Acta Cryst., 2013
