@@ -4,18 +4,21 @@ Module written by Niklaus Johner (niklaus.johner@a3.epfl.ch) 01.2013
 This module contains functions to determine lipid tilt and splay angles and
 Calculate the elastic properties of the membrane from there.
 
-If you use this code please cite ref. 1, where the method and its implementation 
-is described in details. An example of the application
+If you use this code please cite ref. [1]_, where the method and its implementation 
+is described in details or ref. [2]_, where the method is applied to complex lipidic phases.
 
-To ensure proper treatment of the periodic boundayr conditions, the trajectory
+To ensure proper treatment of the periodic boundary conditions, the trajectory
 should first be extended to neighboring unit cells, and then aligned.
 The tilts and splays are then calculated only for the central cell, the others 
 being only used to ascertain correct treatment of the PBCs.
 
 References
 -------------
-1. Release note
-
+.. [1] Niklaus Johner, D. Harries and G. Khelashvili, 
+       "Release note of the lipid tilt and splay code"
+.. [2] Niklaus Johner, D. Harries, and G. Khelashvili. 
+       "Curvature and Lipid Packing Modulate the Elastic Properties of Lipid Assemblies: Comparing HII and Lamellar Phases." 
+       The Journal of Physical Chemistry Letters 5, no. 23 (December 4, 2014): 4201–6.
 """
 try:
   from ost import *
@@ -125,7 +128,7 @@ def _CalculateTilts(t,lipids,normals,head_sele,tail_sele,prot_cm=None,bool_prop=
   :type bool_prop: :class:`str`
   :type prot_cm: :class:`~ost.mol.EntityView`
   
-  :return: A tuple of arrays **(tilts, prot_dist)**. Each array has the shape N\ :subscript:`Lipids`\ x N\ :subscript:`Frames`\
+  :return: A tuple of arrays **(tilts, prot_dist)**. Each array has the shape N\ :subscript:`Lipids`\ x N\ :subscript:`Frames`
    If **prot_cm** is **None**, the second list is empty.
   :rtype: (:class:`npy.array`,:class:`npy.array`)
   """
@@ -221,6 +224,40 @@ def AssignNormalsToLipids(t,eh,b_eh,lipid_names,head_group_dict):
   return lipid_normal_dict
 
 def AnalyzeLipidTilts(t,eh,lipid_names,lipid_normal_dict,head_group_dict,tail_dict,prot_cm=None,bool_prop=''):
+  """
+  This function calculates the lipid tilts from a trajectory.
+
+  :param t: The trajectory
+  :param eh: The associated entity
+  :param lipid_names: List of the residue names of the different lipids in the system
+  :param lipid_normal_dict: Dictionary of normal vectors. One entry for every lipid type (element in lipid_names)
+   Every entry is a :class:`list`\ (:class:`~ost.geom.Vec3List`\ ) of normals for every frame for every lipid of that type 
+   (size of list:N\ :subscript:`Lipids`\ x N\ :subscript:`Frames`).
+  :param head_group_dict: Dictionary containing a selection string for each lipid type
+   that is used to determine the position of the lipid headgroups (center of mass of the selection).
+  :param tail_dict: Dictionary containing a selection string for each lipid type
+   that is used to determine the position of the lipid tails (center of mass of the selection).
+  :param prot_cm: A list of position (one for each frame). If specified the each tilt the distance between this position
+    and the lipid in question will also be returned. This is typically used to calculate local properties of the membrane around an insertion.
+  :param bool_prop: Boolean property assigned to lipids to determine whether they should be considered in the tilt calculations.
+   This is typically used to treat the periodic boundary conditions, to differentiate lipids from the central unit cell, for which tilt and 
+   splay are calculated, from the lipids from neighboring unit cells, used only to ensure correct treatment of PBC.
+
+  :type t: :class:`~ost.mol.CoordGroupHandle`
+  :type eh: :class:`~ost.mol.EntityHandle`
+  :type lipid_normal_dict: :class:`dict`
+  :type lipid_names: :class:`str`
+  :type head_group_dict: :class:`dict`
+  :type tail_dict: :class:`dict`
+  :type prot_cm: :class:`~ost.geom.Vec3List`
+  :type bool_prop: :class:`bool`
+
+  :return: Dictionary of lipid tilts. One entry for every lipid type (element in lipid_names)
+           Every entry is a :class:`list`\ (:class:`~ost.geom.FloatList`\ ) of tilts 
+           for every frame for every lipid of that type (size of list:N\ :subscript:`Lipids`\ x N\ :subscript:`Frames`).
+
+  WARNING: Removed parameters PBC, cell_center, cell_size
+  """
   lipid_tilt_dict={}
   for ln in lipid_names:
     lipids=eh.Select('rname='+ln)
@@ -240,9 +277,11 @@ def AnalyzeLipidSplays(t,eh,lipid_names,head_group_dict,tail_dict,lipid_normal_d
   :param tail_dict: Dictionary containing a selection string for each lipid type
    that is used to determine the position of the lipid tails (center of mass of the selection).
   :param lipid_normal_dict: Dictionary of normal vectors. One entry for every lipid type (element in lipid_names)
-                            Every entry is a :class:`list`\ (:class:`~ost.geom.Vec3List`\ ) of normals for every frame for every lipid of that type (size of list:Nlipids x NFrames).
+                            Every entry is a :class:`list`\ (:class:`~ost.geom.Vec3List`\ ) of normals for every frame 
+                            for every lipid of that type (size of list:N\ :subscript:`Lipids`\ x N\ :subscript:`Frames`).
   :param lipid_tilt_dict: Dictionary of lipid tilts. One entry for every lipid type (element in lipid_names)
-                          Every entry is a :class:`list`\ (:class:`~ost.geom.FloatList`\ ) of tilts for every frame for every lipid of that type (size of list:Nlipids x NFrames).
+                          Every entry is a :class:`list`\ (:class:`~ost.geom.FloatList`\ ) of tilts for every frame 
+                          for every lipid of that type (size of list:N\ :subscript:`Lipids`\ x N\ :subscript:`Frames`).
   :param distance_sele_dict: Dictionary containing a selection string for each lipid type that is used
    to calculate the distance between lipids (center of mass distance). The center of mass of these selections should lie
    on the neutral plane.
@@ -373,10 +412,10 @@ def AnalyzeLipidTiltAndSplay(t,lipid_names,head_group_dict,tail_dict,distance_cu
   :type sele_dict: :class:`dict`
 
   :return: A tuple **(lipid_tilt_dict,lipid_normal_dict,splay_dict,b_eh)**, where **lipid_tilt_dict**,
-          **lipid_notmal_dict** and **lipid_splay_dict** are dictionaries with keys corresponding to the elements
+          **lipid_normal_dict** and **lipid_splay_dict** are dictionaries with keys corresponding to the elements
           in **sele_dict**.  
 
-  WARNIGN: Removed parameters PBC, cell_center, cell_size
+  WARNING: Removed parameters PBC, cell_center, cell_size
   """
   import time
   t0=time.time()
