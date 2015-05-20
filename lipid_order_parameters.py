@@ -1,7 +1,9 @@
 """
-Module written by Niklaus Johner (niklaus.johner@a3.epfl.ch) 01.2013
+.. codeauthor:: Niklaus Johner <niklaus.johner@a3.epfl.ch>
+
 This module contains functions to calculate lipid order parameters.
 """
+
 try:
   from ost import *
   import time
@@ -12,7 +14,7 @@ except:
   print 'could not import at least one of the modules nedded: ost, time, numpy, os, math, entity_alg,trajectory_utilities,surface_alg,file_utilities'
 
 
-__all__=('AnalyzeMolecularOrderParameters')
+__all__=['AnalyzeMolecularOrderParameters',"CalculateMolecularOrderParameters"]
 
 def _MolecularOrderParameter(v1,v2):
   a=geom.Angle(v1,v2)

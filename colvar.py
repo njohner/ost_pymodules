@@ -1,5 +1,6 @@
 """
-Module written by Niklaus Johner (niklaus.johner@a3.epfl.ch) 03.2013
+.. codeauthor:: Niklaus Johner <niklaus.johner@a3.epfl.ch>
+
 This module is a collection of functions used in conjunction with namd's colvar module
 """
 from ost import *

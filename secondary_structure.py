@@ -1,5 +1,6 @@
 """
-Module written by Niklaus Johner (niklaus.johner@a3.epfl.ch) 01.2013
+.. codeauthor:: Niklaus Johner <niklaus.johner@a3.epfl.ch>
+
 This module contains functions to analyze the secondary structure of proteins
 It uses DSSP, which has to be installed and in the path for OpenStructure
 DSSP does not allow CHARMM formated PDBs and therefore all chains in the

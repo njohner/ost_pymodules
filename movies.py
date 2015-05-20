@@ -1,5 +1,6 @@
 """
-Module written by Niklaus Johner (niklaus.johner@a3.epfl.ch) 01.2013
+.. codeauthor:: Niklaus Johner <niklaus.johner@a3.epfl.ch>
+
 This module contains functions to render movies from OpenStructure using ffmpeg
 """
 from ost import *

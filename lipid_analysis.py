@@ -1,5 +1,5 @@
 """
-Module written by Niklaus Johner (niklaus.johner@a3.epfl.ch) 01.2013
+.. codeauthor:: Niklaus Johner <niklaus.johner@a3.epfl.ch>
 
 This module contains functions to determine lipid tilt and splay angles and
 Calculate the elastic properties of the membrane from there.
@@ -16,9 +16,9 @@ References
 -------------
 .. [1] Niklaus Johner, D. Harries and G. Khelashvili, 
        "Release note of the lipid tilt and splay code"
-.. [2] Niklaus Johner, D. Harries, and G. Khelashvili. 
-       "Curvature and Lipid Packing Modulate the Elastic Properties of Lipid Assemblies: Comparing HII and Lamellar Phases." 
-       The Journal of Physical Chemistry Letters 5, no. 23 (December 4, 2014): 4201–6.
+.. [2] Niklaus Johner, D. Harries and G. Khelashvili,
+       "Curvature and lipid packing modulate the elastic properties of lipid assemblies: comparing the HII and lamellar phases."
+       The Journal of Physical Chemistry Letters 5, no. 23 (2014), 4201-6.
 """
 try:
   from ost import *

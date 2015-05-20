@@ -1,5 +1,6 @@
 """
-Module written by Niklaus Johner (niklaus.johner@a3.epfl.ch) 01.2013
+.. codeauthor:: Niklaus Johner <niklaus.johner@a3.epfl.ch>
+
 This module is used to generate densities from trajectories and extract
 surfaces from these densities in the form of sets of points.
 Some algebra can be done on these surfaces, found in the surface_alg module

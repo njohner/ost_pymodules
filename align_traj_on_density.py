@@ -1,5 +1,6 @@
 """
-Module written by Niklaus Johner (niklaus.johner@a3.epfl.ch) 01.2013
+.. codeauthor: Niklaus Johner <niklaus.johner@a3.epfl.ch>
+
 This module is used to align trajectories on a density. It was designed 
 for complex lipidic phases such as the lipid cubic phase. It maximizes the overlap
 of a selection of atoms with a reference density while minimizing the overlap

@@ -1,5 +1,6 @@
 """
-Module written by Niklaus Johner (niklaus.johner@a3.epfl.ch) 01.2013
+.. codeauthor:: Niklaus Johner <niklaus.johner@a3.epfl.ch>
+
 This module is used to mainly to calculate curvatures of a point set surface
 Such surfaces can be obtained from densities using functions form the density_alg module
 """
