@@ -7,7 +7,7 @@ It can be assembled into html files using sphinx, and can be found in the *doc* 
 ```shell
 make html
 ```
-
+This should generate a set of html files in *doc/build/html*. To view the documentation, open the *index.html* file.
 Some examples on how to use certain functions of the modules can be found in the *example* folder.
 
 To import the modules in OpenStructure:
