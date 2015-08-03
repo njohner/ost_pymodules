@@ -423,6 +423,7 @@ def CalculateInterfaceFromTraj(t,waters,lipids,PBC=False,cell_center=None,cell_s
     for el in water_filtered:
       if water_filtered.GetReal(el)>dmw:dmw=water_filtered.GetReal(el)
     density_cutoff=(dml+dmw)/20.
+  print "Calculating the interface between the two densities"
   boundary=density_alg.GetBoundaryBetweenDensities(water_filtered,lipid_filtered,density_cutoff,PBC,cell_center,cell_size)
   return (water_filtered,lipid_filtered,boundary)
 
