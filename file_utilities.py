@@ -1,7 +1,7 @@
 """
 .. codeauthor:: Niklaus Johner <niklaus.johner@a3.epfl.ch>
 
-This module contains functions for reading and writing files
+This module contains some helper functions for reading and writing files
 """
 from ost import *
 import math

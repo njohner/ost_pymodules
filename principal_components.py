@@ -1,7 +1,10 @@
 """
 .. codeauthor: Niklaus Johner <niklaus.johner@a3.epfl.ch>
 
-This module contains functions for principal components analysis
+This module contains functions for principal components analysis. 
+It can be used to calculate principal components from a trajectory,
+graphically display the principal components, reconstruct a trajectory from
+a chosen set of components and so on.
 """
 from ost import *
 import time

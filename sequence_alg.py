@@ -1,7 +1,8 @@
 """
 .. codeauthor:: Niklaus Johner <niklaus.johner@a3.epfl.ch>
 
-This module contains basic functions to work with sequences
+This module contains basic functions to work with sequences, notably to find motifs,
+and build a position specific scoring matrix from an alignment.
 """
 
 __all__=('FindMotif','CreateSequenceFromView')

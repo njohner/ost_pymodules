@@ -1,18 +1,9 @@
 """
 .. codeauthor: Niklaus Johner <niklaus.johner@a3.epfl.ch>
 
-This module contains functions for clustering
-
--ClusterOnPairwiseDistance(view,dist_cutoff=3,prop_name='cluster'):
-This function clusters the atoms in the view based on the pairwise distances. 
-A pair of atom with a distance lower than dist_cutoff will be part of the same cluster.
-The clustering scales linearly with the number of atoms, unlike hierarchical clustering.
-
--HierarchichalClusteringOnPairwiseDistance(view,dist_cutoff,prop_name='cluster',method='single'):
-This function uses the scipy hierarchical clustering to perform clustering of atoms based on their
-pairwise distance. The same methods as in the scipy.cluster.hierarchy.linkage toolbox are available
-('single', 'average', 'full').  
-
+This module contains functions for performing distance-based clustering.
+It can be used to perform hierarchical clustering or clustering using the
+Hoshen-Kopelman algorithm.
 """
 from ost import *
 import time
@@ -20,6 +11,11 @@ import numpy as npy
 import os,math
 
 def HierarchicalClusteringOnPairwiseDistance(view,dist_cutoff,prop_name='cluster',method='single'):
+  """
+  This function uses the scipy hierarchical clustering to perform clustering of atoms based on their
+  pairwise distance. The same methods as in the scipy.cluster.hierarchy.linkage toolbox are available
+  ('single', 'average', 'full').  
+  """
   import numpy as npy
   import scipy
   import scipy.cluster
@@ -85,6 +81,11 @@ def HoshenKopelman(neighbor_list):
 
 
 def ClusterOnPairwiseDistance(view,dist_cutoff=3,prop_name='cluster'):
+  """
+  This function clusters the atoms in the view based on the pairwise distances. 
+  A pair of atom with a distance lower than dist_cutoff will be part of the same cluster.
+  The clustering scales linearly with the number of atoms, unlike hierarchical clustering.
+  """
   an_l=[view.FindWithin(a.pos,dist_cutoff) for a in view.atoms]
   d={}
   for i,a in enumerate(view.atoms):d[a]=i

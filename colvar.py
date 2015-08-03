@@ -1,7 +1,8 @@
 """
 .. codeauthor:: Niklaus Johner <niklaus.johner@a3.epfl.ch>
 
-This module is a collection of functions used in conjunction with namd's colvar module
+This module is a collection of functions to work in conjunction with namd's colvar module.
+It mainly contains functions to read som of the files output by namd.
 """
 from ost import *
 

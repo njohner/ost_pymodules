@@ -2,8 +2,7 @@
 .. codeauthor:: Niklaus Johner <niklaus.johner@a3.epfl.ch>
 
 This module contains basic functions to work with structures (Entities and EntityViews).
-It notably includes several functions to work with periodic conditions in orthogonal
-and non-orthogonal unit cells
+It notably functions to generate the biounit or crystal packing from a pdb file
 """
 __all__=('FindClosestAtom','CreateEntityFromVec3List',"GenerateBioUnit"\
          'WriteFloatPropList','AssignFloatPropToEntityResidues','AssignFloatPropToEntity','GenerateCrystalPackingFromPDB')

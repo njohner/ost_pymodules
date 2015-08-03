@@ -3,8 +3,6 @@
 
 This module contains functions to analyze the secondary structure of proteins
 It uses DSSP, which has to be installed and in the path for OpenStructure
-DSSP does not allow CHARMM formated PDBs and therefore all chains in the
-EntityView of interest need to have a single letter name.
 """
 import ost
 import ost.gfx as _gfx
