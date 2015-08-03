@@ -19,11 +19,35 @@ if not hasattr(ost.bindings,'dssp'):print 'DSSP is not found'
 __all__=('AssignSecondaryStructure','AnalyzeSecondaryStructure','PlotSecStructureList',\
         'SimplifySecStructure','SimplifySecStructureList','FindSecStrucElements')
 
+def _RenameChainsToOneLetter(prot):
+  prot_cnames=[c.name for c in prot.chains]
+  cnames="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  cnames2=[el for el in cnames if not el in prot_cnames]
+  if prot.GetChainCount()>len(cnames):return prot,None
+  cname_dict={}
+  edi=prot.handle.EditXCS()
+  i=0
+  for c in prot.chains:
+    if c.name in cnames:
+      cname_dict[c.name]=c.name
+      continue
+    cname=cnames2[i]
+    cname_dict[cname]=c.name
+    edi.RenameChain(c.handle,cname)
+    i+=1
+  return prot,cname_dict
+
+def _RenameChainsToInitial(prot,cname_dict):
+  edi=prot.handle.EditXCS()
+  for cname in cname_dict:
+    edi.RenameChain(prot.FindChain(cname).handle,cname_dict[cname])
+  return prot
 
 def AssignSecondaryStructure(prot,nmax=50):
   """
   This function calls DSSP to assign the secondary structure to a protein.
   """
+  prot,cname_dict=_RenameChainsToOneLetter(prot)
   flag=True
   i=0
   while flag and i<nmax:
@@ -36,6 +60,7 @@ def AssignSecondaryStructure(prot,nmax=50):
       break
     flag=False
   if flag==True:print 'could not assign secondary structure'
+  prot=_RenameChainsToInitial(prot,cname_dict)
   return
 
 def AnalyzeSecondaryStructure(t,prot,first=0,last=-1,stride=1):
@@ -52,6 +77,7 @@ def AnalyzeSecondaryStructure(t,prot,first=0,last=-1,stride=1):
   ss_list: A list of lists. Each element of ss_list is a list of letters corresponding
   to the secondary structure of a residue for the different frames of the trajectory.
   """
+  prot,cname_dict=_RenameChainsToOneLetter(prot)
   if last==-1:last=t.GetFrameCount()
   ss_list=[[] for r in prot.residues]
   for f in range(first,last,stride):
@@ -59,6 +85,7 @@ def AnalyzeSecondaryStructure(t,prot,first=0,last=-1,stride=1):
     AssignSecondaryStructure(prot)
     for i,r in enumerate(prot.residues):
       ss_list[i].append(str(r.GetSecStructure()))
+  prot=_RenameChainsToInitial(prot,cname_dict)
   return ss_list
 
 def SecStrucColorMap(ss_list,color_dict={}):
