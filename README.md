@@ -1,8 +1,12 @@
 This is a set of python modules that can be used to perform various analyses 
 on structures and dynamics of proteins and lipids in OpenStructure.
 
-The main functionalities are presented below, but the complete documentation is included in docstrings.
-It is assembled into html files using sphinx, and can be found in the *doc* folder.
+The main functionalities are presented below, but the complete documentation is included in docstrings in each module and function.
+It can be assembled into html files using sphinx, and can be found in the *doc* folder. To build the documentation, simply go to the *doc* folder and simply:
+
+```shell
+make html
+```
 
 Some examples on how to use certain functions of the modules can be found in the *example* folder.
 
