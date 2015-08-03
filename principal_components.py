@@ -26,10 +26,12 @@ def CalculatePrincipalComponents(t,pc_sele,superposition_sele=None,first=0,last=
   This function calculates the principal components for the positions
   of the N atoms in ev, i.e the 3N eigenvalues and eigenvectors.
   Specifically it performs an svd decomposition A=U*S*V
-  Return:
+  Return: a tuple (U,S,V,mean_atom_pos,atom_pos_list) containing:
     -The unitary matrix U containing the eigenvectors in its columns
     -The singular values S, so that S*S are the eigenvalues
     -The unitary matrix V
+    -A list of the average positions for each atoms in pc_sele
+    -A list with all the positions for each atom and each frame.
   """
   if not _import_numpy:return False
   if last==-1:last=t.GetFrameCount()
