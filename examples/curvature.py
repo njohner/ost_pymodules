@@ -2,7 +2,7 @@
 Example written by Niklaus Johner (niklaus.johner@a3.epfl.ch)
 
 This is an example of curvature calculation done on a cylinder capped with half spheres.
-It should be run from within the example/curvature directory, otherwise the path
+It should be run from within the "example" directory, otherwise the path
 to the python modules will have to be set.
 """
 sys.path.append("../")
