@@ -252,14 +252,17 @@ def AnalyzeLipidTilts(t,eh,lipid_names,lipid_normal_dict,head_group_dict,tail_di
   :type prot_cm: :class:`~ost.geom.Vec3List`
   :type bool_prop: :class:`bool`
 
-  :return: Dictionary of lipid tilts. One entry for every lipid type (element in lipid_names)
-           Every entry is a :class:`list`\ (:class:`~ost.geom.FloatList`\ ) of tilts 
+  :return: Dictionary of lipid tilts. One entry for every lipid type (element in **lipid_names**).
+           Every entry is a :class:`list` with two elements. The first one is a :class:`list`\ (:class:`~ost.geom.FloatList`\ ) of tilts 
            for every frame for every lipid of that type (size of list:N\ :subscript:`Lipids`\ x N\ :subscript:`Frames`).
+           The second element contains the list of distances to **prot_cm** if it was defined and is empty otherwise.
 
   WARNING: Removed parameters PBC, cell_center, cell_size
   """
   lipid_tilt_dict={}
+  print "analyzing lipid tilts for",lipid_names
   for ln in lipid_names:
+    print "starting for",ln
     lipids=eh.Select('rname='+ln)
     lipid_tilt_dict[ln]=_CalculateTilts(t,lipids,lipid_normal_dict[ln],head_group_dict[ln],tail_dict[ln],prot_cm,bool_prop)
   return lipid_tilt_dict
@@ -413,7 +416,8 @@ def AnalyzeLipidTiltAndSplay(t,lipid_names,head_group_dict,tail_dict,distance_cu
 
   :return: A tuple **(lipid_tilt_dict,lipid_normal_dict,splay_dict,b_eh)**, where **lipid_tilt_dict**,
           **lipid_normal_dict** and **lipid_splay_dict** are dictionaries with keys corresponding to the elements
-          in **sele_dict**.  
+          in **sele_dict**. For more information about **lipid_tilt_dict** and **lipid_splay_dict**, refer to the
+          the documentation for the **AnalyzeLipidTilts** and **AnalyzeLipidSplays** functions.
 
   WARNING: Removed parameters PBC, cell_center, cell_size
   """
@@ -461,7 +465,9 @@ def AnalyzeLipidTiltAndSplay(t,lipid_names,head_group_dict,tail_dict,distance_cu
     print 'calculating tilts for',sele
     lipid_tilt_dict[sele_name]=AnalyzeLipidTilts(t,eh.Select(lipid_sele,mol.MATCH_RESIDUES),lipid_names,lipid_normal_dict[sele_name],
                                                   head_group_dict,tail_dict,prot_cm)
-    if tilt_bool_prop:lipid_tilt_dict_sele[sele_name]=AnalyzeLipidTilts(t,eh.Select(lipid_sele,mol.MATCH_RESIDUES),lipid_names,lipid_normal_dict[sele_name],
+    if tilt_bool_prop:
+      print "Caalculating tilts again only for the lipids with bool prop",tilt_bool_prop
+      lipid_tilt_dict_sele[sele_name]=AnalyzeLipidTilts(t,eh.Select(lipid_sele,mol.MATCH_RESIDUES),lipid_names,lipid_normal_dict[sele_name],
                                                   head_group_dict,tail_dict,prot_cm,tilt_bool_prop)
     print 'Done in',time.time()-t0,'seconds'
     t0=time.time()
@@ -598,7 +604,7 @@ def _PlotParabola(bincenters,fa,a,b,x0,fitting_range,outfile,title='',xlabel='',
   plt.close()
   return
 
-def FitSplayDistribution(splay_list,lipid_area,nbins=100,xrange=None,outdir='',filename_basis='',title_complement=''):  
+def FitSplayDistribution(splay_list,lipid_area,nbins=100,x_range=None,outdir='',filename_basis='',title_complement=''):  
   """
   This function extracts the bending modulus from a list of splays.
   It will first fit a gaussian y=A exp[(x-mu)/sigma^2] to the distribution of splays to determine
@@ -608,7 +614,7 @@ def FitSplayDistribution(splay_list,lipid_area,nbins=100,xrange=None,outdir='',f
   :param splay_list: A list of lipid splays.
   :param lipid_area: The area per lipid.
   :param nbins:   The number of bins used when determining the distribution of splays
-  :param xrange:  The range in which the distribution will be calculated. Defaults to [mean-3*std,mean+3*std].
+  :param x_range:  The range in which the distribution will be calculated. Defaults to [mean-3*std,mean+3*std].
   :param outdir:  the directory to which output files will be written, i.e. plots of splay distribution and PMF.
                   if it is not defined, plots will not be generated
   :param filename_basis: Will be prepended to all file names.
@@ -617,7 +623,7 @@ def FitSplayDistribution(splay_list,lipid_area,nbins=100,xrange=None,outdir='',f
   :type splay_list: :class:`list`
   :type lipid_area: :class:`float`
   :type nbins: :class:`int`
-  :type xrange: :class:`tuple` of 2 floats
+  :type x_range: :class:`tuple` of 2 floats
   :type outdir: :class:`str`
   :type filename_basis: :class:`str`
   :type title_complement: :class:`str`
@@ -626,11 +632,11 @@ def FitSplayDistribution(splay_list,lipid_area,nbins=100,xrange=None,outdir='',f
            the estimated uncertainty on *K*, and the list of *K* values obtained from the different fitting ranges.
   :rtype: (:class:`float`,:class:`float`,:class:`list`)
   """
-  if not xrange:
+  if not x_range:
     w=npy.std(splay_list)
     m=npy.average(splay_list)
-    xrange=[m-3*w,m+3*w]
-  pa=npy.histogram(splay_list,nbins,range=xrange,density=True)
+    x_range=[m-3*w,m+3*w]
+  pa=npy.histogram(splay_list,nbins,range=x_range,density=True)
   bincenters=0.5*(pa[1][1:]+pa[1][:-1])
   fa=-npy.log(pa[0])
   A,mu,sigma=_FitGaussian(bincenters,pa[0])
@@ -655,7 +661,7 @@ def FitSplayDistribution(splay_list,lipid_area,nbins=100,xrange=None,outdir='',f
     _PlotParabola(bincenters,fa,a,b,x0,ranges[0],outfile,title,'Splay',r'$-\log\left[P(\alpha)\right]$','$K={0}\pm {1}$'.format(round(K,int(-math.log10(K))+1),round(DeltaK,int(-math.log10(DeltaK))+1)))
   return K,DeltaK,K_list
   
-def FitTiltDistribution(tilt_list,nbins=90,xrange=None,outdir='',filename_basis='',title_complement='',degrees=False):
+def FitTiltDistribution(tilt_list,nbins=90,x_range=None,outdir='',filename_basis='',title_complement='',degrees=False):
   """
   This function extracts the tilt modulus from a list of lipid tilts.
   It will first fit a gaussian y=A exp[(x-mu)/sigma^2] to the distribution of tilts to determine
@@ -664,7 +670,7 @@ def FitTiltDistribution(tilt_list,nbins=90,xrange=None,outdir='',filename_basis=
 
   :param tilt_list: A list of lipid splays.
   :param nbins:   The number of bins used when determining the distribution of splays
-  :param xrange:  The range in which the distribution will be calculated. Defaults to [mean-3*std,mean+3*std].
+  :param x_range:  The range in which the distribution will be calculated. Defaults to [mean-3*std,mean+3*std].
   :param outdir:  the directory to which output files will be written, i.e. plots of splay distribution and PMF.
                   if it is not defined, plots will not be generated
   :param filename_basis: Will be prepended to all file names.
@@ -674,7 +680,7 @@ def FitTiltDistribution(tilt_list,nbins=90,xrange=None,outdir='',filename_basis=
   :type splay_list: :class:`list`
   :type lipid_area: :class:`float`
   :type nbins: :class:`int`
-  :type xrange: :class:`tuple` of 2 floats
+  :type x_range: :class:`tuple` of 2 floats
   :type outdir: :class:`str`
   :type filename_basis: :class:`str`
   :type title_complement: :class:`str`
@@ -687,7 +693,7 @@ def FitTiltDistribution(tilt_list,nbins=90,xrange=None,outdir='',filename_basis=
   if degrees:ac=math.pi/180.
   else:ac=1
   if None:range=[0,math.pi/(2.*ac)]
-  pa=npy.histogram(tilt_list,nbins,range=xrange,density=True)
+  pa=npy.histogram(tilt_list,nbins,range=x_range,density=True)
   bincenters=0.5*(pa[1][1:]+pa[1][:-1])
   pa=pa[0]
   pa2=pa/npy.sin(bincenters*ac)
