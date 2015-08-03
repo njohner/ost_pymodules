@@ -1,5 +1,6 @@
 This is a set of python modules that can be used to perform various analyses 
-on structures and dynamics of proteins and lipids in OpenStructure.
+on structures and dynamics of proteins and lipids in OpenStructure. These modules should be used
+with the latest stable release of OpenStructure (http://www.openstructure.org).
 
 The main functionalities are presented below, but the complete documentation is included in docstrings in each module and function.
 It can be assembled into html files using sphinx, and can be found in the *doc* folder. To build the documentation, simply go to the *doc* folder and simply:
@@ -13,6 +14,13 @@ Some examples on how to use certain functions of the modules can be found in the
 To import the modules in OpenStructure:
 
 ```python
+import sys
+sys.path.append(path_to_module)
+import module
+```
+alternatively both OpenStructure (ost) and the modules can be imported in a python session (ost has to be first added to the PYTHONPATH for that):
+```python
+from ost import *
 import sys
 sys.path.append(path_to_module)
 import module
