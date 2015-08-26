@@ -21,6 +21,12 @@ p=io.IOProfile(dialect='CHARMM',fault_tolerant=True)
 eh=io.LoadPDB(os.path.join(indir,"hex_phase.pdb"),profile=p)
 t=io.LoadCHARMMTraj(eh,os.path.join(indir,'hex_phase.dcd'),stride=1)
 
+#It is generally a good idea to keep only what is needed of the trajectory
+#to reduce the number of atoms and speed up the calculations.
+#For an all-atom simulation one could for example remove the hydrogen atoms:
+#t=t.Filter(eh.Select("ele!=H"))
+#eh=t.GetEntity()
+
 ###################################
 #We extend the trajectory
 #1. We get the unit cell vectors

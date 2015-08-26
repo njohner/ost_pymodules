@@ -71,8 +71,16 @@ head_group_dict={'DOP':'aname=PO4,GL1,GL2','CHO':'aname=R1'}
 tail_dict={'DOP':'aname=C5A,C5B','CHO':'aname=R5'}
 distance_sele_dict={'DOP':'aname=C1*','CHO':'aname=R1'}
 
+# 4. It is generally a good idea to keep only what is needed of the trajectory
+#    to reduce the number of atoms and speed up the calculations.
+sele="rname=W"
+for l in lipid_names:sele+=" or (rname={0} and {1})".format(l,head_group_dict[l])
+for l in lipid_names:sele+=" or (rname={0} and {1})".format(l,tail_dict[l])
+for l in lipid_names:sele+=" or (rname={0} and {1})".format(l,distance_sele_dict[l])
+t=t.Filter(eh.Select(sele))
+eh=t.GetEntity()
 
-# 4. We define the different cutoffs used by the algorithms. More information can be found
+# 5. We define the different cutoffs used by the algorithms. More information can be found
 #    In the documentation
 #max distance between two lipids to be considered in the splay calculation
 distance_cutoff=10.0 
@@ -87,7 +95,7 @@ density_cutoff=0.3
 #When set to 1, all frames are considered, which can be slow.
 density_stride=1
 
-#5. Periodic boundaries are best treated by replicating the simulation box around
+#6. Periodic boundaries are best treated by replicating the simulation box around
 #   the original unit cell and then calculating tilts and splays only for lipids from
 #   the original unit cell, but using the surrounding unit cells to find all neighbors 
 #   of a lipid for the splay calculation and to avoid boundary effects on the interfaces
@@ -106,11 +114,11 @@ for r in v.residues:
   r.SetBoolProp(tilt_bool_prop,False)
   r.SetBoolProp(splay_bool_prop,False)
 
-#6. Other parameters
+#7. Other parameters
 prot_sele=None
 sele_dict={}
 filename_basis='tilt&splay_'
-#7. We calculate the tilts and splays:
+#8. We calculate the tilts and splays:
 (lipid_tilt_dict,lipid_normal_dict,splay_dict,b_eh)=lipid_analysis.AnalyzeLipidTiltAndSplay(t,
   lipid_names,head_group_dict,tail_dict,distance_cutoff,within_size_normals,distance_sele_dict,water_name,
   outdir,density_cutoff,prot_sele,density_stride,tilt_bool_prop,splay_bool_prop,filename_basis,sele_dict)
@@ -182,7 +190,7 @@ for key in splay_dict['all']:
   w=npy.std(splay_list)
   x_range=[-4*w,4*w]
   k,dk,kl=lipid_analysis.FitSplayDistribution(splay_list,lipid_area,outdir=outdir,filename_basis=fname,title_complement='for '+key,nbins=nbins,x_range=x_range)
-  print "Splay modulus for {0} is k={1:1.2f} +/- {2:1.2f}.".format(lipid_name,k,dk)
+  print "Splay modulus for {0} is k={1:1.2f} +/- {2:1.2f}.".format(key,k,dk)
   outfile.write(' '.join([key,str(round(kl[0],1)),str(round(dk,1))])+'\n')
   k_list.append(k)
   deltak_list.append(dk)
