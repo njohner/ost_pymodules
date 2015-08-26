@@ -12,6 +12,8 @@ Everything that gets generated will be put in the "tmp" directory
 from ost import *
 import os,sys
 import numpy as npy
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 
 indir="./data"
