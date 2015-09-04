@@ -73,7 +73,7 @@ distance_sele_dict={'DOP':'aname=C1*','CHO':'aname=R1'}
 
 # 4. It is generally a good idea to keep only what is needed of the trajectory
 #    to reduce the number of atoms and speed up the calculations.
-sele="rname=W"
+sele="rname={0}".format(water_name)
 for l in lipid_names:sele+=" or (rname={0} and {1})".format(l,head_group_dict[l])
 for l in lipid_names:sele+=" or (rname={0} and {1})".format(l,tail_dict[l])
 for l in lipid_names:sele+=" or (rname={0} and {1})".format(l,distance_sele_dict[l])
