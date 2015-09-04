@@ -100,7 +100,11 @@ def ExtendEntityToNeighboringUnitCells(eh,vecs_to_neighbor_ucells):
     T.SetTrans(v)
     edi.SetTransform(T)
     for c in eh_t.chains:
-      edi2.InsertChain(c.name+str(i+1),c,1)
+      new_cname=c.name+str(i+1)
+      if len(new_cname)>4:
+        print "Added chain {0}. Chain name is longer than 4 caracters which will get cropped when saving as pdb.".format(new_cname)
+        print "You should rename initial chains to something shorter."
+      edi2.InsertChain(new_cname,c,1)
   return eh_extended
   
 
