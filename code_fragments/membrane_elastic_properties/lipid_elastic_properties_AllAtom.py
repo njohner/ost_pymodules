@@ -78,16 +78,6 @@ eh=io.LoadPDB(os.path.join(indir,pdbname+".pdb"),profile=p)
 t=io.LoadCHARMMTraj(eh,os.path.join(indir,trajname+'.dcd'),stride=1)
 
 
-# It is generally a good idea to keep only what is needed of the trajectory
-# to reduce the number of atoms and speed up the calculations.
-sele="rname={0}".format(water_name)
-for l in lipid_names:sele+=" or (rname={0} and {1})".format(l,head_group_dict[l])
-for l in lipid_names:sele+=" or (rname={0} and {1})".format(l,tail_dict[l])
-for l in lipid_names:sele+=" or (rname={0} and {1})".format(l,distance_sele_dict[l])
-t=t.Filter(eh.Select(sele))
-eh=t.GetEntity()
-
-
 #   Periodic boundaries are best treated by replicating the simulation box around
 #   the original unit cell and then calculating tilts and splays only for lipids from
 #   the original unit cell, but using the surrounding unit cells to find all neighbors 
