@@ -677,8 +677,7 @@ def FitTiltDistribution(tilt_list,nbins=90,x_range=None,outdir='',filename_basis
   :param title_complement: will be added in the title of the plots
   :param degrees: Whether plots should be in degrees or radians.
 
-  :type splay_list: :class:`list`
-  :type lipid_area: :class:`float`
+  :type tilt_list: :class:`list`
   :type nbins: :class:`int`
   :type x_range: :class:`tuple` of 2 floats
   :type outdir: :class:`str`
