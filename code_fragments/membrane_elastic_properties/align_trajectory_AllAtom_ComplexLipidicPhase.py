@@ -54,7 +54,7 @@ memb_sele="aname!=TIP3 and cname=A"
 
 
 #First we load the structure and trajectory
-p=io.IOProfile(dialect='CHARMM',fault_tolerant=True)
+p=io.IOProfile(processor=conop.HeuristicProcessor(),dialect='CHARMM',fault_tolerant=True)
 eh=io.LoadPDB(os.path.join(indir,pdbname+".pdb"),profile=p)
 t=io.LoadCHARMMTraj(eh,os.path.join(indir,trajname+".dcd"),stride=1)
 

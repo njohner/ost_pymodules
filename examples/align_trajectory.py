@@ -17,7 +17,7 @@ import align_traj_on_density
 import trajectory_utilities
 
 #First we load the structure and trajectory
-p=io.IOProfile(dialect='CHARMM',fault_tolerant=True)
+p=io.IOProfile(processor=conop.HeuristicProcessor(),dialect='CHARMM',fault_tolerant=True)
 eh=io.LoadPDB(os.path.join(indir,"hex_phase.pdb"),profile=p)
 t=io.LoadCHARMMTraj(eh,os.path.join(indir,'hex_phase.dcd'),stride=1)
 
