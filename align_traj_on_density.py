@@ -184,7 +184,9 @@ def AlignTrajectoryOnDensity(t,density_map,water_sele,not_water_sele=None,initia
     eh.SetTransform(geom.Transform())
   print 'total time',int(time.time()-t0),'seconds'
   xmin=[]
-  if skip_first:xmin.append(npy.array([initial_translation[0]/10.,initial_translation[1]/10.,initial_translation[2]/10.,0.0,0.0,0.0]))
+  if skip_first:
+    if initial_translation:xmin.append(npy.array([initial_translation[0]/10.,initial_translation[1]/10.,initial_translation[2]/10.,0.0,0.0,0.0]))
+    else:xmin.append(npy.array([0.,0.,0.,0.0,0.0,0.0]))
   xmin.extend([xi[0] for xi in xmin_list])
   return xmin
 
