@@ -62,6 +62,13 @@ density_stride=1
 to_analyze="cname=A and rname=DOP,CHO"
 to_ignore="cname!=A and rname=DOP,CHO"
 
+#6.  We need to define the area per lipid (at the neutral plane). This is used in the
+#    Calculation of the lipid splay constants.
+#    In this example it is set to 49.5 A^2. For a lipid bilayer the area can be obtained
+#    Using the lipid_analysis.AnalyzeAreaPerLipid function.
+lipid_area=49.5
+
+
 #7. Other parameters
 prot_sele=None
 sele_dict={}
@@ -165,9 +172,6 @@ for i in range(10):plt.close()
 # Now we fit the splays to extract the bending rigidities.
 # The procedure is the same as for the tilts
 # Except that we need the area per lipid to calculate the bending rigidity from the splays
-# In this example the area per lipid is 49.5 A^2. For a lipid bilayer the area can be obtained
-# Using the AnalyzeAreaPerLipid function.
-lipid_area=49.5
 
 outfile=open(os.path.join(outdir,'splay_constants.txt'),'w')
 k_list=FloatList()
