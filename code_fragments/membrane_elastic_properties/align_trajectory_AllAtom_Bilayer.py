@@ -62,20 +62,19 @@ eh=t.GetEntity()
 
 ###################################
 #We extend the trajectory
-#1. We get the unit cell vectors
-temp=[t.GetFrame(i).GetCellVectors() for i in range(t.GetFrameCount())]
-#2. temp contains for each frame a Vec3List with 3 Vec3 in it corresponding
-#   to the three unit cell vectors. We keep only the x and y vector and add the x+y one.
-vecs_list=[]
-for vl in temp:
-  vecs_list.append(geom.Vec3List(vl[0],vl[1],vl[0]+vl[1]))
-#3. We extend the trajectory to its neighboring unit cells. The last argument is the mutliplicative
+#1. We define the directions in which we want to extend the trajectory
+#   Here we want to extend it in the x,y and x+y directions,
+#   i.e end up with a system containing 4 unit cells. We do not extend in the z directions
+#   as this is a planar bilayer and extending in the z direction is of no use for
+#   calculation of membrane properties in that case.
+extension_directions=[[1,0,0],[0,1,0],[1,1,0]]
+#2. We extend the trajectory to its neighboring unit cells. The last argument is the mutliplicative
 #   factors that will be applied to cell dimensions in the information in each frame
-extended_t=trajectory_utilities.ExtendTrajectoryToNeighboringUnitCells(t,vecs_list,(2,2,1))
-#4. We wrap the trajectory around the central unit cell
+extended_t=trajectory_utilities.ExtendTrajectoryToNeighboringUnitCells(t,extension_directions,(2,2,1))
+#3. We wrap the trajectory around the central unit cell
 cm=mol.alg.AnalyzeCenterOfMassPos(t,eh.Select(wrap_sele))
 trajectory_utilities.WrapTrajectoryInPeriodicCell(extended_t,cm)
-#5. We extract the entity linked to the trajectory
+#4. We extract the entity linked to the trajectory
 #   and then set its positions to the first frame of the trajectory.
 #   This way, when we save the trajectory and structure, the structure will have the positions of the first frame.
 extended_eh=extended_t.GetEntity()

@@ -41,9 +41,8 @@ for a in eh.atoms:
 # To properly treat boundary conditions we replicate the unit cell all around the original one.
 # And then wrap it around the central unit cell
 # See the aign_trajectory.py example for more information.
-vecs_list=[t.GetFrame(i).GetCellVectors() for i in range(t.GetFrameCount())]
-for vl in vecs_list:vl.extend([vl[0]+vl[1],vl[0]+vl[2],vl[1]+vl[2],vl[0]+vl[1]+vl[2]])
-t=trajectory_utilities.ExtendTrajectoryToNeighboringUnitCells(t,vecs_list,(2,2,2))
+extension_directions=[[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1],[1,1,1]]
+t=trajectory_utilities.ExtendTrajectoryToNeighboringUnitCells(t,extension_directions,(2,2,2))
 eh=t.GetEntity()
 centers=mol.alg.AnalyzeCenterOfMassPos(t,eh.Select("cname=A"))
 trajectory_utilities.WrapTrajectoryInPeriodicCell(t,centers)

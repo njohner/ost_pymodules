@@ -68,19 +68,18 @@ for a in eh.atoms:
 
 ###################################
 #We extend the trajectory
-#1. We get the unit cell vectors
-vecs_list=[t.GetFrame(i).GetCellVectors() for i in range(t.GetFrameCount())]
-#2. vecs_list contains for each frame a Vec3List with 3 Vec3 in it corresponding
-#   to the three unit cell vectors. We add the vectors to the other neighboring unit cells
-#   for each frame.
-for vl in vecs_list:vl.extend([vl[0]+vl[1],vl[0]+vl[2],vl[1]+vl[2],vl[0]+vl[1]+vl[2]])
-#3. We extend the trajectory to its neighboring unit cells. The last argument is the mutliplicative
+#We extend the trajectory
+#1. We define the directions in which we want to extend the trajectory
+#   Here we want to extend it in the x,y,z,x+y,x+z, y+z and x+y+z directions,
+#   i.e end up with a system containing 8 unit cells
+extension_directions=[[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1],[1,1,1]]
+#2. We extend the trajectory to its neighboring unit cells. The last argument is the mutliplicative
 #   factors that will be applied to cell dimensions in the information in each frame
-extended_t=trajectory_utilities.ExtendTrajectoryToNeighboringUnitCells(t,vecs_list,(2,2,2))
-#4. We wrap the trajectory around the central unit cell
+extended_t=trajectory_utilities.ExtendTrajectoryToNeighboringUnitCells(t,extension_directions,(2,2,2))
+#3. We wrap the trajectory around the central unit cell
 cm=mol.alg.AnalyzeCenterOfMassPos(t,eh.Select(wrap_sele))
 trajectory_utilities.WrapTrajectoryInPeriodicCell(extended_t,cm)
-#5. We extract the entity linked to the trajectory
+#4. We extract the entity linked to the trajectory
 #   and then set its positions to the first frame of the trajectory.
 #   This way, when we save the trajectory and structure, the structure will have the positions of the first frame.
 extended_eh=extended_t.GetEntity()

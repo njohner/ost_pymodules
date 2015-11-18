@@ -11,7 +11,7 @@ import os,math
 __all__=('CalculateInterfaceFromTraj','CalculateGeneralizedCorrelations','CalculateMutualInformation',\
         'CalculateCovariance','AverageMembraneThickness','SmoothAverageMembrane','WrapFloatList',\
         'GetCellVectorsList','GetCellAnglesList','GetCellSizeList',\
-        'CreatePerResidueCMTrajectory','ExtendTrajectoryToNeighboringUnitCells','TranslateFrames',\
+        'CreatePerResidueCMTrajectory','ExtendTrajectoryToNeighboringUnitCells','ExtendTrajectory','TranslateFrames',\
         'WrapTrajectoryInPeriodicCell')
 
 def WrapTrajectoryInPeriodicCell(t,centers,cell_sizes=None,cell_angles=None,group_res=False,follow_bonds=False):
@@ -51,7 +51,35 @@ def TranslateFrames(t,trans_list):
     t.Capture(i)
   return
 
-def ExtendTrajectoryToNeighboringUnitCells(t,vecs_to_neighbor_ucells_list,cell_size_mult_factors=(1,1,1)):
+def ExtendTrajectoryToNeighboringUnitCells(t,extension_directions,cell_size_mult_factors=(1,1,1)):
+  """
+  This function is used to extend a trajectory to its neighboring unit cells.
+  Specifically, it will copy and translate the simulation box for each frame *i* in each of the directions
+  given by **extension_directions**. For example if **extension_directions=[[1,0,0],[0,1,0],[1,1,0]]**
+  it will extend the simulation in the x, y and x+y directions.
+  It will also reset the cell size for each frame by multiplying it by **cell_size_mult_factors**.
+  Specifically, the unit cell is specified by the length of the 3 unit cell vectors and 3 angles.
+  So for each frame *i*, the size of each of the unit cell vectors will be multiplied by the corresponding
+  component of **cell_size_mult_factors[i]**.
+
+  :param t: the trajectory
+  :param extension_directions: The list of lists used to define the directions in which the 
+    unit cell should be copied.
+  :param cell_size_mult_factors:
+
+  :type t: :class:`~ost.mol.CoordGroupHandle`
+  :type extension_directions: :class:`list` (:class:`list`)
+  :type cell_size_mult_factors: :class:`~ost.geom.Vec3`
+  """
+  import pbc_utilities
+  vecs_to_neighbor_ucells_list=[]
+  for i in range(t.GetFrameCount()):
+    ucell_vec=t.GetFrame(i).GetCellVectors()
+    ext_vecs=[geom.Vec3(el[0]*ucell_vec[0]+el[1]*ucell_vec[1]+el[2]*ucell_vec[2]) for el in extension_directions]
+    vecs_to_neighbor_ucells_list.append(geom.Vec3List(ext_vecs))
+  return ExtendTrajectory(t,vecs_to_neighbor_ucells_list,cell_size_mult_factors)
+
+def ExtendTrajectory(t,vecs_to_neighbor_ucells_list,cell_size_mult_factors=(1,1,1)):
   """
   This function is used to extend a trajectory to its neighboring unit cells.
   Specifically, it will copy and translate the simulation box for each frame *i* by each
