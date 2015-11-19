@@ -701,13 +701,14 @@ def FitSplayDistribution(splay_list,lipid_area,nbins=100,x_range=None,outdir='',
   DeltaK=npy.std([el for el in K_list if not el==0.0])
   K=K_list[0]
   if outdir:
-    file_utilities.WriteListOfListsInColumns(['bin','dist','fa'],[bincenters,pa[0],fa],os.path.join(outdir,'_'.join([filename_basis,'splay','distribution'])+'.txt'),separator=' ')
+    file_utilities.WriteListOfListsInColumns(['bin','distribution','pmf'],[bincenters,pa[0],fa],os.path.join(outdir,'_'.join([filename_basis,'splay','distribution'])+'.txt'),separator=' ')
     title='Splay distribution {0}'.format(title_complement)
     outfile=os.path.join(outdir,'_'.join([filename_basis,'splay','distribution'])+'.png')
     _PlotGaussian(bincenters,pa[0],A,mu,sigma,outfile,title=title,xlabel='Splay')
     outfile=os.path.join(outdir,'_'.join([filename_basis,'splay','fit'])+'.png')
     a,b,x0=res_list[0]
-    _PlotParabola(bincenters,fa,a,b,x0,ranges[0],outfile,title,'Splay',r'$-\log\left[P(\alpha)\right]$','$K={0}\pm {1}$'.format(round(K,int(-math.log10(K))+1),round(DeltaK,int(-math.log10(DeltaK))+1)))
+    title='Splay PMF {0}'.format(title_complement)
+    _PlotParabola(bincenters,fa,a,b,x0,ranges[0],outfile,title,'Splay',r'$-\log\left[P(\alpha)\right]$','$\chi^{{12}}={0}\pm {1}$'.format(round(K,int(-math.log10(K))+1),round(DeltaK,int(-math.log10(DeltaK))+1)))
   return K,DeltaK,K_list
   
 def FitTiltDistribution(tilt_list,nbins=90,x_range=None,outdir='',filename_basis='',title_complement='',degrees=False):
@@ -755,14 +756,15 @@ def FitTiltDistribution(tilt_list,nbins=90,x_range=None,outdir='',filename_basis
   DeltaK=npy.std(K_list)
   K=K_list[0]
   if outdir:
-    file_utilities.WriteListOfListsInColumns(['bin','dist','fa'],[bincenters,pa,fa],os.path.join(outdir,'_'.join([filename_basis,'tilt','distribution'])+'.txt'),separator=' ')
+    file_utilities.WriteListOfListsInColumns(['bin','distribution','pmf'],[bincenters,pa,fa],os.path.join(outdir,'_'.join([filename_basis,'tilt','distribution'])+'.txt'),separator=' ')
     title='Tilt distribution {0}'.format(title_complement)
     outfile=os.path.join(outdir,'_'.join([filename_basis,'tilt','distribution'])+'.png')
-    _PlotGaussian(bincenters,pa,A,mu,sigma,outfile,title=title,xlabel='tilt')
+    _PlotGaussian(bincenters,pa,A,mu,sigma,outfile,title=title,xlabel='Tilt')
     outfile=os.path.join(outdir,'_'.join([filename_basis,'tilt','fit'])+'.png')
     a,b=res_list[0]
     r=[el for el in ranges[0]]
-    _PlotParabola(bincenters,fa,a,b,0.0,r,outfile,title,'tilt',r'$-\log\left[\frac{P(\alpha)}{\sin(\alpha)}\right]$','$\chi={0}\pm {1}$'.format(round(K,int(-math.log10(K))+1),round(DeltaK,int(-math.log10(DeltaK))+1)))
+    title='Tilt PMF {0}'.format(title_complement)
+    _PlotParabola(bincenters,fa,a,b,0.0,r,outfile,title,'Tilt',r'$-\log\left[\frac{P(\alpha)}{\sin(\alpha)}\right]$','$\chi={0}\pm {1}$'.format(round(K,int(-math.log10(K))+1),round(DeltaK,int(-math.log10(DeltaK))+1)))
   return K,DeltaK,K_list
 
 
