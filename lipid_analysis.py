@@ -447,9 +447,6 @@ def AnalyzeLipidTiltAndSplay(t,lipid_names,head_group_dict,tail_dict,distance_cu
     sele_dict['all']=''
     lipid_sele_dict['all']=' or '.join(s)
   print sele_dict,lipid_sele_dict
-  for ln in lipid_names:
-    v=eh.Select('rname={0}'.format(ln))
-    for i,r in enumerate(v.residues):r.SetIntProp('index',i)
   lipid_normal_dict={}
   lipid_tilt_dict={}
   if tilt_bool_prop:lipid_tilt_dict_sele={}
@@ -457,8 +454,12 @@ def AnalyzeLipidTiltAndSplay(t,lipid_names,head_group_dict,tail_dict,distance_cu
   for sele_name in sele_dict:
     lipid_sele=lipid_sele_dict[sele_name]
     sele=sele_dict[sele_name]
+    sele_ev=eh.Select(lipid_sele,mol.MATCH_RESIDUES)
+    for ln in lipid_names:
+      v=sele_ev.Select('rname={0}'.format(ln))
+      for i,r in enumerate(v.residues):r.SetIntProp('index',i)
     print 'Assigning normals for',sele_name,sele,lipid_sele
-    lipid_normal_dict[sele_name]=AssignNormalsToLipids(t,eh.Select(lipid_sele,mol.MATCH_RESIDUES),b_eh.Select(sele),lipid_names,head_group_dict)
+    lipid_normal_dict[sele_name]=AssignNormalsToLipids(t,sele_ev,b_eh.Select(sele),lipid_names,head_group_dict)
     print 'lipid normal dict',lipid_normal_dict[sele_name].keys()
     print 'Done in',time.time()-t0,'seconds'
     t0=time.time()
