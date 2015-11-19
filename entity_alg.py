@@ -59,6 +59,24 @@ def WriteFloatPropList(eh,prop_list,filename,index=False,delimiter=' ',precision
       f.write(format.format(*l))
   return
 
+def WriteVec3Prop(eh,prop_name,filename,index=False,delimiter=' ',precision='4',column_width=10):
+  with open(filename,'w') as f: 
+    if index:f.write(('{:^'+str(column_width)+'} ').format('aindex'))
+    col_names=[prop_name+el for el in [".x",".y",".z"]]
+    format=' '.join(['{:^'+str(column_width)+'}' for key in col_names])
+    format+='\n'
+    f.write(format.format(*col_names))
+    if index:format='{:^'+str(column_width)+'} '+' '.join(['{:'+str(column_width)+'.'+str(precision)+'g}' for key in col_names])
+    else:format=' '.join(['{:'+str(column_width)+'.'+str(precision)+'g}' for key in col_names])
+    format+='\n'
+    for a in eh.atoms:
+      v=a.GetVec3Prop(prop_name)
+      l=[v.x,v.y,v.z]
+      if index:l.insert(0,a.index)
+      f.write(format.format(*l))
+  return
+
+
 def AssignFloatPropToEntityResidues(eh,fl,key):
   """
   That function will not work if the atom indices are not the same as the order of atoms in the entity

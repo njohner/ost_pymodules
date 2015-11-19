@@ -76,9 +76,7 @@ def CalculateNormals(eh,within_size=5,PBC=False,cell_center=False,cell_size=Fals
       vl.append(a2.pos)
     if PBC:vl=geom.WrapVec3List(vl,a.pos,cell_size)
     n=vl.principal_axes.GetRow(0)
-    a.SetFloatProp('nx',n.x)
-    a.SetFloatProp('ny',n.y)
-    a.SetFloatProp('nz',n.z)
+    a.SetVec3Prop('n',n)
     if count==5000:
       count=0
       print count_tot,'normals out of',n_tot,'in',time.time()-t1,'seconds'
@@ -120,9 +118,7 @@ def CalculateNormalsFast2(eh,within_size=5,PBC=False,cell_center=False,cell_size
         vl.append(a2.pos)
       if PBC:vl=geom.WrapVec3List(vl,a.pos,cell_size)
       n=vl.principal_axes.GetRow(0)
-      a.SetFloatProp('nx',n.x)
-      a.SetFloatProp('ny',n.y)
-      a.SetFloatProp('nz',n.z)
+      a.SetVec3Prop('n',n)
       a.SetBoolProp('done',True)
       if count==5000:
         count=0
@@ -160,17 +156,13 @@ def CalculateNormalsFast(eh,within_size=15,within_size2=7,PBC=False,cell_center=
     n=vl.principal_axes.GetRow(0)
     if PBC:within=pbc_utilities.FindWithinWithPBC(eh,a.pos,within_size2,cell_center,cell_size)
     else:within=mol.CreateViewFromAtoms([a2 for a2 in eh.FindWithin(a.pos,within_size2)]).Select('')
-    a.SetFloatProp('nx',n.x)
-    a.SetFloatProp('ny',n.y)
-    a.SetFloatProp('nz',n.z)
+    a.SetVec3Prop('n',n)
     a.SetBoolProp('done',True)
     for a2 in within.atoms:
       if a2.GetBoolProp('done'):continue
       count+=1
       count_tot+=1
-      a2.SetFloatProp('nx',n.x)
-      a2.SetFloatProp('ny',n.y)
-      a2.SetFloatProp('nz',n.z)
+      a2.SetVec3Prop('n',n)
       a2.SetBoolProp('done',True)
     if count>=5000:
       count=0
@@ -179,13 +171,11 @@ def CalculateNormalsFast(eh,within_size=15,within_size2=7,PBC=False,cell_center=
 
 def OrientNormalsAlongDensity(eh,density):
   for a in eh.atoms:
-    n=geom.Vec3(a.GetFloatProp('nx'),a.GetFloatProp('ny'),a.GetFloatProp('nz'))
+    n=a.GetVec3Prop('n')
     d1=density.GetReal(img.Point(density.CoordToIndex(a.pos)))
     d2=density.GetReal(img.Point(density.CoordToIndex(a.pos+4*n)))
     if d2>d1:
-      a.SetFloatProp('nx',-n.x)
-      a.SetFloatProp('ny',-n.y)
-      a.SetFloatProp('nz',-n.z)
+      a.SetVec3Prop('n',-n)
   return
 
 def OrientNormalsFast(eh,within_size=15,PBC=False,cell_center=None,cell_size=None):
@@ -231,16 +221,14 @@ def OrientNormalsFast(eh,within_size=15,PBC=False,cell_center=None,cell_size=Non
   total_atoms=ref_view.GetAtomCount()
   print 'start orientation correction for the other atoms',time.time()-t1 
   for ref_a in ref_view.atoms:
-    ref_n=geom.Vec3(ref_a.GetFloatProp('nx'),ref_a.GetFloatProp('ny'),ref_a.GetFloatProp('nz'))
+    ref_n=ref_a.GetVec3Prop('n')
     if PBC:within=pbc_utilities.FindWithinWithPBC(eh.Select('gadone!=1'),ref_a.pos,within_size,cell_center,cell_size)
     else:within=mol.CreateViewFromAtoms([a for a in eh.Select('gadone!=1').FindWithin(ref_a.pos,within_size)]).Select('')
     if not within.IsValid():within=eh.CreateEmptyView()
     for a in within.atoms:
-      n=geom.Vec3(a.GetFloatProp('nx'),a.GetFloatProp('ny'),a.GetFloatProp('nz'))
+      n=a.GetVec3Prop('n')
       if geom.Dot(ref_n,n)<0.0:
-        a.SetFloatProp('nx',-n.x)
-        a.SetFloatProp('ny',-n.y)
-        a.SetFloatProp('nz',-n.z)
+        a.SetVec3Prop('n',-n)
       a.SetIntProp('done',1)
       total_atoms+=1
       if total_atoms%5000==0:print total_atoms,'out of',n_atoms,'in',time.time()-t1,'seconds'
@@ -271,15 +259,13 @@ def OrientNormals(eh,starting_point,within_size=10,PBC=False,cell_center=None,ce
     return
   total_atoms+=within.GetAtomCount()
   ref_a=within.atoms[0]
-  ref_n=geom.Vec3(ref_a.GetFloatProp('nx'),ref_a.GetFloatProp('ny'),ref_a.GetFloatProp('nz'))
+  ref_n=ref_a.GetVec3Prop('n')
   for a in within.atoms:
     count+=1
     if count%5000==0:print count,'out of',n_atoms
-    n=geom.Vec3(a.GetFloatProp('nx'),a.GetFloatProp('ny'),a.GetFloatProp('nz'))
+    n=a.GetVec3Prop('n')
     if geom.Dot(ref_n,n)<0.0:
-      a.SetFloatProp('nx',-n.x)
-      a.SetFloatProp('ny',-n.y)
-      a.SetFloatProp('nz',-n.z)
+      a.SetVec3Prop('n',-n)
   l=max(eh.bounds.size.data)
   ref_within=within.Copy()
   i=1
@@ -313,12 +299,10 @@ def OrientNormals(eh,starting_point,within_size=10,PBC=False,cell_center=None,ce
       except:
         count3+=1
         continue
-      n=geom.Vec3(a.GetFloatProp('nx'),a.GetFloatProp('ny'),a.GetFloatProp('nz'))
-      ref_n=geom.Vec3(a2.GetFloatProp('nx'),a2.GetFloatProp('ny'),a2.GetFloatProp('nz'))
+      n=a.GetVec3Prop('n')
+      ref_n=a2.GetVec3Prop('n')
       if geom.Dot(ref_n,n)<0.0:
-        a.SetFloatProp('nx',-n.x)
-        a.SetFloatProp('ny',-n.y)
-        a.SetFloatProp('nz',-n.z)
+        a.SetVec3Prop('n',-n)
   print count2,'times no atoms in within out of',n_atoms,'and ',count3,'atoms were not oriented'
   print 'total number of atoms treated',total_atoms
   return
@@ -344,7 +328,7 @@ def CleanMaxDensitySurface(eh,den_map,n_steps=2,step_size=1,PBC=False,cell_cente
   counter=0
   for j,a in enumerate(eh.atoms):
     if j%10000==0:print j,'atoms done and deleted',counter
-    n=geom.Vec3(a.GetFloatProp('nx'),a.GetFloatProp('ny'),a.GetFloatProp('nz'))
+    n=a.GetVec3Prop('n')
     d1=den_map.GetReal(img.Point(den_map.CoordToIndex(a.pos)))
     for i in range(step_size,n_steps*step_size+1):
       if PBC:
@@ -395,7 +379,7 @@ def CleanMaxDensitySurface2(eh,den_map,clean_length=10,step_size=1,r=0.7,PBC=Fal
     for a in within2.atoms:
       if a.GetBoolProp('done') or a.GetFloatProp('delete'):continue
       #print a, within_zone.GetAtomCount()
-      n=geom.Vec3(a.GetFloatProp('nx'),a.GetFloatProp('ny'),a.GetFloatProp('nz'))
+      n=a.GetVec3Prop('n')
       d1=den_map.GetReal(img.Point(den_map.CoordToIndex(a.pos)))
       p=a.pos
       for i in range(1,n_steps):
@@ -457,7 +441,7 @@ def CalculateCurvature(eh,within_size=5,normal_corr=False,PBC=False,cell_center=
         count=0
         print 'curvature for',count_tot,'out of',n_tot,'in',time.time()-t1,'sec. Number of atoms in vicinity used for calculation',within.GetAtomCount()
       p=a.pos
-      n=geom.Vec3(a.GetFloatProp('nx'),a.GetFloatProp('ny'),a.GetFloatProp('nz'))
+      n=a.GetVec3Prop('n')
       #We define the local coordinate system
       try:
         psi=math.acos(n.z)
@@ -479,7 +463,7 @@ def CalculateCurvature(eh,within_size=5,normal_corr=False,PBC=False,cell_center=
         if a2.handle==a.handle:continue
         if PBC:pi=geom.WrapVec3(a2.pos,p,cell_size)-p
         else:pi=a2.pos-p
-        ni=geom.Vec3(a2.GetFloatProp('nx'),a2.GetFloatProp('ny'),a2.GetFloatProp('nz'))
+        ni=a2.GetVec3Prop('n')
         pl.append(geom.Vec3(geom.Dot(pi,x),geom.Dot(pi,y),geom.Dot(pi,n)))
         niz=geom.Dot(ni,n)
         if normal_corr:
@@ -568,17 +552,13 @@ go_cyl=gfx.Entity('cylinder',eh_cyl)
 scene.Add(go_cyl)
 for a in eh_cyl.atoms:
   n=geom.Normalize(geom.Vec3(0.0,a.pos.y,a.pos.z))
-  a.SetFloatProp('nx',n.x)
-  a.SetFloatProp('ny',n.y)
-  a.SetFloatProp('nz',n.z)
+  a.SetVec3Prop('n',n)
 for a in eh_cyl.Select('x>29').atoms:
   n=geom.Normalize(a.pos-geom.Vec3(29,0,0))
-  a.SetFloatProp('nx',n.x)
-  a.SetFloatProp('ny',n.y)
-  a.SetFloatProp('nz',n.z)
+  a.SetVec3Prop('n',n)
 go_n=gfx.PrimList('cyl_normals')
 for a in eh_cyl.atoms:
-  n=geom.Vec3(a.GetFloatProp('nx'),a.GetFloatProp('ny'),a.GetFloatProp('nz'))
+  n=a.GetVec3Prop('n')
   go_n.AddLine(a.pos,a.pos+n)
 scene.Add(go_n)
 CalculateCurvature(eh_cyl)

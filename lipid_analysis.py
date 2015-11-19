@@ -88,7 +88,7 @@ def _AssignNormalsFromSurfaceToResidues(t,sele,surface,within_size=10):
   :param t: the trajectory
   :param sele: the selection to which normals will be assigned.
   :param surface: the surface. Each atom of the surface should have an associated
-                  normal vector as float properties "nx","ny" and "nz".
+                  normal vector as Vec3 property "n".
   :param within_size: Size of surrounding used to find the closest atom on the surface.
                       This parameter only optimizes the speed of the calculation
 
@@ -108,7 +108,7 @@ def _AssignNormalsFromSurfaceToResidues(t,sele,surface,within_size=10):
       within=surface.FindWithin(r.center_of_atoms,within_size)
       if not len(within)==0:a=entity_alg.FindClosestAtom(r,mol.CreateViewFromAtoms(within))
       else:a=entity_alg.FindClosestAtom(r,surface)
-      ln[j].append(geom.Vec3(a.GetFloatProp('nx'),a.GetFloatProp('ny'),a.GetFloatProp('nz')))
+      ln[j].append(a.GetVec3Prop('n'))
   return ln
 
 def _CalculateTilts(t,lipids,normals,head_sele,tail_sele,prot_cm=None,bool_prop=''):
@@ -187,7 +187,7 @@ def GetBoundaryBetweenViews(t,waters,lipids,outdir='',density_cutoff=None,stride
   surface_alg.OrientNormalsAlongDensity(b_eh,lipid_filtered)
   if outdir:
     io.SavePDB(b_eh,os.path.join(outdir,filename_basis+'boundary.pdb'))
-    entity_alg.WriteFloatPropList(b_eh,['nx','ny','nz'],os.path.join(outdir,filename_basis+'boundary_normals.txt'),index=True)
+    entity_alg.WriteVec3Prop(b_eh,"n",os.path.join(outdir,filename_basis+'boundary_normals.txt'),index=True)
   return (water_filtered,lipid_filtered,b_eh)
       
 def AssignNormalsToLipids(t,eh,b_eh,lipid_names,head_group_dict):
