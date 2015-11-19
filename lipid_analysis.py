@@ -604,6 +604,54 @@ def _PlotParabola(bincenters,fa,a,b,x0,fitting_range,outfile,title='',xlabel='',
   plt.close()
   return
 
+def ExtractTiltAndSplayModuli(tilt_dict,splay_dict,lipid_area,outdir,nbins=100):
+  for sele_name in tilt_dict.keys():
+    outfile=open(os.path.join(outdir,sele_name+'_tilt_constants.txt'),'w')
+    k_list=FloatList()
+    deltak_list=FloatList()
+    nl_list=FloatList()
+    for lipid_name in tilt_dict[sele_name].keys():
+      fname="_".join([sele_name,lipid_name])
+      tilt_list=FloatList()
+      for el in tilt_dict[sele_name][lipid_name][0]:tilt_list.extend(el)
+      k,dk,kl=FitTiltDistribution(tilt_list,nbins,outdir=outdir,filename_basis=fname,title_complement='for '+sele_name+" "+lipid_name)
+      print "Tilt modulus for {0} {1} is k={2:1.2f} +/- {3:1.2f}.".format(sele_name,lipid_name,k,dk)
+      outfile.write(' '.join([lipid_name,str(round(kl[0],1)),str(round(dk,1))])+'\n')
+      k_list.append(k)
+      deltak_list.append(dk)
+      nl_list.append(len(tilt_list))
+    ntot=npy.sum(nl_list)
+    k=npy.sum([ni/ki for ni,ki in zip(nl_list,k_list)])/ntot
+    k=1./k
+    dk=npy.sum([((k**2.0)/(ki**2.0)*ni/ntot)**2.0*(dki**2.0) for ni,ki,dki in zip(nl_list,k_list,deltak_list)])
+    dk=npy.sqrt(dk)
+    outfile.write(' '.join(['agregated',str(round(k,1)),str(round(dk,1))])+'\n')
+    outfile.close()
+    for i in range(2*len(k_list)):plt.close()
+
+  for sele_name in splay_dict.keys():
+    outfile=open(os.path.join(outdir,sele_name+'_splay_constants.txt'),'w')
+    k_list=FloatList()
+    nl_list=FloatList()
+    deltak_list=FloatList()
+    for key in splay_dict[sele_name]:
+      fname="_".join([sele_name,key])
+      splay_list=[el[0] for el in splay_dict[sele_name][key]]
+      k,dk,kl=FitSplayDistribution(splay_list,lipid_area,nbins,outdir=outdir,filename_basis=fname,title_complement='for '+sele_name+" "+key)
+      print "Splay modulus for {0} {1} is k={2:1.2f} +/- {3:1.2f}.".format(sele_name,key,k,dk)
+      outfile.write(' '.join([key,str(round(kl[0],1)),str(round(dk,1))])+'\n')
+      k_list.append(k)
+      deltak_list.append(dk)
+      nl_list.append(len(splay_list))
+    ntot=npy.sum(nl_list)
+    k=npy.sum([ni/ki for ni,ki in zip(nl_list,k_list)])/ntot
+    k=1./k
+    dk=npy.sum([((k**2.0)/(ki**2.0)*ni/ntot)**2.0*(dki**2.0) for ni,ki,dki in zip(nl_list,k_list,deltak_list)])
+    dk=npy.sqrt(dk)
+    outfile.write(' '.join(['agregated',str(round(k,1)),str(round(dk,1))])+'\n')
+    outfile.close()
+    for i in range(2*len(k_list)):plt.close()
+
 def FitSplayDistribution(splay_list,lipid_area,nbins=100,x_range=None,outdir='',filename_basis='',title_complement=''):  
   """
   This function extracts the bending modulus from a list of splays.
