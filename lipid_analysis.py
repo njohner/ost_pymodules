@@ -440,12 +440,13 @@ def AnalyzeLipidTiltAndSplay(t,lipid_names,head_group_dict,tail_dict,distance_cu
   #From here we separate into the sub categories defined in sele_dict, which could be upper and lower leaflets
   s=['(rname='+ln+' and '+head_group_dict[ln]+')' for ln in lipid_names]
   lipid_sele_dict={}
-  if sele_dict:
-    for sele_name in sele_dict:
-      lipid_sele_dict[sele_name]=' or '.join(s)+' and '+sele_dict[sele_name]
-  else: 
+  if not sele_dict:
     sele_dict['all']=''
-    lipid_sele_dict['all']=' or '.join(s)
+  for sele_name in sele_dict:
+    if sele_dict[sele_name]:
+      lipid_sele_dict[sele_name]=' or '.join(s)+' and '+sele_dict[sele_name]
+    else:
+      lipid_sele_dict[sele_name]=' or '.join(s)
   print sele_dict,lipid_sele_dict
   lipid_normal_dict={}
   lipid_tilt_dict={}
