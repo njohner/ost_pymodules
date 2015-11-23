@@ -362,7 +362,7 @@ def AnalyzeLipidSplays(t,eh,lipid_names,head_group_dict,tail_dict,lipid_normal_d
   print 'done in {0} seconds. Computed {1} splays'.format(time.time()-t0,nsplays)
   return splay_dict_def
 
-def AnalyzeLipidTiltAndSplay(t,lipid_names,head_group_dict,tail_dict,distance_cutoff=10.0,within_size_normals=5.0
+def AnalyzeLipidTiltAndSplay(t,lipid_names,head_group_dict,tail_dict,distance_cutoff=10.0,within_size_normals=10.0
                       ,distance_sele_dict={},water_name='TIP3',outdir='',density_cutoff=None
                       ,prot_sele=None,density_stride=10,tilt_bool_prop='',splay_bool_prop='',filename_basis='',sele_dict={}):
   """
