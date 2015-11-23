@@ -71,7 +71,6 @@ def ExtendTrajectoryToNeighboringUnitCells(t,extension_directions,cell_size_mult
   :type extension_directions: :class:`list` (:class:`list`)
   :type cell_size_mult_factors: :class:`~ost.geom.Vec3`
   """
-  import pbc_utilities
   vecs_to_neighbor_ucells_list=[]
   for i in range(t.GetFrameCount()):
     ucell_vec=t.GetFrame(i).GetCellVectors()
