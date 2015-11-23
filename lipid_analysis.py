@@ -709,7 +709,7 @@ def FitSplayDistribution(splay_list,lipid_area,nbins=100,x_range=None,outdir='',
     outfile=os.path.join(outdir,'_'.join([filename_basis,'splay','fit'])+'.png')
     a,b,x0=res_list[0]
     title='Splay PMF {0}'.format(title_complement)
-    _PlotParabola(bincenters,fa,a,b,x0,ranges[0],outfile,title,'Splay',r'$-\log\left[P(\alpha)\right]$','$\chi^{{12}}={0}\pm {1}$'.format(round(K,int(-math.log10(K))+1),round(DeltaK,int(-math.log10(DeltaK))+1)))
+    _PlotParabola(bincenters,fa,a,b,x0,ranges[0],outfile,title,'Splay',r'$-\log\left[P(\alpha)\right]$','$\chi^{{12}}={0}\pm {1}  k_BT$'.format(round(K,int(-math.log10(K))+1),round(DeltaK,int(-math.log10(DeltaK))+1)))
   return K,DeltaK,K_list
   
 def FitTiltDistribution(tilt_list,nbins=90,x_range=None,outdir='',filename_basis='',title_complement='',degrees=False):
@@ -765,7 +765,7 @@ def FitTiltDistribution(tilt_list,nbins=90,x_range=None,outdir='',filename_basis
     a,b=res_list[0]
     r=[el for el in ranges[0]]
     title='Tilt PMF {0}'.format(title_complement)
-    _PlotParabola(bincenters,fa,a,b,0.0,r,outfile,title,'Tilt',r'$-\log\left[\frac{P(\alpha)}{\sin(\alpha)}\right]$','$\chi={0}\pm {1}$'.format(round(K,int(-math.log10(K))+1),round(DeltaK,int(-math.log10(DeltaK))+1)))
+    _PlotParabola(bincenters,fa,a,b,0.0,r,outfile,title,'Tilt',r'$-\log\left[\frac{P(\alpha)}{\sin(\alpha)}\right]$','$\chi={0}\pm {1} k_BT$'.format(round(K,int(-math.log10(K))+1),round(DeltaK,int(-math.log10(DeltaK))+1)))
   return K,DeltaK,K_list
 
 
