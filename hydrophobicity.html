@@ -1,0 +1,174 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>hydrophobicity module &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="index.html" />
+    <link rel="next" title="lipid_analysis module" href="lipid_analysis.html" />
+    <link rel="prev" title="hole module" href="hole.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="lipid_analysis.html" title="lipid_analysis module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="hole.html" title="hole module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="hole.html"
+                        title="previous chapter">hole module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="lipid_analysis.html"
+                        title="next chapter">lipid_analysis module</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/hydrophobicity.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-hydrophobicity">
+<span id="hydrophobicity-module"></span><h1>hydrophobicity module<a class="headerlink" href="#module-hydrophobicity" title="Permalink to this headline">¶</a></h1>
+<p><em>Code author: Niklaus Johner &lt;<a class="reference external" href="mailto:niklaus&#46;johner&#37;&#52;&#48;a3&#46;epfl&#46;ch">niklaus<span>&#46;</span>johner<span>&#64;</span>a3<span>&#46;</span>epfl<span>&#46;</span>ch</a>&gt;</em></p>
+<p>This module contains function to calculate hydrophobicity and hydrophobic
+moments from different hydrophobic scales.</p>
+<dl class="function">
+<dt id="hydrophobicity.CalculateCharge">
+<tt class="descname">CalculateCharge</tt><big>(</big><em>sequence</em><big>)</big><a class="reference internal" href="_modules/hydrophobicity.html#CalculateCharge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hydrophobicity.CalculateCharge" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="hydrophobicity.CalculateChargeWithSlidingWindow">
+<tt class="descname">CalculateChargeWithSlidingWindow</tt><big>(</big><em>sequence</em>, <em>w=11</em><big>)</big><a class="reference internal" href="_modules/hydrophobicity.html#CalculateChargeWithSlidingWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hydrophobicity.CalculateChargeWithSlidingWindow" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="hydrophobicity.GetResidueHydrophobicity">
+<tt class="descname">GetResidueHydrophobicity</tt><big>(</big><em>res</em>, <em>hydrophobicity_dict={'A': 0.62</em>, <em>'C': 0.29</em>, <em>'E': -0.74</em>, <em>'D': -0.9</em>, <em>'G': 0.48</em>, <em>'F': 1.19</em>, <em>'I': 1.38</em>, <em>'H': -0.4</em>, <em>'K': -1.5</em>, <em>'M': 0.64</em>, <em>'L': 1.06</em>, <em>'N': -0.78</em>, <em>'Q': -0.85</em>, <em>'P': 0.12</em>, <em>'S': -0.18</em>, <em>'R': -2.53</em>, <em>'T': -0.05</em>, <em>'W': 0.81</em>, <em>'V': 1.08</em>, <em>'Y': 0.26}</em><big>)</big><a class="reference internal" href="_modules/hydrophobicity.html#GetResidueHydrophobicity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hydrophobicity.GetResidueHydrophobicity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="hydrophobicity.CalculateHydrophobicMoment">
+<tt class="descname">CalculateHydrophobicMoment</tt><big>(</big><em>sequence</em>, <em>angle=1.7453292519943295</em>, <em>hydrophobicity_dict={'A': 0.62</em>, <em>'C': 0.29</em>, <em>'E': -0.74</em>, <em>'D': -0.9</em>, <em>'G': 0.48</em>, <em>'F': 1.19</em>, <em>'I': 1.38</em>, <em>'H': -0.4</em>, <em>'K': -1.5</em>, <em>'M': 0.64</em>, <em>'L': 1.06</em>, <em>'N': -0.78</em>, <em>'Q': -0.85</em>, <em>'P': 0.12</em>, <em>'S': -0.18</em>, <em>'R': -2.53</em>, <em>'T': -0.05</em>, <em>'W': 0.81</em>, <em>'V': 1.08</em>, <em>'Y': 0.26}</em><big>)</big><a class="reference internal" href="_modules/hydrophobicity.html#CalculateHydrophobicMoment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hydrophobicity.CalculateHydrophobicMoment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="hydrophobicity.CalculateHydrophobicMoment2">
+<tt class="descname">CalculateHydrophobicMoment2</tt><big>(</big><em>sequence</em>, <em>angle=1.7453292519943295</em>, <em>hydrophobicity_dict={'A': 0.62</em>, <em>'C': 0.29</em>, <em>'E': -0.74</em>, <em>'D': -0.9</em>, <em>'G': 0.48</em>, <em>'F': 1.19</em>, <em>'I': 1.38</em>, <em>'H': -0.4</em>, <em>'K': -1.5</em>, <em>'M': 0.64</em>, <em>'L': 1.06</em>, <em>'N': -0.78</em>, <em>'Q': -0.85</em>, <em>'P': 0.12</em>, <em>'S': -0.18</em>, <em>'R': -2.53</em>, <em>'T': -0.05</em>, <em>'W': 0.81</em>, <em>'V': 1.08</em>, <em>'Y': 0.26}</em><big>)</big><a class="reference internal" href="_modules/hydrophobicity.html#CalculateHydrophobicMoment2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hydrophobicity.CalculateHydrophobicMoment2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="hydrophobicity.CalculateHydrophobicMoment3">
+<tt class="descname">CalculateHydrophobicMoment3</tt><big>(</big><em>sequence</em>, <em>angle=1.7453292519943295</em>, <em>hydrophobicity_dict={'A': 0.62</em>, <em>'C': 0.29</em>, <em>'E': -0.74</em>, <em>'D': -0.9</em>, <em>'G': 0.48</em>, <em>'F': 1.19</em>, <em>'I': 1.38</em>, <em>'H': -0.4</em>, <em>'K': -1.5</em>, <em>'M': 0.64</em>, <em>'L': 1.06</em>, <em>'N': -0.78</em>, <em>'Q': -0.85</em>, <em>'P': 0.12</em>, <em>'S': -0.18</em>, <em>'R': -2.53</em>, <em>'T': -0.05</em>, <em>'W': 0.81</em>, <em>'V': 1.08</em>, <em>'Y': 0.26}</em><big>)</big><a class="reference internal" href="_modules/hydrophobicity.html#CalculateHydrophobicMoment3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hydrophobicity.CalculateHydrophobicMoment3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="hydrophobicity.CalculateHydrophobicMomentWithSlidingWindow">
+<tt class="descname">CalculateHydrophobicMomentWithSlidingWindow</tt><big>(</big><em>sequence</em>, <em>w=11</em>, <em>angle=1.7453292519943295</em>, <em>hydrophobicity_dict={'A': 0.62</em>, <em>'C': 0.29</em>, <em>'E': -0.74</em>, <em>'D': -0.9</em>, <em>'G': 0.48</em>, <em>'F': 1.19</em>, <em>'I': 1.38</em>, <em>'H': -0.4</em>, <em>'K': -1.5</em>, <em>'M': 0.64</em>, <em>'L': 1.06</em>, <em>'N': -0.78</em>, <em>'Q': -0.85</em>, <em>'P': 0.12</em>, <em>'S': -0.18</em>, <em>'R': -2.53</em>, <em>'T': -0.05</em>, <em>'W': 0.81</em>, <em>'V': 1.08</em>, <em>'Y': 0.26}</em><big>)</big><a class="reference internal" href="_modules/hydrophobicity.html#CalculateHydrophobicMomentWithSlidingWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hydrophobicity.CalculateHydrophobicMomentWithSlidingWindow" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="hydrophobicity.CalculateHydrophobicity">
+<tt class="descname">CalculateHydrophobicity</tt><big>(</big><em>sequence</em>, <em>hydrophobicity_dict={'A': 0.62</em>, <em>'C': 0.29</em>, <em>'E': -0.74</em>, <em>'D': -0.9</em>, <em>'G': 0.48</em>, <em>'F': 1.19</em>, <em>'I': 1.38</em>, <em>'H': -0.4</em>, <em>'K': -1.5</em>, <em>'M': 0.64</em>, <em>'L': 1.06</em>, <em>'N': -0.78</em>, <em>'Q': -0.85</em>, <em>'P': 0.12</em>, <em>'S': -0.18</em>, <em>'R': -2.53</em>, <em>'T': -0.05</em>, <em>'W': 0.81</em>, <em>'V': 1.08</em>, <em>'Y': 0.26}</em><big>)</big><a class="reference internal" href="_modules/hydrophobicity.html#CalculateHydrophobicity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hydrophobicity.CalculateHydrophobicity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="hydrophobicity.CalculateHydrophobicityWithSlidingWindow">
+<tt class="descname">CalculateHydrophobicityWithSlidingWindow</tt><big>(</big><em>sequence</em>, <em>w=11</em>, <em>hydrophobicity_dict={'A': 0.62</em>, <em>'C': 0.29</em>, <em>'E': -0.74</em>, <em>'D': -0.9</em>, <em>'G': 0.48</em>, <em>'F': 1.19</em>, <em>'I': 1.38</em>, <em>'H': -0.4</em>, <em>'K': -1.5</em>, <em>'M': 0.64</em>, <em>'L': 1.06</em>, <em>'N': -0.78</em>, <em>'Q': -0.85</em>, <em>'P': 0.12</em>, <em>'S': -0.18</em>, <em>'R': -2.53</em>, <em>'T': -0.05</em>, <em>'W': 0.81</em>, <em>'V': 1.08</em>, <em>'Y': 0.26}</em><big>)</big><a class="reference internal" href="_modules/hydrophobicity.html#CalculateHydrophobicityWithSlidingWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hydrophobicity.CalculateHydrophobicityWithSlidingWindow" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="hydrophobicity.DetermineAmphipathicity">
+<tt class="descname">DetermineAmphipathicity</tt><big>(</big><em>sequence</em>, <em>w=11</em>, <em>angle=1.7453292519943295</em><big>)</big><a class="reference internal" href="_modules/hydrophobicity.html#DetermineAmphipathicity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hydrophobicity.DetermineAmphipathicity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="hydrophobicity.AnalyzeHydrophobicMoment">
+<tt class="descname">AnalyzeHydrophobicMoment</tt><big>(</big><em>sequence</em>, <em>w=11</em>, <em>angle_min=1.39</em>, <em>angle_max=3.14</em>, <em>step=0.1</em>, <em>hydrophobicity_dict={'A': 0.62</em>, <em>'C': 0.29</em>, <em>'E': -0.74</em>, <em>'D': -0.9</em>, <em>'G': 0.48</em>, <em>'F': 1.19</em>, <em>'I': 1.38</em>, <em>'H': -0.4</em>, <em>'K': -1.5</em>, <em>'M': 0.64</em>, <em>'L': 1.06</em>, <em>'N': -0.78</em>, <em>'Q': -0.85</em>, <em>'P': 0.12</em>, <em>'S': -0.18</em>, <em>'R': -2.53</em>, <em>'T': -0.05</em>, <em>'W': 0.81</em>, <em>'V': 1.08</em>, <em>'Y': 0.26}</em><big>)</big><a class="reference internal" href="_modules/hydrophobicity.html#AnalyzeHydrophobicMoment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hydrophobicity.AnalyzeHydrophobicMoment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="lipid_analysis.html" title="lipid_analysis module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="hole.html" title="hole module"
+             >previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

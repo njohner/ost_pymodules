@@ -1,0 +1,507 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>lipid_analysis module &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="index.html" />
+    <link rel="next" title="lipid_order_parameters module" href="lipid_order_parameters.html" />
+    <link rel="prev" title="hydrophobicity module" href="hydrophobicity.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="lipid_order_parameters.html" title="lipid_order_parameters module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="hydrophobicity.html" title="hydrophobicity module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">lipid_analysis module</a><ul>
+<li><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="hydrophobicity.html"
+                        title="previous chapter">hydrophobicity module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="lipid_order_parameters.html"
+                        title="next chapter">lipid_order_parameters module</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/lipid_analysis.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-lipid_analysis">
+<span id="lipid-analysis-module"></span><h1>lipid_analysis module<a class="headerlink" href="#module-lipid_analysis" title="Permalink to this headline">¶</a></h1>
+<p><em>Code author: Niklaus Johner &lt;<a class="reference external" href="mailto:niklaus&#46;johner&#37;&#52;&#48;a3&#46;epfl&#46;ch">niklaus<span>&#46;</span>johner<span>&#64;</span>a3<span>&#46;</span>epfl<span>&#46;</span>ch</a>&gt;</em></p>
+<p>This module contains functions to determine lipid tilt and splay angles and
+Calculate the elastic properties of the membrane from there.</p>
+<p>If you use this code please cite ref. <a class="footnote-reference" href="#id3" id="id1">[1]</a>, where the method and its implementation 
+is described in details or ref. <a class="footnote-reference" href="#id4" id="id2">[2]</a>, where the method is applied to complex lipidic phases.</p>
+<p>To ensure proper treatment of the periodic boundary conditions, the trajectory
+should first be extended to neighboring unit cells, and then aligned.
+The tilts and splays are then calculated only for the central cell, the others 
+being only used to ascertain correct treatment of the PBCs.</p>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<table class="docutils footnote" frame="void" id="id3" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>Niklaus Johner, D. Harries and G. Khelashvili, 
+&#8220;Implementation of a methodology for determining elastic properties of lipid assemblies from molecular dynamics simulations&#8221;,
+submitted to BMC bioinformatics (2015).</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id4" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[2]</td><td><em>(<a class="fn-backref" href="#id2">1</a>, <a class="fn-backref" href="#id5">2</a>)</em> Niklaus Johner, D. Harries and G. Khelashvili,
+&#8220;Curvature and lipid packing modulate the elastic properties of lipid assemblies: comparing the HII and lamellar phases.&#8221;
+The Journal of Physical Chemistry Letters 5, no. 23 (2014), 4201-6.</td></tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="lipid_analysis.GetBoundaryBetweenViews">
+<tt class="descname">GetBoundaryBetweenViews</tt><big>(</big><em>t</em>, <em>waters</em>, <em>lipids</em>, <em>outdir=''</em>, <em>density_cutoff=None</em>, <em>stride=1</em>, <em>within_size_normals=5.0</em>, <em>filename_basis=''</em><big>)</big><a class="reference internal" href="_modules/lipid_analysis.html#GetBoundaryBetweenViews"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lipid_analysis.GetBoundaryBetweenViews" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function determines the interface between two views, typically the lipid-water interface and assigns normals 
+to every point on the surface.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>t</strong> (<tt class="xref py py-class docutils literal"><span class="pre">CoordGroupHandle</span></tt>) &#8211; the trajectory</li>
+<li><strong>waters</strong> (<tt class="xref py py-class docutils literal"><span class="pre">EntityView</span></tt>) &#8211; First view</li>
+<li><strong>lipids</strong> (<tt class="xref py py-class docutils literal"><span class="pre">EntityView</span></tt>) &#8211; Second view</li>
+<li><strong>outdir</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; Path to output directory</li>
+<li><strong>density_cutoff</strong> (<tt class="xref py py-class docutils literal"><span class="pre">float</span></tt>) &#8211; Interface will not be calculated for regions where the density is lower than this cutoff.</li>
+<li><strong>stride</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; stride used to calculate the average density from the trajectory.</li>
+<li><strong>within_size_normals</strong> &#8211; radius of the patch used to determine the normals on the water-lipid interface.</li>
+<li><strong>filename_basis</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; used as first part in the name of all the files generated.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A tuple <strong>(water_filtered,lipid_filtered,b_eh)</strong> containing the density for 
+the first and second views and an entity for the boundary between the two views.
+Every atom in the boundary has an associated normal vector set as a Vec3 property &#8216;n&#8217;.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>WARNING: Interface was changed. Taking 2 views instead of a list of lipid names and water name.
+The order of the two views was also inversed. I also removed the PBC, cell_center and cell_size parameters</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lipid_analysis.AssignNormalsToLipids">
+<tt class="descname">AssignNormalsToLipids</tt><big>(</big><em>t</em>, <em>eh</em>, <em>b_eh</em>, <em>lipid_names</em>, <em>head_group_dict</em><big>)</big><a class="reference internal" href="_modules/lipid_analysis.html#AssignNormalsToLipids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lipid_analysis.AssignNormalsToLipids" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>t</strong> (<tt class="xref py py-class docutils literal"><span class="pre">CoordGroupHandle</span></tt>) &#8211; The trajectory</li>
+<li><strong>eh</strong> (<tt class="xref py py-class docutils literal"><span class="pre">Entity</span></tt>) &#8211; The associated entity</li>
+<li><strong>b_eh</strong> (<tt class="xref py py-class docutils literal"><span class="pre">Entity</span></tt>) &#8211; The surface from which the normals will get assigned to the lipids.</li>
+<li><strong>lipid_names</strong> (<tt class="xref py py-class docutils literal"><span class="pre">list</span></tt>) &#8211; a list of the lipid residue names to which normals will be assigned.</li>
+<li><strong>head_group_dict</strong> (<tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt>) &#8211; a dictionary containing the selections defining the headgroup 
+for each lipid type. There should be one entry for each residue name in <strong>lipid_names</strong></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A dictionary with one entry for each residue name in <strong>lipid_names</strong>.
+Each element in the dictionary is a <tt class="xref py py-class docutils literal"><span class="pre">list</span></tt>(<tt class="xref py py-class docutils literal"><span class="pre">Vec3List</span></tt>). Each element in the list
+corresponds to one residue and each <tt class="xref py py-class docutils literal"><span class="pre">Vec3</span></tt> in the <tt class="xref py py-class docutils literal"><span class="pre">Vec3List</span></tt> is the normal for one frame
+of the trajectory.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lipid_analysis.AnalyzeLipidTilts">
+<tt class="descname">AnalyzeLipidTilts</tt><big>(</big><em>t</em>, <em>eh</em>, <em>lipid_names</em>, <em>lipid_normal_dict</em>, <em>head_group_dict</em>, <em>tail_dict</em>, <em>prot_cm=None</em>, <em>bool_prop=''</em><big>)</big><a class="reference internal" href="_modules/lipid_analysis.html#AnalyzeLipidTilts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lipid_analysis.AnalyzeLipidTilts" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function calculates the lipid tilts from a trajectory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>t</strong> (<tt class="xref py py-class docutils literal"><span class="pre">CoordGroupHandle</span></tt>) &#8211; The trajectory</li>
+<li><strong>eh</strong> (<tt class="xref py py-class docutils literal"><span class="pre">EntityHandle</span></tt>) &#8211; The associated entity</li>
+<li><strong>lipid_names</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; List of the residue names of the different lipids in the system</li>
+<li><strong>lipid_normal_dict</strong> (<tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt>) &#8211; Dictionary of normal vectors. One entry for every lipid type (element in lipid_names)
+Every entry is a <tt class="xref py py-class docutils literal"><span class="pre">list</span></tt>(<tt class="xref py py-class docutils literal"><span class="pre">Vec3List</span></tt>) of normals for every frame for every lipid of that type 
+(size of list:N<sub>Lipids</sub>x N<sub>Frames</sub>).</li>
+<li><strong>head_group_dict</strong> (<tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt>) &#8211; Dictionary containing a selection string for each lipid type
+that is used to determine the position of the lipid headgroups (center of mass of the selection).</li>
+<li><strong>tail_dict</strong> (<tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt>) &#8211; Dictionary containing a selection string for each lipid type
+that is used to determine the position of the lipid tails (center of mass of the selection).</li>
+<li><strong>prot_cm</strong> (<tt class="xref py py-class docutils literal"><span class="pre">Vec3List</span></tt>) &#8211; A list of position (one for each frame). If specified the each tilt the distance between this position
+and the lipid in question will also be returned. This is typically used to calculate local properties of the membrane around an insertion.</li>
+<li><strong>bool_prop</strong> (<tt class="xref py py-class docutils literal"><span class="pre">bool</span></tt>) &#8211; Boolean property assigned to lipids to determine whether they should be considered in the tilt calculations.
+This is typically used to treat the periodic boundary conditions, to differentiate lipids from the central unit cell, for which tilt and 
+splay are calculated, from the lipids from neighboring unit cells, used only to ensure correct treatment of PBC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Dictionary of lipid tilts. One entry for every lipid type (element in <strong>lipid_names</strong>).
+Every entry is a <tt class="xref py py-class docutils literal"><span class="pre">list</span></tt> with two elements. The first one is a <tt class="xref py py-class docutils literal"><span class="pre">list</span></tt>(<tt class="xref py py-class docutils literal"><span class="pre">FloatList</span></tt>) of tilts 
+for every frame for every lipid of that type (size of list:N<sub>Lipids</sub>x N<sub>Frames</sub>).
+The second element contains the list of distances to <strong>prot_cm</strong> if it was defined and is empty otherwise.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>WARNING: Removed parameters PBC, cell_center, cell_size</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lipid_analysis.AnalyzeLipidSplays">
+<tt class="descname">AnalyzeLipidSplays</tt><big>(</big><em>t</em>, <em>eh</em>, <em>lipid_names</em>, <em>head_group_dict</em>, <em>tail_dict</em>, <em>lipid_normal_dict</em>, <em>lipid_tilt_dict</em>, <em>distance_sele_dict</em>, <em>distance_cutoff=10</em>, <em>bool_prop=''</em><big>)</big><a class="reference internal" href="_modules/lipid_analysis.html#AnalyzeLipidSplays"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lipid_analysis.AnalyzeLipidSplays" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function calculates the lipid splays from a trajectory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>t</strong> &#8211; The trajectory</li>
+<li><strong>eh</strong> &#8211; The associated entity</li>
+<li><strong>lipid_names</strong> &#8211; A list of the residue names of the different lipids in the system</li>
+<li><strong>head_group_dict</strong> &#8211; Dictionary containing a selection string for each lipid type
+that is used to determine the position of the lipid headgroups (center of mass of the selection).</li>
+<li><strong>tail_dict</strong> &#8211; Dictionary containing a selection string for each lipid type
+that is used to determine the position of the lipid tails (center of mass of the selection).</li>
+<li><strong>lipid_normal_dict</strong> &#8211; Dictionary of normal vectors. One entry for every lipid type (element in lipid_names)
+Every entry is a <tt class="xref py py-class docutils literal"><span class="pre">list</span></tt>(<tt class="xref py py-class docutils literal"><span class="pre">Vec3List</span></tt>) of normals for every frame 
+for every lipid of that type (size of list:N<sub>Lipids</sub>x N<sub>Frames</sub>).</li>
+<li><strong>lipid_tilt_dict</strong> &#8211; Dictionary of lipid tilts. One entry for every lipid type (element in lipid_names)
+Every entry is a <tt class="xref py py-class docutils literal"><span class="pre">list</span></tt>(<tt class="xref py py-class docutils literal"><span class="pre">FloatList</span></tt>) of tilts for every frame 
+for every lipid of that type (size of list:N<sub>Lipids</sub>x N<sub>Frames</sub>).</li>
+<li><strong>distance_sele_dict</strong> &#8211; Dictionary containing a selection string for each lipid type that is used
+to calculate the distance between lipids (center of mass distance). The center of mass of these selections should lie
+on the neutral plane.</li>
+<li><strong>distance_cutoff</strong> &#8211; Lipid pairs further apart than this distance will not be considered for splay calculation.</li>
+<li><strong>bool_prop</strong> &#8211; Boolean property assigned to lipids to determine whether they should be considered in the splay calculations.
+This is typically used to treat the periodic boundary conditions, to differentiate lipids from the central unit cell, for which tilt and 
+splay are calculated, from the lipids from neighboring unit cells, used only to ensure correct treatment of PBC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Dictionary of splays, containing one entry for each possible lipid pairs</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>WARNING: Changed the name of that function from AnalyzeLipidSplay to AnalyzeLipidSplays.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lipid_analysis.AnalyzeLipidTiltAndSplay">
+<tt class="descname">AnalyzeLipidTiltAndSplay</tt><big>(</big><em>t</em>, <em>lipid_names</em>, <em>head_group_dict</em>, <em>tail_dict</em>, <em>distance_cutoff=10.0</em>, <em>within_size_normals=10.0</em>, <em>distance_sele_dict={}</em>, <em>water_name='TIP3'</em>, <em>outdir=''</em>, <em>density_cutoff=None</em>, <em>prot_sele=None</em>, <em>density_stride=10</em>, <em>tilt_bool_prop=''</em>, <em>splay_bool_prop=''</em>, <em>filename_basis=''</em>, <em>sele_dict={}</em><big>)</big><a class="reference internal" href="_modules/lipid_analysis.html#AnalyzeLipidTiltAndSplay"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lipid_analysis.AnalyzeLipidTiltAndSplay" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is a wrapper to determine the membrane elastic moduli from the lipid titls and splays.
+Periodic boundary conditions are not treated explicitely here and should be treated as suggested in the
+description of this module.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>t</strong> (<tt class="xref py py-class docutils literal"><span class="pre">CoordGroupHandle</span></tt>) &#8211; The trajectory</li>
+<li><strong>lipid_names</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; List of the residue names of the different lipids in the system</li>
+<li><strong>head_group_dict</strong> (<tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt>) &#8211; Dictionary containing a selection string for each lipid type
+that is used to determine the position of the lipid headgroups (center of mass of the selection).</li>
+<li><strong>tail_dict</strong> (<tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt>) &#8211; Dictionary containing a selection string for each lipid type
+that is used to determine the position of the lipid tails (center of mass of the selection).</li>
+<li><strong>distance_cutoff</strong> (<tt class="xref py py-class docutils literal"><span class="pre">float</span></tt>) &#8211; Lipid pairs further apart than this distance will not be considered for splay calculation.</li>
+<li><strong>within_size_normals</strong> (<tt class="xref py py-class docutils literal"><span class="pre">float</span></tt>) &#8211; radius of the patch used to determine the normals on the water-lipid interface.</li>
+<li><strong>distance_sele_dict</strong> (<tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt>) &#8211; Dictionary containing a selection string for each lipid type that is used
+to calculate the distance between lipids (center of mass distance). The center of mass of these selections should lie
+on the neutral plane.</li>
+<li><strong>water_name</strong> &#8211; Residue name of the waters (used to calculate the water-lipid interface).</li>
+<li><strong>outdir</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; Path to output directory. If none, no files will be written.</li>
+<li><strong>density_cutoff</strong> (<tt class="xref py py-class docutils literal"><span class="pre">float</span></tt>) &#8211; Interface will not be calculated for regions where the density is lower than this cutoff.</li>
+<li><strong>prot_sele</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; Selection string used to determine the position of the protein. This is used to calculate the distance
+between lipids and the protein which will be returned together with splays and tilts and can be used to determine the vatiation
+in membrane properties around a protein</li>
+<li><strong>density_stride</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; Stride to be used for the calculation of the average lipid and water densities used to determine the interface.
+Using every single frame can slow down the calculation.</li>
+<li><strong>tilt_bool_prop</strong> (<tt class="xref py py-class docutils literal"><span class="pre">bool</span></tt>) &#8211; Boolean property assigned to lipids to determine whether they should be considered in the titl calculations.
+This is typically used to treat the periodic boundary conditions, to differentiate lipids from the central unit cell, for which tilt and 
+splay are calculated, from the lipids from neighboring unit cells, used only to ensure correct treatment of PBC.</li>
+<li><strong>splay_bool_prop</strong> (<tt class="xref py py-class docutils literal"><span class="pre">bool</span></tt>) &#8211; Same as <strong>tilt_bool_prop</strong> but for the calculation of splays</li>
+<li><strong>filename_basis</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; used as first part in the name of all the files generated.</li>
+<li><strong>sele_dict</strong> (<tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt>) &#8211; Dictionary containing selection strings used to separate the system in several parts for the calculation
+This can be used for example to make the tilt and splay calculations separately for each leaflet of a bilayer.
+In such a case <strong>sele_dict</strong> would be something like <strong>sele_dict={&#8220;upper&#8221;:&#8221;z&gt;0&#8221;,&#8221;lower&#8221;:&#8221;z&lt;0&#8221;}</strong></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A tuple <strong>(lipid_tilt_dict,lipid_normal_dict,splay_dict,b_eh)</strong>, where <strong>lipid_tilt_dict</strong>,
+<strong>lipid_normal_dict</strong> and <strong>lipid_splay_dict</strong> are dictionaries with keys corresponding to the elements
+in <strong>sele_dict</strong>. For more information about <strong>lipid_tilt_dict</strong> and <strong>lipid_splay_dict</strong>, refer to the
+the documentation for the <strong>AnalyzeLipidTilts</strong> and <strong>AnalyzeLipidSplays</strong> functions.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>WARNING: Removed parameters PBC, cell_center, cell_size</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lipid_analysis.WriteTiltDict">
+<tt class="descname">WriteTiltDict</tt><big>(</big><em>lipid_tilt_dict</em>, <em>outdir</em>, <em>filename_basis=''</em><big>)</big><a class="reference internal" href="_modules/lipid_analysis.html#WriteTiltDict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lipid_analysis.WriteTiltDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function writes out the <em>lipid_tilt_dict</em> to the firectory <em>outdir</em>.
+It writes out one file for every key in <em>lipid_tilt_dict</em>, i.e. for every lipid type.
+Filenames are preceded by the <em>filename_basis</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>lipid_tilt_dict</strong> (<tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt>) &#8211; the lipid tilt dictionary as produced by <a class="reference internal" href="#lipid_analysis.AnalyzeLipidTiltAndSplay" title="lipid_analysis.AnalyzeLipidTiltAndSplay"><tt class="xref py py-func docutils literal"><span class="pre">AnalyzeLipidTiltAndSplay()</span></tt></a>.</li>
+<li><strong>outdir</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; the directory to which the files will be written</li>
+<li><strong>filename_basis</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; Will be prepended to all file names.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lipid_analysis.WriteSplayDict">
+<tt class="descname">WriteSplayDict</tt><big>(</big><em>splay_dict</em>, <em>outdir</em>, <em>filename_basis</em><big>)</big><a class="reference internal" href="_modules/lipid_analysis.html#WriteSplayDict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lipid_analysis.WriteSplayDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function writes out the <em>splay_dict</em> to the firectory <em>outdir</em>.
+It writes out one file for every key in <em>splay_dict</em>, i.e. for every lipid type pair.
+Filenames are preceded by the <em>filename_basis</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>splay_dict</strong> (<tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt>) &#8211; the lipid splay dictionary as produced by <a class="reference internal" href="#lipid_analysis.AnalyzeLipidTiltAndSplay" title="lipid_analysis.AnalyzeLipidTiltAndSplay"><tt class="xref py py-func docutils literal"><span class="pre">AnalyzeLipidTiltAndSplay()</span></tt></a>.</li>
+<li><strong>outdir</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; the directory to which the files will be written</li>
+<li><strong>filename_basis</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; Will be prepended to all file names.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lipid_analysis.FitTiltDistribution">
+<tt class="descname">FitTiltDistribution</tt><big>(</big><em>tilt_list</em>, <em>nbins=90</em>, <em>x_range=None</em>, <em>outdir=''</em>, <em>filename_basis=''</em>, <em>title_complement=''</em>, <em>degrees=False</em><big>)</big><a class="reference internal" href="_modules/lipid_analysis.html#FitTiltDistribution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lipid_analysis.FitTiltDistribution" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function extracts the tilt modulus from a list of lipid tilts.
+It will first fit a gaussian y=A exp[(x-mu)/sigma^2] to the distribution of tilts to determine
+the fitting range used to fit the potential of mean force (PMF).
+Different fitting ranges are used to estimate the error on the extracted tilt modulus</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>tilt_list</strong> (<tt class="xref py py-class docutils literal"><span class="pre">list</span></tt>) &#8211; A list of lipid splays.</li>
+<li><strong>nbins</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; The number of bins used when determining the distribution of splays</li>
+<li><strong>x_range</strong> (<tt class="xref py py-class docutils literal"><span class="pre">tuple</span></tt> of 2 floats) &#8211; The range in which the distribution will be calculated. Defaults to [mean-3*std,mean+3*std].</li>
+<li><strong>outdir</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; the directory to which output files will be written, i.e. plots of splay distribution and PMF.
+if it is not defined, plots will not be generated</li>
+<li><strong>filename_basis</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; Will be prepended to all file names.</li>
+<li><strong>title_complement</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; will be added in the title of the plots</li>
+<li><strong>degrees</strong> (<tt class="xref py py-class docutils literal"><span class="pre">bool</span></tt>) &#8211; Whether plots should be in degrees or radians.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A tuple <strong>(Chi, DeltaChi,Chi_list)</strong>, containing the tilt modulus <em>Chi</em>,
+the estimated uncertainty on <em>Chi</em>, and the list of <em>Chi</em> values obtained from the different fitting ranges.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(<tt class="xref py py-class docutils literal"><span class="pre">float</span></tt>,:class:<cite>float</cite>,:class:<cite>list</cite>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lipid_analysis.FitSplayDistribution">
+<tt class="descname">FitSplayDistribution</tt><big>(</big><em>splay_list</em>, <em>lipid_area</em>, <em>nbins=100</em>, <em>x_range=None</em>, <em>outdir=''</em>, <em>filename_basis=''</em>, <em>title_complement=''</em><big>)</big><a class="reference internal" href="_modules/lipid_analysis.html#FitSplayDistribution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lipid_analysis.FitSplayDistribution" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function extracts the bending modulus from a list of splays.
+It will first fit a gaussian y=A exp[(x-mu)/sigma^2] to the distribution of splays to determine
+the fitting range used to fit the potential of mean force (PMF).
+Different fitting ranges are used to estimate the error on the extracted bending rigidity</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>splay_list</strong> (<tt class="xref py py-class docutils literal"><span class="pre">list</span></tt>) &#8211; A list of lipid splays.</li>
+<li><strong>lipid_area</strong> (<tt class="xref py py-class docutils literal"><span class="pre">float</span></tt>) &#8211; The area per lipid.</li>
+<li><strong>nbins</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; The number of bins used when determining the distribution of splays</li>
+<li><strong>x_range</strong> (<tt class="xref py py-class docutils literal"><span class="pre">tuple</span></tt> of 2 floats) &#8211; The range in which the distribution will be calculated. Defaults to [mean-3*std,mean+3*std].</li>
+<li><strong>outdir</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; the directory to which output files will be written, i.e. plots of splay distribution and PMF.
+if it is not defined, plots will not be generated</li>
+<li><strong>filename_basis</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; Will be prepended to all file names.</li>
+<li><strong>title_complement</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; will be added in the title of the plots</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A tuple <strong>(K, DeltaK,K_list)</strong>, containing the bending rigidity <em>K</em>,
+the estimated uncertainty on <em>K</em>, and the list of <em>K</em> values obtained from the different fitting ranges.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(<tt class="xref py py-class docutils literal"><span class="pre">float</span></tt>,:class:<cite>float</cite>,:class:<cite>list</cite>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lipid_analysis.AnalyzeAreaPerLipid">
+<tt class="descname">AnalyzeAreaPerLipid</tt><big>(</big><em>t</em>, <em>lipids</em><big>)</big><a class="reference internal" href="_modules/lipid_analysis.html#AnalyzeAreaPerLipid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lipid_analysis.AnalyzeAreaPerLipid" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function calculates the area per lipid simply from the number of lipids
+and the size of the simulation box.
+The area per lipid is calculated for each frame in the simulation and the average
+is returned. <strong>This is only suitable for bilayers</strong></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>t</strong> (<tt class="xref py py-class docutils literal"><span class="pre">CoordGroupHandle</span></tt>) &#8211; The trajectory</li>
+<li><strong>lipids</strong> &#8211; Selection of the lipids in the system</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The area per lipid</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><tt class="xref py py-class docutils literal"><span class="pre">float</span></tt></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lipid_analysis.ExtractTiltAndSplayModuli">
+<tt class="descname">ExtractTiltAndSplayModuli</tt><big>(</big><em>tilt_dict</em>, <em>splay_dict</em>, <em>lipid_area</em>, <em>outdir</em>, <em>nbins=100</em><big>)</big><a class="reference internal" href="_modules/lipid_analysis.html#ExtractTiltAndSplayModuli"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lipid_analysis.ExtractTiltAndSplayModuli" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function extracts the tilt and splay moduli from the dictionaries of tilts and splays
+obtained from the <em>AnalyzeLipidTiltAndSplay</em> function.
+It will first fit a gaussian y=A exp[(x-mu)/sigma^2] to the distribution of tilts and the distribution of splays 
+to determine the fitting range then used to fit the corresponding potential of mean force (PMF).
+Different fitting ranges are used to estimate the error on the extracted tilt and splay moduli.
+The function will calculate one tilt modulus for each lipid species and one splay modulus for each pair
+of lipid species. It will then combine these to calculate the overall tilt modulus and splay modulus (bending rigidity).
+More details about this procedure can be found in ref. <a class="footnote-reference" href="#id4" id="id5">[2]</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tilt_dict</strong> (<tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt>) &#8211; A dictionary of lipid tilts as returned by the <em>AnalyzeLipidTiltAndSplay</em> function.</li>
+<li><strong>splay_dict</strong> (<tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt>) &#8211; A dictionary of lipid splays as returned by the <em>AnalyzeLipidTiltAndSplay</em> function.</li>
+<li><strong>lipid_area</strong> &#8211; The area per lipid.</li>
+<li><strong>outdir</strong> (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>) &#8211; the directory to which output files will be written, i.e. plots of tilt and splay distributions and PMFs.
+and text files containing the elastic moduli</li>
+<li><strong>nbins</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; The number of bins used when determining the distributions of tilts and splays</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="lipid_order_parameters.html" title="lipid_order_parameters module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="hydrophobicity.html" title="hydrophobicity module"
+             >previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

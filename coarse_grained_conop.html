@@ -1,0 +1,143 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>coarse_grained_conop module &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="index.html" />
+    <link rel="next" title="colvar module" href="colvar.html" />
+    <link rel="prev" title="clustering module" href="clustering.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="colvar.html" title="colvar module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="clustering.html" title="clustering module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="clustering.html"
+                        title="previous chapter">clustering module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="colvar.html"
+                        title="next chapter">colvar module</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/coarse_grained_conop.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-coarse_grained_conop">
+<span id="coarse-grained-conop-module"></span><h1>coarse_grained_conop module<a class="headerlink" href="#module-coarse_grained_conop" title="Permalink to this headline">¶</a></h1>
+<p>This module contains some funcitons to connect coarse-grained martini structures</p>
+<dl class="function">
+<dt id="coarse_grained_conop.GenerateConnectivityDictFromITPFile">
+<tt class="descname">GenerateConnectivityDictFromITPFile</tt><big>(</big><em>filename</em>, <em>connectivity_dict={}</em><big>)</big><a class="reference internal" href="_modules/coarse_grained_conop.html#GenerateConnectivityDictFromITPFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coarse_grained_conop.GenerateConnectivityDictFromITPFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function reads in a martini itp file and generates a dicionary containing
+the connectivity information for the residues defined in the ITP file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="coarse_grained_conop.ConnectAtomsFromDict">
+<tt class="descname">ConnectAtomsFromDict</tt><big>(</big><em>eh</em>, <em>connectivity_dict</em><big>)</big><a class="reference internal" href="_modules/coarse_grained_conop.html#ConnectAtomsFromDict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coarse_grained_conop.ConnectAtomsFromDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function uses a connectivity dictionary to connect atoms of an Entity or EntityView</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="coarse_grained_conop.ConnectMartiniProteinAtoms">
+<tt class="descname">ConnectMartiniProteinAtoms</tt><big>(</big><em>eh</em><big>)</big><a class="reference internal" href="_modules/coarse_grained_conop.html#ConnectMartiniProteinAtoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coarse_grained_conop.ConnectMartiniProteinAtoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Heuristic connection builder for Martini proteins generated by the martinize.py script
+The backbone atoms have to be named BB</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="coarse_grained_conop.ConnectMartiniAtomsHeuristic">
+<tt class="descname">ConnectMartiniAtomsHeuristic</tt><big>(</big><em>eh</em>, <em>d=5.0</em><big>)</big><a class="reference internal" href="_modules/coarse_grained_conop.html#ConnectMartiniAtomsHeuristic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coarse_grained_conop.ConnectMartiniAtomsHeuristic" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function simply connects atoms from the same resdiue and closer than the cutoff distance d</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="colvar.html" title="colvar module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="clustering.html" title="clustering module"
+             >previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

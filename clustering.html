@@ -1,0 +1,145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>clustering module &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="index.html" />
+    <link rel="next" title="coarse_grained_conop module" href="coarse_grained_conop.html" />
+    <link rel="prev" title="angles module" href="angles.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coarse_grained_conop.html" title="coarse_grained_conop module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="angles.html" title="angles module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="angles.html"
+                        title="previous chapter">angles module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="coarse_grained_conop.html"
+                        title="next chapter">coarse_grained_conop module</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/clustering.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-clustering">
+<span id="clustering-module"></span><h1>clustering module<a class="headerlink" href="#module-clustering" title="Permalink to this headline">¶</a></h1>
+<p>This module contains functions for performing distance-based clustering.
+It can be used to perform hierarchical clustering or clustering using the
+Hoshen-Kopelman algorithm.</p>
+<dl class="function">
+<dt id="clustering.ClusterOnPairwiseDistance">
+<tt class="descname">ClusterOnPairwiseDistance</tt><big>(</big><em>view</em>, <em>dist_cutoff=3</em>, <em>prop_name='cluster'</em><big>)</big><a class="reference internal" href="_modules/clustering.html#ClusterOnPairwiseDistance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.ClusterOnPairwiseDistance" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function clusters the atoms in the view based on the pairwise distances. 
+A pair of atom with a distance lower than dist_cutoff will be part of the same cluster.
+The clustering scales linearly with the number of atoms, unlike hierarchical clustering.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="clustering.HierarchicalClusteringOnPairwiseDistance">
+<tt class="descname">HierarchicalClusteringOnPairwiseDistance</tt><big>(</big><em>view</em>, <em>dist_cutoff</em>, <em>prop_name='cluster'</em>, <em>method='single'</em><big>)</big><a class="reference internal" href="_modules/clustering.html#HierarchicalClusteringOnPairwiseDistance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.HierarchicalClusteringOnPairwiseDistance" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function uses the scipy hierarchical clustering to perform clustering of atoms based on their
+pairwise distance. The same methods as in the scipy.cluster.hierarchy.linkage toolbox are available
+(&#8216;single&#8217;, &#8216;average&#8217;, &#8216;full&#8217;).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="clustering.HoshenKopelman">
+<tt class="descname">HoshenKopelman</tt><big>(</big><em>neighbor_list</em><big>)</big><a class="reference internal" href="_modules/clustering.html#HoshenKopelman"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.HoshenKopelman" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function performs a clustering using the Hoshen-Kopelman algorithm.
+It takes as input a list of neighbors, specifically for node i, 
+neighbor_list[i] is a list of all the neighbors of node i (a list of integers). So if
+neighbor_list[i]=[2,4,7] means that node i has nodes 2, 4, and 7 as neighbors.
+It returns a list of integers representing the cluster number for each node</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coarse_grained_conop.html" title="coarse_grained_conop module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="angles.html" title="angles module"
+             >previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

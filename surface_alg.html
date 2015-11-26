@@ -1,0 +1,193 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>surface_alg module &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="index.html" />
+    <link rel="next" title="trajectory_utilities module" href="trajectory_utilities.html" />
+    <link rel="prev" title="sequence_alg module" href="sequence_alg.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="trajectory_utilities.html" title="trajectory_utilities module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="sequence_alg.html" title="sequence_alg module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="sequence_alg.html"
+                        title="previous chapter">sequence_alg module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="trajectory_utilities.html"
+                        title="next chapter">trajectory_utilities module</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/surface_alg.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-surface_alg">
+<span id="surface-alg-module"></span><h1>surface_alg module<a class="headerlink" href="#module-surface_alg" title="Permalink to this headline">¶</a></h1>
+<p><em>Code author: Niklaus Johner &lt;<a class="reference external" href="mailto:niklaus&#46;johner&#37;&#52;&#48;a3&#46;epfl&#46;ch">niklaus<span>&#46;</span>johner<span>&#64;</span>a3<span>&#46;</span>epfl<span>&#46;</span>ch</a>&gt;</em></p>
+<p>This module is used to mainly to calculate curvatures of a point set surface
+Such surfaces can be obtained from densities using functions form the density_alg module</p>
+<dl class="function">
+<dt id="surface_alg.CalculateSurface">
+<tt class="descname">CalculateSurface</tt><big>(</big><em>eh</em>, <em>sampling</em><big>)</big><a class="reference internal" href="_modules/surface_alg.html#CalculateSurface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#surface_alg.CalculateSurface" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function estimates the surface of a point set surface
+by simply summing up the number of points times the infinitesimal surface
+given by sampling**2.0</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="surface_alg.CalculateSurface2">
+<tt class="descname">CalculateSurface2</tt><big>(</big><em>eh</em>, <em>within_size=5</em>, <em>PBC=False</em>, <em>cell_center=None</em>, <em>cell_size=None</em>, <em>float_prop_key=None</em><big>)</big><a class="reference internal" href="_modules/surface_alg.html#CalculateSurface2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#surface_alg.CalculateSurface2" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function estimates the surface of a point set surface
+by simply summing up the number of points times the infinitesimal surface
+given by sampling**2.0</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="surface_alg.CalculateNormals">
+<tt class="descname">CalculateNormals</tt><big>(</big><em>eh</em>, <em>within_size=5</em>, <em>PBC=False</em>, <em>cell_center=False</em>, <em>cell_size=False</em><big>)</big><a class="reference internal" href="_modules/surface_alg.html#CalculateNormals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#surface_alg.CalculateNormals" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function assigns normals to each atom in eh
+No specific orientation of the normals will come out</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="surface_alg.CalculateNormalsFast2">
+<tt class="descname">CalculateNormalsFast2</tt><big>(</big><em>eh</em>, <em>within_size=5</em>, <em>PBC=False</em>, <em>cell_center=False</em>, <em>cell_size=False</em><big>)</big><a class="reference internal" href="_modules/surface_alg.html#CalculateNormalsFast2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#surface_alg.CalculateNormalsFast2" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function assigns normals to each atom in eh
+No specific orientation of the normals will come out</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="surface_alg.CalculateNormalsFast">
+<tt class="descname">CalculateNormalsFast</tt><big>(</big><em>eh</em>, <em>within_size=15</em>, <em>within_size2=7</em>, <em>PBC=False</em>, <em>cell_center=False</em>, <em>cell_size=False</em><big>)</big><a class="reference internal" href="_modules/surface_alg.html#CalculateNormalsFast"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#surface_alg.CalculateNormalsFast" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function assigns normals to each atom in eh
+No specific orientation of the normals will come out</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="surface_alg.OrientNormalsAlongDensity">
+<tt class="descname">OrientNormalsAlongDensity</tt><big>(</big><em>eh</em>, <em>density</em><big>)</big><a class="reference internal" href="_modules/surface_alg.html#OrientNormalsAlongDensity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#surface_alg.OrientNormalsAlongDensity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="surface_alg.OrientNormalsFast">
+<tt class="descname">OrientNormalsFast</tt><big>(</big><em>eh</em>, <em>within_size=15</em>, <em>PBC=False</em>, <em>cell_center=None</em>, <em>cell_size=None</em><big>)</big><a class="reference internal" href="_modules/surface_alg.html#OrientNormalsFast"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#surface_alg.OrientNormalsFast" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="surface_alg.OrientNormals">
+<tt class="descname">OrientNormals</tt><big>(</big><em>eh</em>, <em>starting_point</em>, <em>within_size=10</em>, <em>PBC=False</em>, <em>cell_center=None</em>, <em>cell_size=None</em><big>)</big><a class="reference internal" href="_modules/surface_alg.html#OrientNormals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#surface_alg.OrientNormals" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="surface_alg.CleanMaxDensitySurface">
+<tt class="descname">CleanMaxDensitySurface</tt><big>(</big><em>eh</em>, <em>den_map</em>, <em>n_steps=2</em>, <em>step_size=1</em>, <em>PBC=False</em>, <em>cell_center=None</em>, <em>cell_size=None</em><big>)</big><a class="reference internal" href="_modules/surface_alg.html#CleanMaxDensitySurface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#surface_alg.CleanMaxDensitySurface" title="Permalink to this definition">¶</a></dt>
+<dd><p>We keep only points that are at a maximum of the density in the direction of the normal</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="surface_alg.CleanMaxDensitySurface2">
+<tt class="descname">CleanMaxDensitySurface2</tt><big>(</big><em>eh</em>, <em>den_map</em>, <em>clean_length=10</em>, <em>step_size=1</em>, <em>r=0.7</em>, <em>PBC=False</em>, <em>cell_center=None</em>, <em>cell_size=None</em><big>)</big><a class="reference internal" href="_modules/surface_alg.html#CleanMaxDensitySurface2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#surface_alg.CleanMaxDensitySurface2" title="Permalink to this definition">¶</a></dt>
+<dd><p>We keep only points that have a larger density than the other points along the normal</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="surface_alg.CalculateCurvature">
+<tt class="descname">CalculateCurvature</tt><big>(</big><em>eh</em>, <em>within_size=5</em>, <em>normal_corr=False</em>, <em>PBC=False</em>, <em>cell_center=None</em>, <em>cell_size=None</em><big>)</big><a class="reference internal" href="_modules/surface_alg.html#CalculateCurvature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#surface_alg.CalculateCurvature" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function calculates the principal curvatures k1 and k2 and their
+direction (principal directions e1 and e2), as well as the gaussian
+and mean curvature for each atom in the entity and assigns them as FloatProp.
+Each atom should have a normal vector assigned to it beforehand, 
+as done by the CalculateNormals function.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="trajectory_utilities.html" title="trajectory_utilities module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="sequence_alg.html" title="sequence_alg module"
+             >previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

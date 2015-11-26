@@ -1,0 +1,154 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>entity_alg module &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="index.html" />
+    <link rel="next" title="file_utilities module" href="file_utilities.html" />
+    <link rel="prev" title="density_alg module" href="density_alg.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="file_utilities.html" title="file_utilities module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="density_alg.html" title="density_alg module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="density_alg.html"
+                        title="previous chapter">density_alg module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="file_utilities.html"
+                        title="next chapter">file_utilities module</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/entity_alg.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="entity-alg-module">
+<h1>entity_alg module<a class="headerlink" href="#entity-alg-module" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-entity_alg"></span><p><em>Code author: Niklaus Johner &lt;<a class="reference external" href="mailto:niklaus&#46;johner&#37;&#52;&#48;a3&#46;epfl&#46;ch">niklaus<span>&#46;</span>johner<span>&#64;</span>a3<span>&#46;</span>epfl<span>&#46;</span>ch</a>&gt;</em></p>
+<p>This module contains basic functions to work with structures (Entities and EntityViews).
+It notably functions to generate the biounit or crystal packing from a pdb file</p>
+<dl class="function">
+<dt id="entity_alg.FindClosestAtom">
+<tt class="descname">FindClosestAtom</tt><big>(</big><em>v1</em>, <em>v2</em><big>)</big><a class="reference internal" href="_modules/entity_alg.html#FindClosestAtom"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#entity_alg.FindClosestAtom" title="Permalink to this definition">¶</a></dt>
+<dd><p>v1 and v2 need to be an Entity, EntityView, ChainView, ResidueView, ChainHandle or ResidueHandle
+Returns the atom of v2 that is closest to v1 (minimal distance to any atom in v1).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="entity_alg.CreateEntityFromVec3List">
+<tt class="descname">CreateEntityFromVec3List</tt><big>(</big><em>pos_list</em>, <em>chain_name='A'</em>, <em>rname='b'</em>, <em>aname_base='C'</em>, <em>atom_element='C'</em><big>)</big><a class="reference internal" href="_modules/entity_alg.html#CreateEntityFromVec3List"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#entity_alg.CreateEntityFromVec3List" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an entity with atoms positioned according to vectors in the pos_list (Vec3List).
+All atoms are generated in a single chain, with 100 atoms per residue.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="entity_alg.AssignFloatPropToEntityResidues">
+<tt class="descname">AssignFloatPropToEntityResidues</tt><big>(</big><em>eh</em>, <em>fl</em>, <em>key</em><big>)</big><a class="reference internal" href="_modules/entity_alg.html#AssignFloatPropToEntityResidues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#entity_alg.AssignFloatPropToEntityResidues" title="Permalink to this definition">¶</a></dt>
+<dd><p>That function will not work if the atom indices are not the same as the order of atoms in the entity</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="entity_alg.AssignFloatPropToEntity">
+<tt class="descname">AssignFloatPropToEntity</tt><big>(</big><em>eh</em>, <em>fl</em>, <em>key</em>, <em>aindex_list=None</em><big>)</big><a class="reference internal" href="_modules/entity_alg.html#AssignFloatPropToEntity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#entity_alg.AssignFloatPropToEntity" title="Permalink to this definition">¶</a></dt>
+<dd><p>That function will not work if the atom indices are not the same as the order of atoms in the entity</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="entity_alg.GenerateCrystalPackingFromPDB">
+<tt class="descname">GenerateCrystalPackingFromPDB</tt><big>(</big><em>pdb_filename</em>, <em>distance_cutoff=20</em>, <em>vec_search_level=4</em>, <em>vec_search_cutoff=None</em>, <em>superpose_sele='aname=CA'</em><big>)</big><a class="reference internal" href="_modules/entity_alg.html#GenerateCrystalPackingFromPDB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#entity_alg.GenerateCrystalPackingFromPDB" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function loads a pdb and generates the crystal packing around the initial structure, including
+all structures within <em>distance_cutoff</em> of the initial structure.
+ref_sele is used to test if a certain structure coming form symmetry operations and translations
+is already present in the crystal packing being generated.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="file_utilities.html" title="file_utilities module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="density_alg.html" title="density_alg module"
+             >previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

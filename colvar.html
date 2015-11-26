@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>colvar module &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="index.html" />
+    <link rel="next" title="density_alg module" href="density_alg.html" />
+    <link rel="prev" title="coarse_grained_conop module" href="coarse_grained_conop.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="density_alg.html" title="density_alg module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="coarse_grained_conop.html" title="coarse_grained_conop module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="coarse_grained_conop.html"
+                        title="previous chapter">coarse_grained_conop module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="density_alg.html"
+                        title="next chapter">density_alg module</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/colvar.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-colvar">
+<span id="colvar-module"></span><h1>colvar module<a class="headerlink" href="#module-colvar" title="Permalink to this headline">¶</a></h1>
+<p><em>Code author: Niklaus Johner &lt;<a class="reference external" href="mailto:niklaus&#46;johner&#37;&#52;&#48;a3&#46;epfl&#46;ch">niklaus<span>&#46;</span>johner<span>&#64;</span>a3<span>&#46;</span>epfl<span>&#46;</span>ch</a>&gt;</em></p>
+<p>This module is a collection of functions to work in conjunction with namd&#8217;s colvar module.
+It mainly contains functions to read som of the files output by namd.</p>
+<dl class="function">
+<dt id="colvar.ReadNamdSMDFile">
+<tt class="descname">ReadNamdSMDFile</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/colvar.html#ReadNamdSMDFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#colvar.ReadNamdSMDFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function opens and reads a namd ouput file
+It looks for the SMD ouput and returns it in a dictionary
+with keys [&#8216;timestep&#8217;,&#8217;cm_pos&#8217;,&#8217;force&#8217;]</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="colvar.IntegrateFloatList">
+<tt class="descname">IntegrateFloatList</tt><big>(</big><em>x_list</em>, <em>y_list</em>, <em>lim=-1</em><big>)</big><a class="reference internal" href="_modules/colvar.html#IntegrateFloatList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#colvar.IntegrateFloatList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to integrate a FloatList y over x
+from x_list[0] to x_list[lim]</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="colvar.ReadColvarFile">
+<tt class="descname">ReadColvarFile</tt><big>(</big><em>filename</em>, <em>skip_first_n=1</em><big>)</big><a class="reference internal" href="_modules/colvar.html#ReadColvarFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#colvar.ReadColvarFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function opens and reads a namd colvar trajectory file
+It searches for the fields in the first line of the file and then generates
+a dictionary with these fields as keys</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="density_alg.html" title="density_alg module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="coarse_grained_conop.html" title="coarse_grained_conop module"
+             >previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

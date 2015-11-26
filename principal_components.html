@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>principal_components module &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="index.html" />
+    <link rel="next" title="secondary_structure module" href="secondary_structure.html" />
+    <link rel="prev" title="plot module" href="plot.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="secondary_structure.html" title="secondary_structure module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="plot.html" title="plot module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="plot.html"
+                        title="previous chapter">plot module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="secondary_structure.html"
+                        title="next chapter">secondary_structure module</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/principal_components.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-principal_components">
+<span id="principal-components-module"></span><h1>principal_components module<a class="headerlink" href="#module-principal_components" title="Permalink to this headline">¶</a></h1>
+<p>This module contains functions for principal components analysis. 
+It can be used to calculate principal components from a trajectory,
+graphically display the principal components, reconstruct a trajectory from
+a chosen set of components and so on.</p>
+<dl class="function">
+<dt id="principal_components.RepresentPrincipalComponentOnStruccture">
+<tt class="descname">RepresentPrincipalComponentOnStruccture</tt><big>(</big><em>ev</em>, <em>U</em>, <em>pc_index=0</em>, <em>go_name='pc0'</em>, <em>color=gfx.RGBA(1</em>, <em>0</em>, <em>0</em>, <em>1) gfx.HSV(0</em>, <em>1</em>, <em>1)</em><big>)</big><a class="reference internal" href="_modules/principal_components.html#RepresentPrincipalComponentOnStruccture"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#principal_components.RepresentPrincipalComponentOnStruccture" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="principal_components.ProjectOnPrincipalComponentsAtomWise">
+<tt class="descname">ProjectOnPrincipalComponentsAtomWise</tt><big>(</big><em>t</em>, <em>ev</em>, <em>first=0</em>, <em>last=-1</em>, <em>stride=1</em><big>)</big><a class="reference internal" href="_modules/principal_components.html#ProjectOnPrincipalComponentsAtomWise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#principal_components.ProjectOnPrincipalComponentsAtomWise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the principal components for each atom and projects the trajectory
+on them.
+It returns:</p>
+<blockquote>
+<div><ul class="simple">
+<li>The list of principal axes in which the ith element is a 3x3 matrix</li>
+</ul>
+<p>with in its columns the principal axes for the ith atom in ev.
+- The positions projected on the principal axes</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="principal_components.ProjectOnPrincipalComponent">
+<tt class="descname">ProjectOnPrincipalComponent</tt><big>(</big><em>atom_pos_list</em>, <em>U</em>, <em>pc_index=0</em>, <em>first=0</em>, <em>last=-1</em><big>)</big><a class="reference internal" href="_modules/principal_components.html#ProjectOnPrincipalComponent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#principal_components.ProjectOnPrincipalComponent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="principal_components.ReconstructTrajFromPrincipalComponents">
+<tt class="descname">ReconstructTrajFromPrincipalComponents</tt><big>(</big><em>ev, U, S, V, mean_atom_pos, pc_indices=[0, 1]</em><big>)</big><a class="reference internal" href="_modules/principal_components.html#ReconstructTrajFromPrincipalComponents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#principal_components.ReconstructTrajFromPrincipalComponents" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="principal_components.CalculatePrincipalComponents">
+<tt class="descname">CalculatePrincipalComponents</tt><big>(</big><em>t</em>, <em>pc_sele</em>, <em>superposition_sele=None</em>, <em>first=0</em>, <em>last=-1</em>, <em>stride=1</em><big>)</big><a class="reference internal" href="_modules/principal_components.html#CalculatePrincipalComponents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#principal_components.CalculatePrincipalComponents" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function calculates the principal components for the positions
+of the N atoms in ev, i.e the 3N eigenvalues and eigenvectors.
+Specifically it performs an svd decomposition A=U*S*V
+Return: a tuple (U,S,V,mean_atom_pos,atom_pos_list) containing:</p>
+<blockquote>
+<div>-The unitary matrix U containing the eigenvectors in its columns
+-The singular values S, so that S*S are the eigenvalues
+-The unitary matrix V
+-A list of the average positions for each atoms in pc_sele
+-A list with all the positions for each atom and each frame.</div></blockquote>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="secondary_structure.html" title="secondary_structure module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="plot.html" title="plot module"
+             >previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

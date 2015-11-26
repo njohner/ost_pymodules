@@ -1,0 +1,335 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>trajectory_utilities module &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="index.html" />
+    <link rel="next" title="Installation" href="installation.html" />
+    <link rel="prev" title="surface_alg module" href="surface_alg.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="surface_alg.html" title="surface_alg module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="surface_alg.html"
+                        title="previous chapter">surface_alg module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="installation.html"
+                        title="next chapter">Installation</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/trajectory_utilities.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-trajectory_utilities">
+<span id="trajectory-utilities-module"></span><h1>trajectory_utilities module<a class="headerlink" href="#module-trajectory_utilities" title="Permalink to this headline">¶</a></h1>
+<p>This module contains functions for filtering and building trajectories</p>
+<dl class="function">
+<dt id="trajectory_utilities.CalculateInterfaceFromTraj">
+<tt class="descname">CalculateInterfaceFromTraj</tt><big>(</big><em>t</em>, <em>waters</em>, <em>lipids</em>, <em>PBC=False</em>, <em>cell_center=None</em>, <em>cell_size=None</em>, <em>low_pass_filter_length=10</em>, <em>density_cutoff=None</em>, <em>outdir=''</em>, <em>outname=''</em>, <em>stride=1</em><big>)</big><a class="reference internal" href="_modules/trajectory_utilities.html#CalculateInterfaceFromTraj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trajectory_utilities.CalculateInterfaceFromTraj" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="trajectory_utilities.CalculateGeneralizedCorrelations">
+<tt class="descname">CalculateGeneralizedCorrelations</tt><big>(</big><em>t</em>, <em>view</em>, <em>superposition_view</em><big>)</big><a class="reference internal" href="_modules/trajectory_utilities.html#CalculateGeneralizedCorrelations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trajectory_utilities.CalculateGeneralizedCorrelations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the generalized correlation coefficient between the N atoms in the view,
+as defined in: &#8220;Generalized Correlation for biomolecular dynamics&#8221;, O. F. Lange and H. Grubmuller,
+Protein: Structure, Function and Bioinformatics 62:1053-1061 (2006)
+If superposition_view is defined, the trajectory is first aligned.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="trajectory_utilities.CalculateMutualInformation">
+<tt class="descname">CalculateMutualInformation</tt><big>(</big><em>t</em>, <em>view</em>, <em>superposition_view=None</em><big>)</big><a class="reference internal" href="_modules/trajectory_utilities.html#CalculateMutualInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trajectory_utilities.CalculateMutualInformation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the mutual information between the N atoms in the view.
+If superposition_view is defined, the trajectory is first aligned.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="trajectory_utilities.CalculateCovariance">
+<tt class="descname">CalculateCovariance</tt><big>(</big><em>t</em>, <em>view</em>, <em>superposition_view=None</em><big>)</big><a class="reference internal" href="_modules/trajectory_utilities.html#CalculateCovariance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trajectory_utilities.CalculateCovariance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the covariance matrix C(3Nx3N) for the N atoms in the view.
+If superposition_view is defined, the trajectory is first aligned.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="trajectory_utilities.AverageMembraneThickness">
+<tt class="descname">AverageMembraneThickness</tt><big>(</big><em>t</em>, <em>upper</em>, <em>lower</em>, <em>step_size=2</em>, <em>z_midplane=None</em><big>)</big><a class="reference internal" href="_modules/trajectory_utilities.html#AverageMembraneThickness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trajectory_utilities.AverageMembraneThickness" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function creates a discrete mesh in the xy plane and calculates the average
+z position of the atoms in the upper and lower EntityViews over the trajectory t.
+Typically upper and lower contain the phosphate atoms of the lipids in the upper and
+lower leaflets of the membrane.
+It returns two Entities, representing these average positions in the upper and lower leaflets,
+as well as two matricies containing the same information.
+Each atom of the output entities is assigned a FloatProp &#8216;thickness&#8217;, 
+representing the local thickness of the membrane, another FloatProp &#8216;&#8217;
+&#8216;monolayer_thickness&#8217; representing the local thickness of the monolayer,
+an FloatProp &#8216;count&#8217; which is the number times that particular bin was sampled and
+a FloatProp &#8216;count_thickness&#8217; which is the min between the counts for this
+bin and the corresponding bin on the other leaflet.
+Relevant atoms for which the bin was sampled at least i times 
+can therefore be selected with eh_upper.Select(&#8216;gacount&gt;=i&#8217;)
+whereas relevant atoms for which the thickness was sampled at least i times 
+can therefore be selected with eh_upper.Select(&#8216;gacount_thickness&gt;=i&#8217;)
+Input:   -t          : CoordGroup, the trajectory</p>
+<blockquote>
+<div><table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-u<var>pper</var></span></kbd></td>
+<td>: EntityView, the upper membrane leaflet</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-l<var>ower</var></span></kbd></td>
+<td>: EntityView, the lower membrane leaflet</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-s<var>tep_size</var></span></kbd></td>
+<td>: size of the bins in xy</td></tr>
+</tbody>
+</table>
+<p>-z_midplane : average height of the midplane</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>Output:  -eh_upper <span class="classifier-delimiter">:</span> <span class="classifier">EntityHandle, average membrane upper leaflet</span></dt>
+<dd><table class="first last docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-e<var>h_lower</var></span></kbd></td>
+<td>: EntityHandle, average membrane lower leaflet</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-z<var>u</var></span></kbd></td>
+<td>: numpy matrix, binned average z positions upper leaflet</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-z<var>l</var></span></kbd></td>
+<td>: numpy matrix, binned average z positions lower leaflet</td></tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="trajectory_utilities.SmoothAverageMembrane">
+<tt class="descname">SmoothAverageMembrane</tt><big>(</big><em>eh_upper</em>, <em>eh_lower</em>, <em>zu</em>, <em>zl</em>, <em>smooth_sigma=2.0</em>, <em>smooth_sampling_cutoff=5</em>, <em>z_midplane=None</em><big>)</big><a class="reference internal" href="_modules/trajectory_utilities.html#SmoothAverageMembrane"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trajectory_utilities.SmoothAverageMembrane" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function smoothes a membane surface obtained from the
+AverageMembraneThickness function.
+Input:   -eh_upper   : EntityHandle, average membrane upper leaflet</p>
+<blockquote>
+<div><table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-e<var>h_lower</var></span></kbd></td>
+<td>: EntityHandle, average membrane lower leaflet</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-z<var>u</var></span></kbd></td>
+<td>: numpy matrix, binned average z positions upper leaflet</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-z<var>l</var></span></kbd></td>
+<td>: numpy matrix, binned average z positions lower leaflet</td></tr>
+</tbody>
+</table>
+<p>-smooth_sigma: standard deviation of the gaussian used for smoothing
+-smooth_sampling_cutoff: atoms with FloatProp &#8216;count&#8217; smaller than this</p>
+<blockquote>
+<div>do not participate in smoothing of their neighboring atoms</div></blockquote>
+<p>-z_midplane : average height of the midplane</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>Output:  -eh_upper_smooth <span class="classifier-delimiter">:</span> <span class="classifier">EntityHandle, smoothed average membrane upper leaflet</span></dt>
+<dd>-eh_lower_smooth : EntityHandle, smoothed average membrane lower leaflet</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="trajectory_utilities.WrapFloatList">
+<tt class="descname">WrapFloatList</tt><big>(</big><em>fl</em>, <em>center</em>, <em>period</em><big>)</big><a class="reference internal" href="_modules/trajectory_utilities.html#WrapFloatList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trajectory_utilities.WrapFloatList" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="trajectory_utilities.GetCellVectorsList">
+<tt class="descname">GetCellVectorsList</tt><big>(</big><em>t</em><big>)</big><a class="reference internal" href="_modules/trajectory_utilities.html#GetCellVectorsList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trajectory_utilities.GetCellVectorsList" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="trajectory_utilities.GetCellAnglesList">
+<tt class="descname">GetCellAnglesList</tt><big>(</big><em>t</em><big>)</big><a class="reference internal" href="_modules/trajectory_utilities.html#GetCellAnglesList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trajectory_utilities.GetCellAnglesList" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="trajectory_utilities.GetCellSizeList">
+<tt class="descname">GetCellSizeList</tt><big>(</big><em>t</em><big>)</big><a class="reference internal" href="_modules/trajectory_utilities.html#GetCellSizeList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trajectory_utilities.GetCellSizeList" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="trajectory_utilities.CreatePerResidueCMTrajectory">
+<tt class="descname">CreatePerResidueCMTrajectory</tt><big>(</big><em>eh</em>, <em>t</em>, <em>cm_sele_list=[]</em>, <em>atom_name_list=[]</em>, <em>superposition_view=None</em><big>)</big><a class="reference internal" href="_modules/trajectory_utilities.html#CreatePerResidueCMTrajectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trajectory_utilities.CreatePerResidueCMTrajectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function will generate a trajectory containing for each residue the center of masse
+for each selection in the selection list. The atoms corresponding to these COMs will be named
+according to the atom_name_list.
+If provided the trajectory will first be aligned on the superposition_view (has to be from the same entity).
+As default it gives one CM for the backbone heavy atoms and one for the sidechain heavy atoms,
+except for GLY and PRO for which only the backbone is used.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="trajectory_utilities.ExtendTrajectoryToNeighboringUnitCells">
+<tt class="descname">ExtendTrajectoryToNeighboringUnitCells</tt><big>(</big><em>t</em>, <em>extension_directions</em>, <em>cell_size_mult_factors=(1</em>, <em>1</em>, <em>1)</em><big>)</big><a class="reference internal" href="_modules/trajectory_utilities.html#ExtendTrajectoryToNeighboringUnitCells"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trajectory_utilities.ExtendTrajectoryToNeighboringUnitCells" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is used to extend a trajectory to its neighboring unit cells.
+Specifically, it will copy and translate the simulation box for each frame <em>i</em> in each of the directions
+given by <strong>extension_directions</strong>. For example if <strong>extension_directions=[[1,0,0],[0,1,0],[1,1,0]]</strong>
+it will extend the simulation in the x, y and x+y directions.
+It will also reset the cell size for each frame by multiplying it by <strong>cell_size_mult_factors</strong>.
+Specifically, the unit cell is specified by the length of the 3 unit cell vectors and 3 angles.
+So for each frame <em>i</em>, the size of each of the unit cell vectors will be multiplied by the corresponding
+component of <strong>cell_size_mult_factors[i]</strong>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>t</strong> (<tt class="xref py py-class docutils literal"><span class="pre">CoordGroupHandle</span></tt>) &#8211; the trajectory</li>
+<li><strong>extension_directions</strong> (<tt class="xref py py-class docutils literal"><span class="pre">list</span></tt> (<tt class="xref py py-class docutils literal"><span class="pre">list</span></tt>)) &#8211; The list of lists used to define the directions in which the 
+unit cell should be copied.</li>
+<li><strong>cell_size_mult_factors</strong> (<tt class="xref py py-class docutils literal"><span class="pre">Vec3</span></tt>) &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="trajectory_utilities.ExtendTrajectory">
+<tt class="descname">ExtendTrajectory</tt><big>(</big><em>t</em>, <em>vecs_to_neighbor_ucells_list</em>, <em>cell_size_mult_factors=(1</em>, <em>1</em>, <em>1)</em><big>)</big><a class="reference internal" href="_modules/trajectory_utilities.html#ExtendTrajectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trajectory_utilities.ExtendTrajectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is used to extend a trajectory to its neighboring unit cells.
+Specifically, it will copy and translate the simulation box for each frame <em>i</em> by each
+vector in <strong>vecs_to_neighbor_ucells_list[i]</strong>. 
+It will also reset the cell size for each frame by multiplying it by <strong>cell_size_mult_factors</strong>.
+Specifically, the unit cell is specified by the length of the 3 unit cell vectors and 3 angles.
+So for each frame <em>i</em>, the size of each of the unit cell vectors will be multiplied by the corresponding
+component of <strong>cell_size_mult_factors[i]</strong>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>t</strong> (<tt class="xref py py-class docutils literal"><span class="pre">CoordGroupHandle</span></tt>) &#8211; the trajectory</li>
+<li><strong>vecs_to_neighbor_ucells_list</strong> (<tt class="xref py py-class docutils literal"><span class="pre">list</span></tt> (<tt class="xref py py-class docutils literal"><span class="pre">Vec3List</span></tt>)) &#8211; The list of <tt class="xref py py-class docutils literal"><span class="pre">Vec3List</span></tt> used to translate the 
+unit cell. This list should contain one <tt class="xref py py-class docutils literal"><span class="pre">Vec3List</span></tt> for each frame in the trajectory.</li>
+<li><strong>cell_size_mult_factors</strong> (<tt class="xref py py-class docutils literal"><span class="pre">Vec3</span></tt>) &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="trajectory_utilities.TranslateFrames">
+<tt class="descname">TranslateFrames</tt><big>(</big><em>t</em>, <em>trans_list</em><big>)</big><a class="reference internal" href="_modules/trajectory_utilities.html#TranslateFrames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trajectory_utilities.TranslateFrames" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function translates each frame in the trajectory t by the corresponding Vec3
+in the trans_list. The transformation is done in place, so that the provided trajectory
+gets transformed.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="trajectory_utilities.WrapTrajectoryInPeriodicCell">
+<tt class="descname">WrapTrajectoryInPeriodicCell</tt><big>(</big><em>t</em>, <em>centers</em>, <em>cell_sizes=None</em>, <em>cell_angles=None</em>, <em>group_res=False</em>, <em>follow_bonds=False</em><big>)</big><a class="reference internal" href="_modules/trajectory_utilities.html#WrapTrajectoryInPeriodicCell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trajectory_utilities.WrapTrajectoryInPeriodicCell" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="surface_alg.html" title="surface_alg module"
+             >previous</a> |</li>
+        <li><a href="index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
