@@ -617,6 +617,7 @@ def ExtractTiltAndSplayModuli(tilt_dict,splay_dict,lipid_area,outdir,nbins=100):
   The function will calculate one tilt modulus for each lipid species and one splay modulus for each pair
   of lipid species. It will then combine these to calculate the overall tilt modulus and splay modulus (bending rigidity).
   More details about this procedure can be found in ref. [2]_
+  The function returns a dictionary containing the tilt and splay moduli with their uncertainties as tuples (k,delta_k).
 
   :param tilt_dict: A dictionary of lipid tilts as returned by the *AnalyzeLipidTiltAndSplay* function.
   :param splay_dict: A dictionary of lipid splays as returned by the *AnalyzeLipidTiltAndSplay* function.
@@ -629,9 +630,14 @@ def ExtractTiltAndSplayModuli(tilt_dict,splay_dict,lipid_area,outdir,nbins=100):
   :type splay_dict: :class:`dict`
   :type outdir: :class:`str`
   :type nbins: :class:`int`
-  """
 
+  :return: a dictionary containing the tilt and splay moduli with their uncertainties as tuples (k,delta_k).
+  :rtype: :class:`dict`
+
+  """
+  kdict={"tilt":{},"splay":{}}
   for sele_name in tilt_dict.keys():
+    kdict["tilt"][sele_name]={}
     outfile=open(os.path.join(outdir,sele_name+'_tilt_constants.txt'),'w')
     k_list=FloatList()
     deltak_list=FloatList()
@@ -646,6 +652,7 @@ def ExtractTiltAndSplayModuli(tilt_dict,splay_dict,lipid_area,outdir,nbins=100):
       k_list.append(k)
       deltak_list.append(dk)
       nl_list.append(len(tilt_list))
+      kdict["tilt"][sele_name][lipid_name]=(k,dk)
     ntot=npy.sum(nl_list)
     k=npy.sum([ni/ki for ni,ki in zip(nl_list,k_list)])/ntot
     k=1./k
@@ -653,9 +660,11 @@ def ExtractTiltAndSplayModuli(tilt_dict,splay_dict,lipid_area,outdir,nbins=100):
     dk=npy.sqrt(dk)
     outfile.write(' '.join(['agregated',str(round(k,1)),str(round(dk,1))])+'\n')
     outfile.close()
+    kdict["tilt"][sele_name]['agregated']=(k,dk)
     for i in range(2*len(k_list)):plt.close()
 
   for sele_name in splay_dict.keys():
+    kdict["splay"][sele_name]={}
     outfile=open(os.path.join(outdir,sele_name+'_splay_constants.txt'),'w')
     k_list=FloatList()
     nl_list=FloatList()
@@ -669,6 +678,7 @@ def ExtractTiltAndSplayModuli(tilt_dict,splay_dict,lipid_area,outdir,nbins=100):
       k_list.append(k)
       deltak_list.append(dk)
       nl_list.append(len(splay_list))
+      kdict["splay"][sele_name][key]=(k,dk)
     ntot=npy.sum(nl_list)
     k=npy.sum([ni/ki for ni,ki in zip(nl_list,k_list)])/ntot
     k=1./k
@@ -676,7 +686,9 @@ def ExtractTiltAndSplayModuli(tilt_dict,splay_dict,lipid_area,outdir,nbins=100):
     dk=npy.sqrt(dk)
     outfile.write(' '.join(['agregated',str(round(k,1)),str(round(dk,1))])+'\n')
     outfile.close()
+    kdict["splay"][sele_name]['agregated']=(k,dk)
     for i in range(2*len(k_list)):plt.close()
+    return kdict
 
 def FitSplayDistribution(splay_list,lipid_area,nbins=100,x_range=None,outdir='',filename_basis='',title_complement=''):  
   """
