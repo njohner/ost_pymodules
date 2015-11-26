@@ -130,7 +130,7 @@ nbins=100
 lipid_area=49.5
 
 #Now we extract the constants
-lipid_analysis.ExtractTiltAndSplayModuli(lipid_tilt_dict,splay_dict,lipid_area,outdir,nbins)
+k_dict=lipid_analysis.ExtractTiltAndSplayModuli(lipid_tilt_dict,splay_dict,lipid_area,outdir,nbins)
 
 
 
