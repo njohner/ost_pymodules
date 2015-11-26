@@ -1,0 +1,267 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pbc_utilities &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pbc_utilities</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. codeauthor:: Niklaus Johner &lt;niklaus.johner@a3.epfl.ch&gt;</span>
+
+<span class="sd">This module contains some functions to work with periodic boundary conditions.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__all__</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;ProjectVectorOnUnitCellVectors&#39;</span><span class="p">,</span><span class="s">&#39;GetUCellVectorSizeAndAngles&#39;</span><span class="p">,</span><span class="s">&#39;FindWithinWithPBC&#39;</span><span class="p">,</span><span class="s">&#39;FindWithinWithNonOrthogonalPBC&#39;</span><span class="p">,</span>\
+         <span class="s">&#39;ExtendEntityToNeighboringUnitCells&#39;</span><span class="p">,</span><span class="s">&#39;ExtendEntityWithPBC&#39;</span><span class="p">,</span><span class="s">&#39;BuildUnitCellVectors&#39;</span><span class="p">,</span><span class="s">&#39;VectorsToNeighboringUnitCells&#39;</span><span class="p">,</span><span class="s">&#39;GenerateSearchVectors&#39;</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">ost</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;/work/python_modules&#39;</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">file_utilities</span>
+
+
+
+<div class="viewcode-block" id="ProjectVectorOnUnitCellVectors"><a class="viewcode-back" href="../pbc_utilities.html#pbc_utilities.ProjectVectorOnUnitCellVectors">[docs]</a><span class="k">def</span> <span class="nf">ProjectVectorOnUnitCellVectors</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">ucell_vecs</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function project the vector v on the unit cell vectors</span>
+<span class="sd">  ucell_vecs, of which the first vector is assumed to be along x</span>
+<span class="sd">  and the second in the xy plane.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">v_projected</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">()</span>
+  <span class="n">v_projected</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">=</span><span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+  <span class="n">v_projected</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">v_projected</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+  <span class="n">v_projected</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">v_projected</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">v_projected</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+  <span class="k">return</span> <span class="n">v_projected</span>
+  </div>
+<div class="viewcode-block" id="GetUCellVectorSizeAndAngles"><a class="viewcode-back" href="../pbc_utilities.html#pbc_utilities.GetUCellVectorSizeAndAngles">[docs]</a><span class="k">def</span> <span class="nf">GetUCellVectorSizeAndAngles</span><span class="p">(</span><span class="n">ucell_vecs</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Returns the length of the unit cell vectors and the angles alpha, beta and gamma</span>
+<span class="sd">  The first vector has to be along x and the second in the xy plane.</span>
+<span class="sd">  First angle is between v1 and v2, the second one between v1 and v3 and the third one between v2 and v3.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">,</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">,</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">]):</span>
+    <span class="k">print</span> <span class="s">&#39;Problem with unit cell vectors, first vector has to be along x and second in the xy plane&#39;</span>
+    <span class="k">return</span> <span class="bp">None</span>
+  <span class="n">ucell_size</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span><span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+  <span class="n">ucell_angles</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Angle</span><span class="p">(</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span><span class="n">geom</span><span class="o">.</span><span class="n">Angle</span><span class="p">(</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span><span class="n">geom</span><span class="o">.</span><span class="n">Angle</span><span class="p">(</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+  <span class="k">return</span><span class="p">(</span><span class="n">ucell_size</span><span class="p">,</span><span class="n">ucell_angles</span><span class="p">)</span>
+  </div>
+<div class="viewcode-block" id="FindWithinWithPBC"><a class="viewcode-back" href="../pbc_utilities.html#pbc_utilities.FindWithinWithPBC">[docs]</a><span class="k">def</span> <span class="nf">FindWithinWithPBC</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="n">pos</span><span class="p">,</span><span class="n">radius</span><span class="p">,</span><span class="n">cell_center</span><span class="p">,</span><span class="n">cell_size</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Returns a view containing all the atoms within *radius* of a point</span>
+<span class="sd">  *pos* (Vec3), using periodic boundary conditions (orthogonal unit cell).</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">alist</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">FindWithin</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span><span class="n">radius</span><span class="p">)</span>
+  <span class="n">within</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">CreateViewFromAtomList</span><span class="p">(</span><span class="n">alist</span><span class="p">)</span>
+  <span class="n">vl</span><span class="o">=</span><span class="n">VectorsToNeighboringUnitCells</span><span class="p">(</span><span class="n">cell_size</span><span class="p">)</span>
+  <span class="n">vl2</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3List</span><span class="p">()</span>
+  <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">vl</span><span class="p">:</span>
+    <span class="n">d</span><span class="o">=</span><span class="n">cell_center</span><span class="o">+</span><span class="n">v</span><span class="o">-</span><span class="n">pos</span>
+    <span class="k">if</span> <span class="nb">all</span> <span class="p">(</span><span class="n">di</span><span class="o">&lt;</span><span class="n">csi</span><span class="o">/</span><span class="mf">2.0</span><span class="o">+</span><span class="n">radius</span> <span class="k">for</span> <span class="n">di</span><span class="p">,</span><span class="n">csi</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">data</span><span class="p">,</span><span class="n">cell_size</span><span class="o">.</span><span class="n">data</span><span class="p">)):</span>
+      <span class="n">vl2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">vl2</span><span class="p">:</span>
+    <span class="n">p</span><span class="o">=</span><span class="n">pos</span><span class="o">+</span><span class="n">v</span>
+    <span class="n">alist</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">eh</span><span class="o">.</span><span class="n">FindWithin</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="n">radius</span><span class="p">))</span>
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">alist</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+    <span class="n">within</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">CreateViewFromAtomList</span><span class="p">(</span><span class="n">alist</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">within</span>
+  <span class="k">else</span><span class="p">:</span><span class="k">return</span> <span class="n">eh</span><span class="o">.</span><span class="n">CreateEmptyView</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="FindWithinWithNonOrthogonalPBC"><a class="viewcode-back" href="../pbc_utilities.html#pbc_utilities.FindWithinWithNonOrthogonalPBC">[docs]</a><span class="k">def</span> <span class="nf">FindWithinWithNonOrthogonalPBC</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="n">pos</span><span class="p">,</span><span class="n">radius</span><span class="p">,</span><span class="n">ucell_vecs</span><span class="p">,</span><span class="n">vecs_to_neighbor_ucells</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Returns a view containing all the atoms within *radius* of a point</span>
+<span class="sd">  *pos* (Vec3), using periodic boundary conditions (orthogonal and non-orthogonal unit cell).</span>
+<span class="sd">  By default it searches in all neighboring unit cells (first shell of neighboring unit cells),</span>
+<span class="sd">  except if a list of vectors to the neighboring unit cells in which to search is passed.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">alist</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">FindWithin</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span><span class="n">radius</span><span class="p">)</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">vecs_to_neighbor_ucells</span><span class="p">:</span><span class="n">vecs_to_neighbor_ucells</span><span class="o">=</span><span class="n">VectorsToNeighboringUnitCells</span><span class="p">(</span><span class="n">ucell_vecs</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">vecs_to_neighbor_ucells</span><span class="p">:</span><span class="n">alist</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">eh</span><span class="o">.</span><span class="n">FindWithin</span><span class="p">(</span><span class="n">pos</span><span class="o">+</span><span class="n">v</span><span class="p">,</span><span class="n">radius</span><span class="p">))</span>
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">alist</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+    <span class="n">within</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">CreateViewFromAtomList</span><span class="p">(</span><span class="n">alist</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">within</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span><span class="k">return</span> <span class="n">eh</span><span class="o">.</span><span class="n">CreateEmptyView</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ExtendEntityToNeighboringUnitCells"><a class="viewcode-back" href="../pbc_utilities.html#pbc_utilities.ExtendEntityToNeighboringUnitCells">[docs]</a><span class="k">def</span> <span class="nf">ExtendEntityToNeighboringUnitCells</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="n">vecs_to_neighbor_ucells</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Extends an Entity to surrounding unit cells by replicating it and translating</span>
+<span class="sd">  it for each vector in vecs_to_neighbor_ucells. </span>
+<span class="sd">  For each replica the chains will have the same name as in the original Entity followed by a number</span>
+<span class="sd">  corresponding to the index of the vector used for the translation (starting at 1). </span>
+<span class="sd">  The translations can be obtained for example from the function VectorsToNeighboringUnitCells().</span>
+<span class="sd">  </span>
+<span class="sd">  :param eh: The *Entity* or *EntityView* to be extended</span>
+<span class="sd">  :param vecs_to_neighbor_ucells: List of translations used to extend the entity.</span>
+
+<span class="sd">  :type eh: :class:`~ost.mol.EntityView`</span>
+<span class="sd">  :type vecs_to_neighbor_ucells: :class:`~ost.geom.Vec3List`</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">eh</span><span class="p">)</span><span class="o">==</span><span class="n">mol</span><span class="o">.</span><span class="n">EntityView</span><span class="p">:</span><span class="n">eh</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">CreateEntityFromView</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+  <span class="n">eh_extended</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">Copy</span><span class="p">()</span>
+  <span class="n">eh_t</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">Copy</span><span class="p">()</span>
+  <span class="n">edi</span><span class="o">=</span><span class="n">eh_t</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">()</span>
+  <span class="n">edi2</span><span class="o">=</span><span class="n">eh_extended</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">()</span>
+  <span class="n">T</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Transform</span><span class="p">()</span>
+  <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">vecs_to_neighbor_ucells</span><span class="p">):</span>
+    <span class="n">T</span><span class="o">.</span><span class="n">SetTrans</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="n">edi</span><span class="o">.</span><span class="n">SetTransform</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">eh_t</span><span class="o">.</span><span class="n">chains</span><span class="p">:</span>
+      <span class="n">new_cname</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+      <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_cname</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">4</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;Added chain {0}. Chain name is longer than 4 caracters which will get cropped when saving as pdb.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_cname</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;You should rename initial chains to something shorter.&quot;</span>
+      <span class="n">edi2</span><span class="o">.</span><span class="n">InsertChain</span><span class="p">(</span><span class="n">new_cname</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">eh_extended</span>
+  
+</div>
+<div class="viewcode-block" id="ExtendEntityWithPBC"><a class="viewcode-back" href="../pbc_utilities.html#pbc_utilities.ExtendEntityWithPBC">[docs]</a><span class="k">def</span> <span class="nf">ExtendEntityWithPBC</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="n">cell_center</span><span class="p">,</span><span class="n">ucell_vecs</span><span class="p">,</span><span class="n">extension_size</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function extends an entity to its neighboring unit cell vectors,</span>
+<span class="sd">  by a size given by the *extension_size* in each direction.</span>
+<span class="sd">  It&#39;s slower than ExtendEntityToNeighboringUnitCells but allows</span>
+<span class="sd">  to extend to small parts of the surrounding unit cells.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">vl</span><span class="o">=</span><span class="n">VectorsToNeighboringUnitCells</span><span class="p">(</span><span class="n">ucell_vecs</span><span class="p">)</span>
+  <span class="n">eh_extended</span><span class="o">=</span><span class="n">ExtendEntityToNeighboringUnitCells</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="n">vl</span><span class="p">)</span>
+  <span class="n">pos_list</span><span class="o">=</span><span class="n">eh_extended</span><span class="o">.</span><span class="n">GetAtomPosList</span><span class="p">()</span>
+  <span class="p">(</span><span class="n">ucell_size</span><span class="p">,</span><span class="n">ucell_angles</span><span class="p">)</span><span class="o">=</span><span class="n">GetUCellVectorSizeAndAngles</span><span class="p">(</span><span class="n">ucell_vecs</span><span class="p">)</span>
+  <span class="n">ucell_size</span><span class="o">+=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">extension_size</span><span class="p">,</span><span class="n">extension_size</span><span class="p">,</span><span class="n">extension_size</span><span class="p">)</span>
+  <span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">WrapEntityInPeriodicCell</span><span class="p">(</span><span class="n">eh_extended</span><span class="p">,</span><span class="n">cell_center</span><span class="p">,</span><span class="n">ucell_size</span><span class="p">,</span><span class="n">ucell_angles</span><span class="p">)</span>
+  <span class="n">edi</span><span class="o">=</span><span class="n">eh_extended</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">BUFFERED_EDIT</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">p</span><span class="p">,</span><span class="n">a</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">pos_list</span><span class="p">,</span><span class="n">eh_extended</span><span class="o">.</span><span class="n">atoms</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">p</span><span class="o">==</span><span class="n">a</span><span class="o">.</span><span class="n">pos</span><span class="p">:</span><span class="n">edi</span><span class="o">.</span><span class="n">DeleteAtom</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">eh_extended</span><span class="o">.</span><span class="n">residues</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">GetAtomCount</span><span class="p">()</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span><span class="n">edi</span><span class="o">.</span><span class="n">DeleteResidue</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">eh_extended</span>
+    
+</div>
+<div class="viewcode-block" id="BuildUnitCellVectors"><a class="viewcode-back" href="../pbc_utilities.html#pbc_utilities.BuildUnitCellVectors">[docs]</a><span class="k">def</span> <span class="nf">BuildUnitCellVectors</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">alpha</span><span class="p">,</span><span class="n">beta</span><span class="p">,</span><span class="n">gamma</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Returns the unit cell vectors from their length and angles</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">v1</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">)</span>
+  <span class="n">v2</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">b</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">gamma</span><span class="p">),</span><span class="n">b</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">gamma</span><span class="p">),</span><span class="mf">0.0</span><span class="p">)</span>
+  <span class="n">v31</span><span class="o">=</span><span class="n">c</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
+  <span class="n">v32</span><span class="o">=</span><span class="n">c</span><span class="o">*</span><span class="p">((</span><span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span><span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">gamma</span><span class="p">))</span><span class="o">/</span><span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">gamma</span><span class="p">))</span>
+  <span class="n">v33</span><span class="o">=</span><span class="n">c</span><span class="o">*</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">),</span><span class="mf">2.0</span><span class="p">)</span><span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">beta</span><span class="p">),</span><span class="mf">2.0</span><span class="p">)</span><span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">gamma</span><span class="p">),</span><span class="mf">2.0</span><span class="p">)</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">gamma</span><span class="p">))</span><span class="o">/</span><span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">gamma</span><span class="p">))</span>
+  <span class="n">v3</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">v31</span><span class="p">,</span><span class="n">v32</span><span class="p">,</span><span class="n">v33</span><span class="p">)</span>
+  <span class="k">return</span> <span class="p">(</span><span class="n">v1</span><span class="p">,</span><span class="n">v2</span><span class="p">,</span><span class="n">v3</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="VectorsToNeighboringUnitCells"><a class="viewcode-back" href="../pbc_utilities.html#pbc_utilities.VectorsToNeighboringUnitCells">[docs]</a><span class="k">def</span> <span class="nf">VectorsToNeighboringUnitCells</span><span class="p">(</span><span class="n">ucell_vecs</span><span class="p">,</span><span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Returns the vectors to all the neighboring unit cells.</span>
+<span class="sd">  level=1 will the vectors to the 26 cells surrounding the central cell,</span>
+<span class="sd">  level=2 all the vectors to the first and second shell (124 vectors), etc.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">vl</span><span class="o">=</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">j</span><span class="o">*</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">k</span><span class="o">*</span><span class="n">ucell_vecs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">level</span><span class="p">,</span><span class="n">level</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">level</span><span class="p">,</span><span class="n">level</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">level</span><span class="p">,</span><span class="n">level</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+  <span class="n">vl</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">())</span>
+  <span class="k">return</span> <span class="n">vl</span>
+  </div>
+<div class="viewcode-block" id="GenerateSearchVectors"><a class="viewcode-back" href="../pbc_utilities.html#pbc_utilities.GenerateSearchVectors">[docs]</a><span class="k">def</span> <span class="nf">GenerateSearchVectors</span><span class="p">(</span><span class="n">v1</span><span class="p">,</span><span class="n">v2</span><span class="p">,</span><span class="n">v3</span><span class="p">,</span><span class="n">level</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">dist_cutoff</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">delta</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Returns all the vectors to unit cells within a certain distance of the central cell.</span>
+<span class="sd">  The distance is the minimal distance between the neighboring cell and the central cell.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">dist_cutoff</span><span class="p">:</span><span class="n">dist_cutoff</span><span class="o">=</span><span class="mf">0.5</span><span class="o">*</span><span class="nb">max</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">v1</span><span class="p">),</span><span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">v2</span><span class="p">),</span><span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">v3</span><span class="p">))</span>
+  <span class="n">corners</span><span class="o">=</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">v1</span><span class="o">+</span><span class="n">j</span><span class="o">*</span><span class="n">v2</span><span class="o">+</span><span class="n">k</span><span class="o">*</span><span class="n">v3</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">]]</span>
+  <span class="n">vl_b</span><span class="o">=</span><span class="p">[</span><span class="n">v1</span><span class="p">,</span><span class="n">v2</span><span class="p">,</span><span class="n">v3</span><span class="p">,</span><span class="o">-</span><span class="n">v1</span><span class="p">,</span><span class="o">-</span><span class="n">v2</span><span class="p">,</span><span class="o">-</span><span class="n">v3</span><span class="p">]</span>
+  <span class="n">vl</span><span class="o">=</span><span class="p">[</span><span class="n">el</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">vl_b</span><span class="p">]</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">level</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">v1</span> <span class="ow">in</span> <span class="n">vl_b</span><span class="p">:</span>
+      <span class="k">for</span> <span class="n">v2</span> <span class="ow">in</span> <span class="n">vl_b</span><span class="p">:</span>
+        <span class="n">v</span><span class="o">=</span><span class="n">v1</span><span class="o">+</span><span class="n">v2</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">([</span><span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">v</span><span class="o">+</span><span class="n">c1</span><span class="o">+</span><span class="n">c2</span><span class="p">)</span><span class="o">&gt;</span><span class="n">dist_cutoff</span> <span class="k">for</span> <span class="n">c1</span> <span class="ow">in</span> <span class="n">corners</span> <span class="k">for</span> <span class="n">c2</span> <span class="ow">in</span> <span class="n">corners</span><span class="p">]):</span><span class="k">continue</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">v3</span><span class="o">-</span><span class="n">v</span><span class="p">)</span><span class="o">&lt;</span><span class="n">delta</span> <span class="k">for</span> <span class="n">v3</span> <span class="ow">in</span> <span class="n">vl</span><span class="p">):</span><span class="k">continue</span>
+        <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v1</span><span class="o">+</span><span class="n">v2</span><span class="p">)</span>
+    <span class="n">vl_b</span><span class="o">=</span><span class="p">[</span><span class="n">el</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">vl</span><span class="p">]</span>
+  <span class="n">v</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+  <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">v3</span><span class="o">-</span><span class="n">v</span><span class="p">)</span><span class="o">&gt;</span><span class="n">delta</span> <span class="k">for</span> <span class="n">v3</span> <span class="ow">in</span> <span class="n">vl_b</span><span class="p">):</span><span class="n">vl_b</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+  <span class="k">return</span> <span class="n">vl_b</span>
+
+  </div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>colvar &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for colvar</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. codeauthor:: Niklaus Johner &lt;niklaus.johner@a3.epfl.ch&gt;</span>
+
+<span class="sd">This module is a collection of functions to work in conjunction with namd&#39;s colvar module.</span>
+<span class="sd">It mainly contains functions to read som of the files output by namd.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">ost</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">__all__</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;ReadNamdSMDFile&#39;</span><span class="p">,</span><span class="s">&#39;IntegrateFloatList&#39;</span><span class="p">,</span><span class="s">&#39;ReadColvarFile&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ReadNamdSMDFile"><a class="viewcode-back" href="../colvar.html#colvar.ReadNamdSMDFile">[docs]</a><span class="k">def</span> <span class="nf">ReadNamdSMDFile</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function opens and reads a namd ouput file</span>
+<span class="sd">  It looks for the SMD ouput and returns it in a dictionary</span>
+<span class="sd">  with keys [&#39;timestep&#39;,&#39;cm_pos&#39;,&#39;force&#39;]</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="nb">file</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+  <span class="nb">file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+  <span class="n">l</span><span class="o">=</span><span class="nb">file</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+  <span class="n">s</span><span class="o">=</span><span class="n">l</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+  <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;timestep&#39;</span><span class="p">,</span><span class="s">&#39;cm_pos&#39;</span><span class="p">,</span><span class="s">&#39;force&#39;</span><span class="p">]</span>
+  <span class="n">ts</span><span class="o">=</span><span class="n">FloatList</span><span class="p">()</span>
+  <span class="n">cm_pos</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3List</span><span class="p">()</span>
+  <span class="n">force</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3List</span><span class="p">()</span>
+  <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">file</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">l</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;SMD &#39;</span><span class="p">):</span><span class="k">continue</span>
+    <span class="n">s</span><span class="o">=</span><span class="n">l</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="n">ts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">cm_pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">4</span><span class="p">])))</span>
+    <span class="n">force</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">5</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">6</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">7</span><span class="p">])))</span>
+  <span class="n">out_vecs</span><span class="o">=</span><span class="p">[</span><span class="n">ts</span><span class="p">,</span><span class="n">cm_pos</span><span class="p">,</span><span class="n">force</span><span class="p">]</span>
+  <span class="n">out_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="k">for</span> <span class="n">f</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span><span class="n">out_vecs</span><span class="p">):</span>
+    <span class="n">out_dict</span><span class="p">[</span><span class="n">f</span><span class="p">]</span><span class="o">=</span><span class="n">v</span>
+  <span class="k">return</span> <span class="n">out_dict</span>
+
+</div>
+<div class="viewcode-block" id="IntegrateFloatList"><a class="viewcode-back" href="../colvar.html#colvar.IntegrateFloatList">[docs]</a><span class="k">def</span> <span class="nf">IntegrateFloatList</span><span class="p">(</span><span class="n">x_list</span><span class="p">,</span><span class="n">y_list</span><span class="p">,</span><span class="n">lim</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Function to integrate a FloatList y over x</span>
+<span class="sd">  from x_list[0] to x_list[lim]</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_list</span><span class="p">)</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">y_list</span><span class="p">):</span>
+    <span class="k">print</span> <span class="s">&#39;x and y don</span><span class="se">\&#39;</span><span class="s">t have the same length&#39;</span>
+    <span class="k">return</span>
+  <span class="k">if</span> <span class="n">lim</span><span class="o">==-</span><span class="mi">1</span><span class="p">:</span><span class="n">lim</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">x_list</span><span class="p">)</span>
+  <span class="nb">sum</span><span class="o">=</span><span class="mi">0</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lim</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">y</span><span class="o">=</span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">y_list</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">y_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="c">#y=y_list[i]</span>
+    <span class="n">dx</span><span class="o">=</span><span class="n">x_list</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">x_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="nb">sum</span><span class="o">+=</span><span class="n">dx</span><span class="o">*</span><span class="n">y</span>
+  <span class="k">return</span> <span class="nb">sum</span>
+</div>
+<div class="viewcode-block" id="ReadColvarFile"><a class="viewcode-back" href="../colvar.html#colvar.ReadColvarFile">[docs]</a><span class="k">def</span> <span class="nf">ReadColvarFile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">skip_first_n</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function opens and reads a namd colvar trajectory file</span>
+<span class="sd">  It searches for the fields in the first line of the file and then generates</span>
+<span class="sd">  a dictionary with these fields as keys</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="nb">file</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+  <span class="nb">file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+  <span class="n">l</span><span class="o">=</span><span class="nb">file</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+  <span class="n">s</span><span class="o">=</span><span class="n">l</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+  <span class="n">fields</span><span class="o">=</span><span class="p">[]</span>
+  <span class="n">out_vecs</span><span class="o">=</span><span class="p">[]</span>
+  <span class="c">#We skip the first line as it is for t=0, not in the trajectory</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">skip_first_n</span><span class="p">):</span>
+    <span class="nb">file</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+  <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+    <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">el</span><span class="p">)</span>
+    <span class="n">out_vecs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">FloatList</span><span class="p">())</span>
+  <span class="k">print</span> <span class="s">&#39;fields in the colvar file:&#39;</span><span class="p">,</span><span class="n">fields</span>
+  <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">file</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">l</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;#&#39;</span><span class="p">):</span><span class="k">continue</span>
+    <span class="n">s</span><span class="o">=</span><span class="n">l</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="n">v_list</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+      <span class="k">try</span><span class="p">:</span>
+        <span class="n">v_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">el</span><span class="p">))</span>
+      <span class="k">except</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&#39;error with line&#39;</span><span class="p">,</span><span class="n">l</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">el</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">v_list</span><span class="p">):</span>  
+      <span class="n">out_vecs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">el</span><span class="p">)</span>
+  <span class="n">out_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="k">for</span> <span class="n">f</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span><span class="n">out_vecs</span><span class="p">):</span>
+    <span class="n">out_dict</span><span class="p">[</span><span class="n">f</span><span class="p">]</span><span class="o">=</span><span class="n">v</span>
+  <span class="k">return</span> <span class="n">out_dict</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

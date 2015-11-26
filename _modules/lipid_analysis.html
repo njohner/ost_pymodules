@@ -1,0 +1,910 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>lipid_analysis &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for lipid_analysis</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. codeauthor:: Niklaus Johner &lt;niklaus.johner@a3.epfl.ch&gt;</span>
+
+<span class="sd">This module contains functions to determine lipid tilt and splay angles and</span>
+<span class="sd">Calculate the elastic properties of the membrane from there.</span>
+
+<span class="sd">If you use this code please cite ref. [1]_, where the method and its implementation </span>
+<span class="sd">is described in details or ref. [2]_, where the method is applied to complex lipidic phases.</span>
+
+<span class="sd">To ensure proper treatment of the periodic boundary conditions, the trajectory</span>
+<span class="sd">should first be extended to neighboring unit cells, and then aligned.</span>
+<span class="sd">The tilts and splays are then calculated only for the central cell, the others </span>
+<span class="sd">being only used to ascertain correct treatment of the PBCs.</span>
+
+<span class="sd">References</span>
+<span class="sd">-------------</span>
+<span class="sd">.. [1] Niklaus Johner, D. Harries and G. Khelashvili, </span>
+<span class="sd">       &quot;Implementation of a methodology for determining elastic properties of lipid assemblies from molecular dynamics simulations&quot;,</span>
+<span class="sd">       submitted to BMC bioinformatics (2015).</span>
+<span class="sd">.. [2] Niklaus Johner, D. Harries and G. Khelashvili,</span>
+<span class="sd">       &quot;Curvature and lipid packing modulate the elastic properties of lipid assemblies: comparing the HII and lamellar phases.&quot;</span>
+<span class="sd">       The Journal of Physical Chemistry Letters 5, no. 23 (2014), 4201-6.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="k">try</span><span class="p">:</span>
+  <span class="kn">from</span> <span class="nn">ost</span> <span class="kn">import</span> <span class="o">*</span>
+  <span class="kn">import</span> <span class="nn">time</span>
+  <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">npy</span>
+  <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">math</span>
+  <span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">curve_fit</span>
+  <span class="kn">import</span> <span class="nn">matplotlib</span> <span class="kn">as</span> <span class="nn">mpl</span>
+  <span class="k">try</span><span class="p">:</span><span class="n">gui</span><span class="o">.</span><span class="n">dng</span>
+  <span class="k">except</span><span class="p">:</span><span class="n">mpl</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s">&#39;Agg&#39;</span><span class="p">)</span>
+  <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+  <span class="kn">import</span> <span class="nn">entity_alg</span><span class="o">,</span><span class="nn">trajectory_utilities</span><span class="o">,</span><span class="nn">surface_alg</span><span class="o">,</span><span class="nn">file_utilities</span>
+<span class="k">except</span><span class="p">:</span>
+  <span class="k">print</span> <span class="s">&#39;could not import at least one of the modules nedded: ost, time, numpy, os, math, entity_alg,trajectory_utilities,surface_alg,file_utilities&#39;</span>
+
+
+<span class="n">__all__</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;GetBoundaryBetweenViews&#39;</span><span class="p">,</span><span class="s">&#39;AssignNormalsToLipids&#39;</span><span class="p">,</span><span class="s">&#39;AnalyzeLipidTilts&#39;</span><span class="p">,</span>\
+        <span class="s">&#39;AnalyzeLipidSplays&#39;</span><span class="p">,</span><span class="s">&#39;AnalyzeLipidTiltAndSplay&#39;</span><span class="p">,</span>\
+        <span class="s">&#39;WriteTiltDict&#39;</span><span class="p">,</span><span class="s">&#39;WriteSplayDict&#39;</span><span class="p">,</span>\
+        <span class="s">&#39;FitTiltDistribution&#39;</span><span class="p">,</span><span class="s">&#39;FitSplayDistribution&#39;</span><span class="p">,</span><span class="s">&#39;AnalyzeAreaPerLipid&#39;</span><span class="p">,</span><span class="s">&#39;ExtractTiltAndSplayModuli&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_CalculateSplayAngle</span><span class="p">(</span><span class="n">v11</span><span class="p">,</span><span class="n">v12</span><span class="p">,</span><span class="n">v21</span><span class="p">,</span><span class="n">v22</span><span class="p">,</span><span class="n">v1p</span><span class="p">,</span><span class="n">v2p</span><span class="p">,</span><span class="n">n1</span><span class="p">,</span><span class="n">n2</span><span class="p">,</span><span class="n">distance_cutoff</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Calculates the splay angle for a pair of lipids.</span>
+
+<span class="sd">  :param v11: headgroup of the first lipid</span>
+<span class="sd">  :param v12: terminal tail atoms of the first lipid</span>
+<span class="sd">  :param v21: headgroup of the second lipid</span>
+<span class="sd">  :param v22: terminal tail atoms of the second lipid</span>
+<span class="sd">  :param v1p: Atoms of the first lipid situated at the neutral/pivotal plane</span>
+<span class="sd">  :param v1p: Atoms of the second lipid situated at the neutral/pivotal plane</span>
+<span class="sd">  :param distance_cutoff: The maximal distance between lipids considered for splay calculation.</span>
+
+<span class="sd">  :type v11: :class:`~ost.mol.EntityView`</span>
+<span class="sd">  :type v12: :class:`~ost.mol.EntityView`</span>
+<span class="sd">  :type v21: :class:`~ost.mol.EntityView`</span>
+<span class="sd">  :type v22: :class:`~ost.mol.EntityView`</span>
+<span class="sd">  :type v1p: :class:`~ost.mol.EntityView`</span>
+<span class="sd">  :type v2p: :class:`~ost.mol.EntityView`</span>
+<span class="sd">  :type distance_cutoff: :class: `float`</span>
+
+<span class="sd">  :return: returns a tuple of floats composed of the splay angle and the distance between the lipids</span>
+<span class="sd">  :rtype: (:class:`float`,:class:`float`)</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">if</span> <span class="n">geom</span><span class="o">.</span><span class="n">Dot</span><span class="p">(</span><span class="n">n1</span><span class="p">,</span><span class="n">n2</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">:</span><span class="k">return</span> <span class="bp">None</span>
+  <span class="n">x</span><span class="o">=</span><span class="n">v2p</span><span class="o">.</span><span class="n">GetCenterOfMass</span><span class="p">()</span><span class="o">-</span><span class="n">v1p</span><span class="o">.</span><span class="n">GetCenterOfMass</span><span class="p">()</span>
+  <span class="n">d</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+  <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="o">-</span><span class="n">geom</span><span class="o">.</span><span class="n">Dot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">n1</span><span class="p">)</span><span class="o">*</span><span class="n">n1</span>
+  <span class="c">#d=geom.Length(x)</span>
+  <span class="k">if</span> <span class="n">d</span><span class="o">&gt;</span><span class="n">distance_cutoff</span><span class="p">:</span><span class="k">return</span> <span class="bp">None</span>
+  <span class="n">x</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+  <span class="n">v1</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span><span class="n">v11</span><span class="o">.</span><span class="n">GetCenterOfMass</span><span class="p">()</span><span class="o">-</span><span class="n">v12</span><span class="o">.</span><span class="n">GetCenterOfMass</span><span class="p">())</span>
+  <span class="n">v2</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span><span class="n">v21</span><span class="o">.</span><span class="n">GetCenterOfMass</span><span class="p">()</span><span class="o">-</span><span class="n">v22</span><span class="o">.</span><span class="n">GetCenterOfMass</span><span class="p">())</span>
+  <span class="c">#x=geom.Normalize(v2p.GetCenterOfMass()-v1p.GetCenterOfMass())</span>
+  <span class="c">#d=geom.Length(v2p.GetCenterOfMass()-v1p.GetCenterOfMass())</span>
+  <span class="k">return</span> <span class="p">((</span><span class="n">geom</span><span class="o">.</span><span class="n">Dot</span><span class="p">(</span><span class="n">v2</span><span class="p">,</span><span class="n">x</span><span class="p">)</span><span class="o">-</span><span class="n">geom</span><span class="o">.</span><span class="n">Dot</span><span class="p">(</span><span class="n">v1</span><span class="p">,</span><span class="n">x</span><span class="p">)</span><span class="o">-</span><span class="n">geom</span><span class="o">.</span><span class="n">Dot</span><span class="p">(</span><span class="n">n2</span><span class="p">,</span><span class="n">x</span><span class="p">)</span><span class="o">+</span><span class="n">geom</span><span class="o">.</span><span class="n">Dot</span><span class="p">(</span><span class="n">n1</span><span class="p">,</span><span class="n">x</span><span class="p">))</span><span class="o">/</span><span class="n">d</span><span class="p">,</span><span class="n">d</span><span class="p">)</span>
+  
+
+<span class="n">CalculateInterfaceFromTraj</span><span class="o">=</span><span class="n">trajectory_utilities</span><span class="o">.</span><span class="n">CalculateInterfaceFromTraj</span>
+
+<span class="k">def</span> <span class="nf">_AssignNormalsFromSurfaceToResidues</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">sele</span><span class="p">,</span><span class="n">surface</span><span class="p">,</span><span class="n">within_size</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function assigns a normal vector to each residue for each frame of a trajectory</span>
+<span class="sd">  from the closest point on the surface.</span>
+<span class="sd">  </span>
+<span class="sd">  :param t: the trajectory</span>
+<span class="sd">  :param sele: the selection to which normals will be assigned.</span>
+<span class="sd">  :param surface: the surface. Each atom of the surface should have an associated</span>
+<span class="sd">                  normal vector as Vec3 property &quot;n&quot;.</span>
+<span class="sd">  :param within_size: Size of surrounding used to find the closest atom on the surface.</span>
+<span class="sd">                      This parameter only optimizes the speed of the calculation</span>
+
+<span class="sd">  :type t: :class:`~ost.mol.CoordGroupHandle`</span>
+<span class="sd">  :type sele: :class:`~ost.mol.EntityView`</span>
+<span class="sd">  :type surface: :class:`~ost.mol.EntityView`</span>
+<span class="sd">  :type within_size: :class:`float`</span>
+
+<span class="sd">  :return: A list containing one **Vec3List** for each residue in **sele**.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">surface</span><span class="o">=</span><span class="n">surface</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">)</span><span class="c">#Make sure we don&#39;t have to make that selection each time</span>
+  <span class="n">ln</span><span class="o">=</span><span class="p">[</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3List</span><span class="p">()</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">sele</span><span class="o">.</span><span class="n">residues</span><span class="p">]</span>
+  <span class="n">res_view_list</span><span class="o">=</span><span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">sele</span><span class="o">.</span><span class="n">residues</span><span class="p">]</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrameCount</span><span class="p">()):</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">CopyFrame</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">res_view_list</span><span class="p">):</span>
+      <span class="n">within</span><span class="o">=</span><span class="n">surface</span><span class="o">.</span><span class="n">FindWithin</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">center_of_atoms</span><span class="p">,</span><span class="n">within_size</span><span class="p">)</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">within</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span><span class="n">a</span><span class="o">=</span><span class="n">entity_alg</span><span class="o">.</span><span class="n">FindClosestAtom</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="n">mol</span><span class="o">.</span><span class="n">CreateViewFromAtoms</span><span class="p">(</span><span class="n">within</span><span class="p">))</span>
+      <span class="k">else</span><span class="p">:</span><span class="n">a</span><span class="o">=</span><span class="n">entity_alg</span><span class="o">.</span><span class="n">FindClosestAtom</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="n">surface</span><span class="p">)</span>
+      <span class="n">ln</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">GetVec3Prop</span><span class="p">(</span><span class="s">&#39;n&#39;</span><span class="p">))</span>
+  <span class="k">return</span> <span class="n">ln</span>
+
+<span class="k">def</span> <span class="nf">_CalculateTilts</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">lipids</span><span class="p">,</span><span class="n">normals</span><span class="p">,</span><span class="n">head_sele</span><span class="p">,</span><span class="n">tail_sele</span><span class="p">,</span><span class="n">prot_cm</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">bool_prop</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function calculates the lipid tilts.</span>
+<span class="sd">  :param t: the trajectory</span>
+<span class="sd">  :param lipids: the selection for which tilts will be calculated.</span>
+<span class="sd">  :param head_sele: the selection used for the headgroups.</span>
+<span class="sd">  :param tail_sele: the selection used for the tails. </span>
+<span class="sd">  :param prot_cm: A point from which the distance will be calculated for each tilt.</span>
+<span class="sd">                  This is typically the position of the center of mass of a protein.</span>
+
+<span class="sd">  :type t: :class:`~ost.mol.CoordGroupHandle`</span>
+<span class="sd">  :type lipids: :class:`~ost.mol.EntityView`</span>
+<span class="sd">  :type head_sele: :class:`str`</span>
+<span class="sd">  :type tail_sele: :class:`str`</span>
+<span class="sd">  :type bool_prop: :class:`str`</span>
+<span class="sd">  :type prot_cm: :class:`~ost.mol.EntityView`</span>
+<span class="sd">  </span>
+<span class="sd">  :return: A tuple of arrays **(tilts, prot_dist)**. Each array has the shape N\ :subscript:`Lipids`\ x N\ :subscript:`Frames`</span>
+<span class="sd">   If **prot_cm** is **None**, the second list is empty.</span>
+<span class="sd">  :rtype: (:class:`npy.array`,:class:`npy.array`)</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">tilts</span><span class="o">=</span><span class="p">[]</span>
+  <span class="n">prot_dist</span><span class="o">=</span><span class="p">[]</span>
+  <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lipids</span><span class="o">.</span><span class="n">residues</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">bool_prop</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">r</span><span class="o">.</span><span class="n">GetBoolProp</span><span class="p">(</span><span class="n">bool_prop</span><span class="p">):</span><span class="k">continue</span>
+    <span class="n">p1</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">AnalyzeCenterOfMassPos</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">r</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">head_sele</span><span class="p">))</span>
+    <span class="n">p2</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">AnalyzeCenterOfMassPos</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">r</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">tail_sele</span><span class="p">))</span>
+    <span class="n">n</span><span class="o">=</span><span class="n">normals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">tilts</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">geom</span><span class="o">.</span><span class="n">Angle</span><span class="p">(</span><span class="n">ni</span><span class="p">,</span><span class="n">p1i</span><span class="o">-</span><span class="n">p2i</span><span class="p">)</span> <span class="k">for</span> <span class="n">ni</span><span class="p">,</span><span class="n">p1i</span><span class="p">,</span><span class="n">p2i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">p1</span><span class="p">,</span><span class="n">p2</span><span class="p">)])</span>
+    <span class="k">if</span> <span class="n">prot_cm</span><span class="p">:</span>
+      <span class="n">prot_dist</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="nb">min</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec2</span><span class="p">(</span><span class="n">cm</span><span class="o">-</span><span class="n">el1</span><span class="p">)),</span><span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec2</span><span class="p">(</span><span class="n">cm</span><span class="o">-</span><span class="n">el2</span><span class="p">)))</span> <span class="k">for</span> <span class="n">cm</span><span class="p">,</span><span class="n">el1</span><span class="p">,</span><span class="n">el2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prot_cm</span><span class="p">,</span><span class="n">p1</span><span class="p">,</span><span class="n">p2</span><span class="p">)])</span>
+  <span class="k">return</span> <span class="p">(</span><span class="n">npy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">tilts</span><span class="p">),</span><span class="n">npy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">prot_dist</span><span class="p">))</span>
+
+<div class="viewcode-block" id="GetBoundaryBetweenViews"><a class="viewcode-back" href="../lipid_analysis.html#lipid_analysis.GetBoundaryBetweenViews">[docs]</a><span class="k">def</span> <span class="nf">GetBoundaryBetweenViews</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">waters</span><span class="p">,</span><span class="n">lipids</span><span class="p">,</span><span class="n">outdir</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">density_cutoff</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">within_size_normals</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function determines the interface between two views, typically the lipid-water interface and assigns normals </span>
+<span class="sd">  to every point on the surface.</span>
+
+<span class="sd">  :param t: the trajectory</span>
+<span class="sd">  :param waters: First view</span>
+<span class="sd">  :param lipids: Second view</span>
+<span class="sd">  :param outdir: Path to output directory</span>
+<span class="sd">  :param density_cutoff: Interface will not be calculated for regions where the density is lower than this cutoff.</span>
+<span class="sd">  :param stride: stride used to calculate the average density from the trajectory.</span>
+<span class="sd">  :param within_size_normals: radius of the patch used to determine the normals on the water-lipid interface.</span>
+<span class="sd">  :param filename_basis: used as first part in the name of all the files generated.</span>
+
+<span class="sd">  :type t: :class:`~ost.mol.CoordGroupHandle`</span>
+<span class="sd">  :type waters: :class:`~ost.mol.EntityView`</span>
+<span class="sd">  :type lipids: :class:`~ost.mol.EntityView`</span>
+<span class="sd">  :type outdir: :class:`str`</span>
+<span class="sd">  :type density_cutoff: :class:`float`</span>
+<span class="sd">  :type stride: :class:`int`</span>
+<span class="sd">  :type within_size: :class:`float`</span>
+<span class="sd">  :type filename_basis: :class:`str`</span>
+<span class="sd">  </span>
+<span class="sd">  :return: A tuple **(water_filtered,lipid_filtered,b_eh)** containing the density for </span>
+<span class="sd">    the first and second views and an entity for the boundary between the two views.</span>
+<span class="sd">    Every atom in the boundary has an associated normal vector set as a Vec3 property &#39;n&#39;.</span>
+
+<span class="sd">  WARNING: Interface was changed. Taking 2 views instead of a list of lipid names and water name.</span>
+<span class="sd">  The order of the two views was also inversed. I also removed the PBC, cell_center and cell_size parameters</span>
+
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="n">t0</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+  <span class="n">eh</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">GetEntity</span><span class="p">()</span>
+  <span class="n">t2</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">Filter</span><span class="p">(</span><span class="n">eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">),</span><span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">)</span>
+  <span class="k">print</span> <span class="s">&#39;Calculating densities on&#39;</span><span class="p">,</span><span class="n">t2</span><span class="o">.</span><span class="n">GetFrameCount</span><span class="p">(),</span><span class="s">&#39;frames&#39;</span>
+  <span class="p">(</span><span class="n">water_filtered</span><span class="p">,</span><span class="n">lipid_filtered</span><span class="p">,</span><span class="n">boundary_filtered</span><span class="p">)</span><span class="o">=</span><span class="n">CalculateInterfaceFromTraj</span><span class="p">(</span><span class="n">t2</span><span class="p">,</span><span class="n">waters</span><span class="p">,</span><span class="n">lipids</span><span class="p">,</span><span class="bp">False</span><span class="p">,</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="n">density_cutoff</span><span class="p">,</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="p">)</span>
+  <span class="n">b_eh</span><span class="o">=</span><span class="n">entity_alg</span><span class="o">.</span><span class="n">CreateEntityFromVec3List</span><span class="p">(</span><span class="n">boundary_filtered</span><span class="p">)</span>
+  <span class="k">print</span> <span class="s">&#39;calculating the normals&#39;</span><span class="p">,</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span>
+  <span class="n">surface_alg</span><span class="o">.</span><span class="n">CalculateNormals</span><span class="p">(</span><span class="n">b_eh</span><span class="p">,</span><span class="n">within_size_normals</span><span class="p">,</span><span class="bp">False</span><span class="p">,</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">)</span>
+  <span class="n">surface_alg</span><span class="o">.</span><span class="n">OrientNormalsAlongDensity</span><span class="p">(</span><span class="n">b_eh</span><span class="p">,</span><span class="n">lipid_filtered</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">outdir</span><span class="p">:</span>
+    <span class="n">io</span><span class="o">.</span><span class="n">SavePDB</span><span class="p">(</span><span class="n">b_eh</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">+</span><span class="s">&#39;boundary.pdb&#39;</span><span class="p">))</span>
+    <span class="n">entity_alg</span><span class="o">.</span><span class="n">WriteVec3Prop</span><span class="p">(</span><span class="n">b_eh</span><span class="p">,</span><span class="s">&quot;n&quot;</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">+</span><span class="s">&#39;boundary_normals.txt&#39;</span><span class="p">),</span><span class="n">index</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+  <span class="k">return</span> <span class="p">(</span><span class="n">water_filtered</span><span class="p">,</span><span class="n">lipid_filtered</span><span class="p">,</span><span class="n">b_eh</span><span class="p">)</span>
+      </div>
+<div class="viewcode-block" id="AssignNormalsToLipids"><a class="viewcode-back" href="../lipid_analysis.html#lipid_analysis.AssignNormalsToLipids">[docs]</a><span class="k">def</span> <span class="nf">AssignNormalsToLipids</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">eh</span><span class="p">,</span><span class="n">b_eh</span><span class="p">,</span><span class="n">lipid_names</span><span class="p">,</span><span class="n">head_group_dict</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  :param t: The trajectory</span>
+<span class="sd">  :param eh: The associated entity</span>
+<span class="sd">  :param b_eh: The surface from which the normals will get assigned to the lipids.</span>
+<span class="sd">  :param lipid_names: a list of the lipid residue names to which normals will be assigned.</span>
+<span class="sd">  :param head_group_dict: a dictionary containing the selections defining the headgroup </span>
+<span class="sd">   for each lipid type. There should be one entry for each residue name in **lipid_names**</span>
+
+<span class="sd">  :type t: :class:`~ost.mol.CoordGroupHandle`</span>
+<span class="sd">  :type eh: :class:`~ost.mol.Entity`</span>
+<span class="sd">  :type b_eh: :class:`~ost.mol.Entity`</span>
+<span class="sd">  :type lipid_names: :class:`list`</span>
+<span class="sd">  :type head_group_dict: :class:`dict`</span>
+<span class="sd">  </span>
+<span class="sd">  :return: A dictionary with one entry for each residue name in **lipid_names**.</span>
+<span class="sd">   Each element in the dictionary is a :class:`list`\ (:class:`~ost.geom.Vec3List`\ ). Each element in the list</span>
+<span class="sd">   corresponds to one residue and each :class:`~ost.geom.Vec3` in the :class:`~ost.geom.Vec3List` is the normal for one frame</span>
+<span class="sd">   of the trajectory.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">t0</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+  <span class="c">#Now we assign a normal for each lipid in each frame</span>
+  <span class="k">print</span> <span class="s">&#39;assigning normals to lipids&#39;</span><span class="p">,</span><span class="n">lipid_names</span>
+  <span class="n">lipid_normal_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="k">for</span> <span class="n">lipid_name</span> <span class="ow">in</span> <span class="n">lipid_names</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">&#39;rname=&#39;</span><span class="o">+</span><span class="n">lipid_name</span><span class="o">+</span><span class="s">&#39; and &#39;</span><span class="o">+</span><span class="n">head_group_dict</span><span class="p">[</span><span class="n">lipid_name</span><span class="p">]</span>
+    <span class="n">t0</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">lipids</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="s">&#39;rname=&#39;</span><span class="o">+</span><span class="n">lipid_name</span><span class="o">+</span><span class="s">&#39; and &#39;</span><span class="o">+</span><span class="n">head_group_dict</span><span class="p">[</span><span class="n">lipid_name</span><span class="p">])</span>
+    <span class="k">print</span> <span class="n">lipids</span><span class="o">.</span><span class="n">GetResidueCount</span><span class="p">()</span>
+    <span class="n">lipid_normal_dict</span><span class="p">[</span><span class="n">lipid_name</span><span class="p">]</span><span class="o">=</span><span class="n">_AssignNormalsFromSurfaceToResidues</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">lipids</span><span class="p">,</span><span class="n">b_eh</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;done for&#39;</span><span class="p">,</span><span class="n">lipid_name</span><span class="p">,</span><span class="s">&#39;in&#39;</span><span class="p">,</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">,</span><span class="s">&#39;seconds&#39;</span>
+  <span class="k">return</span> <span class="n">lipid_normal_dict</span>
+</div>
+<div class="viewcode-block" id="AnalyzeLipidTilts"><a class="viewcode-back" href="../lipid_analysis.html#lipid_analysis.AnalyzeLipidTilts">[docs]</a><span class="k">def</span> <span class="nf">AnalyzeLipidTilts</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">eh</span><span class="p">,</span><span class="n">lipid_names</span><span class="p">,</span><span class="n">lipid_normal_dict</span><span class="p">,</span><span class="n">head_group_dict</span><span class="p">,</span><span class="n">tail_dict</span><span class="p">,</span><span class="n">prot_cm</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">bool_prop</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function calculates the lipid tilts from a trajectory.</span>
+
+<span class="sd">  :param t: The trajectory</span>
+<span class="sd">  :param eh: The associated entity</span>
+<span class="sd">  :param lipid_names: List of the residue names of the different lipids in the system</span>
+<span class="sd">  :param lipid_normal_dict: Dictionary of normal vectors. One entry for every lipid type (element in lipid_names)</span>
+<span class="sd">   Every entry is a :class:`list`\ (:class:`~ost.geom.Vec3List`\ ) of normals for every frame for every lipid of that type </span>
+<span class="sd">   (size of list:N\ :subscript:`Lipids`\ x N\ :subscript:`Frames`).</span>
+<span class="sd">  :param head_group_dict: Dictionary containing a selection string for each lipid type</span>
+<span class="sd">   that is used to determine the position of the lipid headgroups (center of mass of the selection).</span>
+<span class="sd">  :param tail_dict: Dictionary containing a selection string for each lipid type</span>
+<span class="sd">   that is used to determine the position of the lipid tails (center of mass of the selection).</span>
+<span class="sd">  :param prot_cm: A list of position (one for each frame). If specified the each tilt the distance between this position</span>
+<span class="sd">    and the lipid in question will also be returned. This is typically used to calculate local properties of the membrane around an insertion.</span>
+<span class="sd">  :param bool_prop: Boolean property assigned to lipids to determine whether they should be considered in the tilt calculations.</span>
+<span class="sd">   This is typically used to treat the periodic boundary conditions, to differentiate lipids from the central unit cell, for which tilt and </span>
+<span class="sd">   splay are calculated, from the lipids from neighboring unit cells, used only to ensure correct treatment of PBC.</span>
+
+<span class="sd">  :type t: :class:`~ost.mol.CoordGroupHandle`</span>
+<span class="sd">  :type eh: :class:`~ost.mol.EntityHandle`</span>
+<span class="sd">  :type lipid_normal_dict: :class:`dict`</span>
+<span class="sd">  :type lipid_names: :class:`str`</span>
+<span class="sd">  :type head_group_dict: :class:`dict`</span>
+<span class="sd">  :type tail_dict: :class:`dict`</span>
+<span class="sd">  :type prot_cm: :class:`~ost.geom.Vec3List`</span>
+<span class="sd">  :type bool_prop: :class:`bool`</span>
+
+<span class="sd">  :return: Dictionary of lipid tilts. One entry for every lipid type (element in **lipid_names**).</span>
+<span class="sd">           Every entry is a :class:`list` with two elements. The first one is a :class:`list`\ (:class:`~ost.geom.FloatList`\ ) of tilts </span>
+<span class="sd">           for every frame for every lipid of that type (size of list:N\ :subscript:`Lipids`\ x N\ :subscript:`Frames`).</span>
+<span class="sd">           The second element contains the list of distances to **prot_cm** if it was defined and is empty otherwise.</span>
+
+<span class="sd">  WARNING: Removed parameters PBC, cell_center, cell_size</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">lipid_tilt_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="k">print</span> <span class="s">&quot;analyzing lipid tilts for&quot;</span><span class="p">,</span><span class="n">lipid_names</span>
+  <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">lipid_names</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;starting for&quot;</span><span class="p">,</span><span class="n">ln</span>
+    <span class="n">lipids</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="s">&#39;rname=&#39;</span><span class="o">+</span><span class="n">ln</span><span class="p">)</span>
+    <span class="n">lipid_tilt_dict</span><span class="p">[</span><span class="n">ln</span><span class="p">]</span><span class="o">=</span><span class="n">_CalculateTilts</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">lipids</span><span class="p">,</span><span class="n">lipid_normal_dict</span><span class="p">[</span><span class="n">ln</span><span class="p">],</span><span class="n">head_group_dict</span><span class="p">[</span><span class="n">ln</span><span class="p">],</span><span class="n">tail_dict</span><span class="p">[</span><span class="n">ln</span><span class="p">],</span><span class="n">prot_cm</span><span class="p">,</span><span class="n">bool_prop</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">lipid_tilt_dict</span>
+  
+</div>
+<div class="viewcode-block" id="AnalyzeLipidSplays"><a class="viewcode-back" href="../lipid_analysis.html#lipid_analysis.AnalyzeLipidSplays">[docs]</a><span class="k">def</span> <span class="nf">AnalyzeLipidSplays</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">eh</span><span class="p">,</span><span class="n">lipid_names</span><span class="p">,</span><span class="n">head_group_dict</span><span class="p">,</span><span class="n">tail_dict</span><span class="p">,</span><span class="n">lipid_normal_dict</span><span class="p">,</span><span class="n">lipid_tilt_dict</span><span class="p">,</span><span class="n">distance_sele_dict</span><span class="p">,</span><span class="n">distance_cutoff</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">bool_prop</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function calculates the lipid splays from a trajectory.</span>
+
+<span class="sd">  :param t: The trajectory</span>
+<span class="sd">  :param eh: The associated entity</span>
+<span class="sd">  :param lipid_names: A list of the residue names of the different lipids in the system</span>
+<span class="sd">  :param head_group_dict: Dictionary containing a selection string for each lipid type</span>
+<span class="sd">   that is used to determine the position of the lipid headgroups (center of mass of the selection).</span>
+<span class="sd">  :param tail_dict: Dictionary containing a selection string for each lipid type</span>
+<span class="sd">   that is used to determine the position of the lipid tails (center of mass of the selection).</span>
+<span class="sd">  :param lipid_normal_dict: Dictionary of normal vectors. One entry for every lipid type (element in lipid_names)</span>
+<span class="sd">                            Every entry is a :class:`list`\ (:class:`~ost.geom.Vec3List`\ ) of normals for every frame </span>
+<span class="sd">                            for every lipid of that type (size of list:N\ :subscript:`Lipids`\ x N\ :subscript:`Frames`).</span>
+<span class="sd">  :param lipid_tilt_dict: Dictionary of lipid tilts. One entry for every lipid type (element in lipid_names)</span>
+<span class="sd">                          Every entry is a :class:`list`\ (:class:`~ost.geom.FloatList`\ ) of tilts for every frame </span>
+<span class="sd">                          for every lipid of that type (size of list:N\ :subscript:`Lipids`\ x N\ :subscript:`Frames`).</span>
+<span class="sd">  :param distance_sele_dict: Dictionary containing a selection string for each lipid type that is used</span>
+<span class="sd">   to calculate the distance between lipids (center of mass distance). The center of mass of these selections should lie</span>
+<span class="sd">   on the neutral plane.</span>
+<span class="sd">  :param distance_cutoff: Lipid pairs further apart than this distance will not be considered for splay calculation.</span>
+<span class="sd">  :param bool_prop: Boolean property assigned to lipids to determine whether they should be considered in the splay calculations.</span>
+<span class="sd">   This is typically used to treat the periodic boundary conditions, to differentiate lipids from the central unit cell, for which tilt and </span>
+<span class="sd">   splay are calculated, from the lipids from neighboring unit cells, used only to ensure correct treatment of PBC.</span>
+
+<span class="sd">  :return: Dictionary of splays, containing one entry for each possible lipid pairs</span>
+<span class="sd">  </span>
+<span class="sd">  WARNING: Changed the name of that function from AnalyzeLipidSplay to AnalyzeLipidSplays.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">nframes</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrameCount</span><span class="p">()</span>
+  <span class="n">t0</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+  <span class="n">splay_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="n">mean_dist_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="n">area_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="n">n_dict</span><span class="o">=</span><span class="p">{}</span>
+  
+  <span class="n">lipid_sele_string</span><span class="o">=</span><span class="s">&#39;rname=&#39;</span><span class="o">+</span><span class="s">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">rname</span> <span class="k">for</span> <span class="n">rname</span> <span class="ow">in</span> <span class="n">distance_sele_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
+  <span class="n">distance_sele_string</span><span class="o">=</span><span class="s">&#39; or &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;(rname={0} and {1})&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rname</span><span class="p">,</span><span class="n">distance_sele_dict</span><span class="p">[</span><span class="n">rname</span><span class="p">])</span> <span class="k">for</span> <span class="n">rname</span> <span class="ow">in</span> <span class="n">distance_sele_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
+  <span class="k">print</span> <span class="s">&#39;selecting all the lipids using&#39;</span><span class="p">,</span><span class="n">lipid_sele_string</span>
+  <span class="k">print</span> <span class="s">&#39;selection for distance calculation&#39;</span><span class="p">,</span><span class="n">distance_sele_string</span>
+  <span class="n">lipids</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">lipid_sele_string</span><span class="p">)</span>
+  <span class="n">distance_sele</span><span class="o">=</span><span class="n">lipids</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">distance_sele_string</span><span class="p">)</span>
+  <span class="k">print</span> <span class="n">bool_prop</span><span class="p">,</span><span class="n">lipid_names</span>
+  <span class="n">head_group_view_list_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="n">tail_view_list_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="n">distance_view_list_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">lipid_names</span><span class="p">:</span>
+    <span class="n">v</span><span class="o">=</span><span class="n">lipids</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="s">&#39;rname=&#39;</span><span class="o">+</span><span class="n">ln</span><span class="p">)</span>
+    <span class="n">head_group_view_list_dict</span><span class="p">[</span><span class="n">ln</span><span class="p">]</span><span class="o">=</span><span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">head_group_dict</span><span class="p">[</span><span class="n">ln</span><span class="p">])</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">residues</span><span class="p">]</span>
+    <span class="n">tail_view_list_dict</span><span class="p">[</span><span class="n">ln</span><span class="p">]</span><span class="o">=</span><span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">tail_dict</span><span class="p">[</span><span class="n">ln</span><span class="p">])</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">residues</span><span class="p">]</span>
+    <span class="n">distance_view_list_dict</span><span class="p">[</span><span class="n">ln</span><span class="p">]</span><span class="o">=</span><span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">distance_sele_dict</span><span class="p">[</span><span class="n">ln</span><span class="p">])</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">residues</span><span class="p">]</span>
+  <span class="n">splay_dict</span><span class="o">=</span><span class="p">{}</span><span class="c">#We prepare the dictionary that will contain the splays for each type of lipid pair</span>
+  <span class="k">for</span> <span class="n">ln1</span> <span class="ow">in</span> <span class="n">lipid_names</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">ln2</span> <span class="ow">in</span> <span class="n">lipid_names</span><span class="p">:</span><span class="n">splay_dict</span><span class="p">[</span><span class="n">ln1</span><span class="o">+</span><span class="s">&#39;-&#39;</span><span class="o">+</span><span class="n">ln2</span><span class="p">]</span><span class="o">=</span><span class="p">[]</span>
+  <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrameCount</span><span class="p">()):</span>
+    <span class="k">if</span> <span class="n">f</span><span class="o">%</span><span class="mi">50</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span><span class="k">print</span> <span class="s">&quot;frame {0} in {1} seconds&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">)</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">CopyFrame</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">r1</span> <span class="ow">in</span> <span class="n">lipids</span><span class="o">.</span><span class="n">residues</span><span class="p">:</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="n">r1</span><span class="o">.</span><span class="n">GetBoolProp</span><span class="p">(</span><span class="n">bool_prop</span><span class="p">):</span><span class="k">continue</span>
+      <span class="n">ln1</span><span class="o">=</span><span class="n">r1</span><span class="o">.</span><span class="n">GetName</span><span class="p">()</span>
+      <span class="n">i</span><span class="o">=</span><span class="n">r1</span><span class="o">.</span><span class="n">GetIntProp</span><span class="p">(</span><span class="s">&#39;index&#39;</span><span class="p">)</span>
+      <span class="n">within</span><span class="o">=</span><span class="n">distance_sele</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="s">&quot;{0}&lt;&gt;[cname={1} and rnum={2}]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distance_cutoff</span><span class="p">,</span><span class="n">r1</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">name</span><span class="p">,</span><span class="n">r1</span><span class="o">.</span><span class="n">number</span><span class="o">.</span><span class="n">num</span><span class="p">))</span>
+      <span class="n">within</span><span class="o">=</span><span class="n">within</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="s">&quot;not (cname={0} and rnum={1})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">r1</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">name</span><span class="p">,</span><span class="n">r1</span><span class="o">.</span><span class="n">number</span><span class="o">.</span><span class="n">num</span><span class="p">))</span>
+      <span class="c">#if within.GetResidueCount()&lt;2:continue</span>
+      <span class="n">v11</span><span class="o">=</span><span class="n">head_group_view_list_dict</span><span class="p">[</span><span class="n">ln1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+      <span class="n">v12</span><span class="o">=</span><span class="n">tail_view_list_dict</span><span class="p">[</span><span class="n">ln1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+      <span class="n">v13</span><span class="o">=</span><span class="n">distance_view_list_dict</span><span class="p">[</span><span class="n">ln1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+      <span class="n">n1</span><span class="o">=</span><span class="n">lipid_normal_dict</span><span class="p">[</span><span class="n">ln1</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="n">f</span><span class="p">]</span>
+      <span class="n">a1</span><span class="o">=</span><span class="n">lipid_tilt_dict</span><span class="p">[</span><span class="n">ln1</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="n">f</span><span class="p">]</span>
+      <span class="k">for</span> <span class="n">r2</span> <span class="ow">in</span> <span class="n">within</span><span class="o">.</span><span class="n">residues</span><span class="p">:</span>
+        <span class="n">ln2</span><span class="o">=</span><span class="n">r2</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">j</span><span class="o">=</span><span class="n">r2</span><span class="o">.</span><span class="n">GetIntProp</span><span class="p">(</span><span class="s">&#39;index&#39;</span><span class="p">)</span>
+        <span class="n">v21</span><span class="o">=</span><span class="n">head_group_view_list_dict</span><span class="p">[</span><span class="n">ln2</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">v22</span><span class="o">=</span><span class="n">tail_view_list_dict</span><span class="p">[</span><span class="n">ln2</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">v23</span><span class="o">=</span><span class="n">distance_view_list_dict</span><span class="p">[</span><span class="n">ln2</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">n2</span><span class="o">=</span><span class="n">lipid_normal_dict</span><span class="p">[</span><span class="n">ln2</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="n">f</span><span class="p">]</span>
+        <span class="n">a2</span><span class="o">=</span><span class="n">lipid_tilt_dict</span><span class="p">[</span><span class="n">ln2</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="n">f</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">a1</span><span class="o">&gt;</span><span class="mf">0.8</span> <span class="ow">or</span> <span class="n">a2</span><span class="o">&gt;</span><span class="mf">0.8</span><span class="p">:</span><span class="k">continue</span>
+        <span class="n">s</span><span class="o">=</span><span class="n">_CalculateSplayAngle</span><span class="p">(</span><span class="n">v11</span><span class="p">,</span><span class="n">v12</span><span class="p">,</span><span class="n">v21</span><span class="p">,</span><span class="n">v22</span><span class="p">,</span><span class="n">v13</span><span class="p">,</span><span class="n">v23</span><span class="p">,</span><span class="n">n1</span><span class="p">,</span><span class="n">n2</span><span class="p">,</span><span class="n">distance_cutoff</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">s</span><span class="p">:</span><span class="n">splay_dict</span><span class="p">[</span><span class="n">ln1</span><span class="o">+</span><span class="s">&#39;-&#39;</span><span class="o">+</span><span class="n">ln2</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+  <span class="c">#We finalize the dictionary by merging equivalent entries</span>
+  <span class="n">nsplays</span><span class="o">=</span><span class="mi">0</span>
+  <span class="n">splay_dict_def</span><span class="o">=</span><span class="p">{}</span>
+  <span class="k">for</span> <span class="n">ln1</span> <span class="ow">in</span> <span class="n">lipid_names</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">ln2</span> <span class="ow">in</span> <span class="n">lipid_names</span><span class="p">:</span>
+      <span class="n">key</span><span class="o">=</span><span class="n">ln1</span><span class="o">+</span><span class="s">&#39;-&#39;</span><span class="o">+</span><span class="n">ln2</span>
+      <span class="n">key2</span><span class="o">=</span><span class="n">ln2</span><span class="o">+</span><span class="s">&#39;-&#39;</span><span class="o">+</span><span class="n">ln1</span>
+      <span class="n">nsplays</span><span class="o">+=</span><span class="nb">len</span><span class="p">(</span><span class="n">splay_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+      <span class="k">if</span> <span class="n">key2</span> <span class="ow">in</span> <span class="n">splay_dict_def</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">splay_dict_def</span><span class="p">[</span><span class="n">key2</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">splay_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+      <span class="k">else</span><span class="p">:</span><span class="n">splay_dict_def</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">splay_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+  <span class="k">print</span> <span class="s">&#39;done in {0} seconds. Computed {1} splays&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">,</span><span class="n">nsplays</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">splay_dict_def</span>
+</div>
+<div class="viewcode-block" id="AnalyzeLipidTiltAndSplay"><a class="viewcode-back" href="../lipid_analysis.html#lipid_analysis.AnalyzeLipidTiltAndSplay">[docs]</a><span class="k">def</span> <span class="nf">AnalyzeLipidTiltAndSplay</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">lipid_names</span><span class="p">,</span><span class="n">head_group_dict</span><span class="p">,</span><span class="n">tail_dict</span><span class="p">,</span><span class="n">distance_cutoff</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span><span class="n">within_size_normals</span><span class="o">=</span><span class="mf">10.0</span>
+                      <span class="p">,</span><span class="n">distance_sele_dict</span><span class="o">=</span><span class="p">{},</span><span class="n">water_name</span><span class="o">=</span><span class="s">&#39;TIP3&#39;</span><span class="p">,</span><span class="n">outdir</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">density_cutoff</span><span class="o">=</span><span class="bp">None</span>
+                      <span class="p">,</span><span class="n">prot_sele</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">density_stride</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">tilt_bool_prop</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">splay_bool_prop</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">sele_dict</span><span class="o">=</span><span class="p">{}):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function is a wrapper to determine the membrane elastic moduli from the lipid titls and splays.</span>
+<span class="sd">  Periodic boundary conditions are not treated explicitely here and should be treated as suggested in the</span>
+<span class="sd">  description of this module.</span>
+
+<span class="sd">  :param t: The trajectory</span>
+<span class="sd">  :param lipid_names: List of the residue names of the different lipids in the system</span>
+<span class="sd">  :param head_group_dict: Dictionary containing a selection string for each lipid type</span>
+<span class="sd">   that is used to determine the position of the lipid headgroups (center of mass of the selection).</span>
+<span class="sd">  :param tail_dict: Dictionary containing a selection string for each lipid type</span>
+<span class="sd">   that is used to determine the position of the lipid tails (center of mass of the selection).</span>
+<span class="sd">  :param distance_cutoff: Lipid pairs further apart than this distance will not be considered for splay calculation.</span>
+<span class="sd">  :param within_size_normals: radius of the patch used to determine the normals on the water-lipid interface.</span>
+<span class="sd">  :param distance_sele_dict: Dictionary containing a selection string for each lipid type that is used</span>
+<span class="sd">   to calculate the distance between lipids (center of mass distance). The center of mass of these selections should lie</span>
+<span class="sd">   on the neutral plane.</span>
+<span class="sd">  :param water_name: Residue name of the waters (used to calculate the water-lipid interface).</span>
+<span class="sd">  :param outdir: Path to output directory. If none, no files will be written.</span>
+<span class="sd">  :param density_cutoff: Interface will not be calculated for regions where the density is lower than this cutoff.</span>
+<span class="sd">  :param prot_sele: Selection string used to determine the position of the protein. This is used to calculate the distance</span>
+<span class="sd">   between lipids and the protein which will be returned together with splays and tilts and can be used to determine the vatiation</span>
+<span class="sd">   in membrane properties around a protein</span>
+<span class="sd">  :param density_stride: Stride to be used for the calculation of the average lipid and water densities used to determine the interface.</span>
+<span class="sd">   Using every single frame can slow down the calculation.</span>
+<span class="sd">  :param tilt_bool_prop: Boolean property assigned to lipids to determine whether they should be considered in the titl calculations.</span>
+<span class="sd">   This is typically used to treat the periodic boundary conditions, to differentiate lipids from the central unit cell, for which tilt and </span>
+<span class="sd">   splay are calculated, from the lipids from neighboring unit cells, used only to ensure correct treatment of PBC.</span>
+<span class="sd">  :param splay_bool_prop: Same as **tilt_bool_prop** but for the calculation of splays</span>
+<span class="sd">  :param filename_basis: used as first part in the name of all the files generated.</span>
+<span class="sd">  :param sele_dict: Dictionary containing selection strings used to separate the system in several parts for the calculation</span>
+<span class="sd">   This can be used for example to make the tilt and splay calculations separately for each leaflet of a bilayer.</span>
+<span class="sd">   In such a case **sele_dict** would be something like **sele_dict={&quot;upper&quot;:&quot;z&gt;0&quot;,&quot;lower&quot;:&quot;z&lt;0&quot;}**</span>
+
+<span class="sd">  :type t: :class:`~ost.mol.CoordGroupHandle`</span>
+<span class="sd">  :type lipid_names: :class:`str`</span>
+<span class="sd">  :type head_group_dict: :class:`dict`</span>
+<span class="sd">  :type tail_dict: :class:`dict`</span>
+<span class="sd">  :type distance_cutoff: :class:`float`</span>
+<span class="sd">  :type within_size_normals: :class:`float`</span>
+<span class="sd">  :type distance_sele_dict: :class:`dict`</span>
+<span class="sd">  :type outdir: :class:`str`</span>
+<span class="sd">  :type density_cutoff: :class:`float`</span>
+<span class="sd">  :type prot_sele: :class:`str`</span>
+<span class="sd">  :type density_stride: :class:`int`</span>
+<span class="sd">  :type tilt_bool_prop: :class:`bool`</span>
+<span class="sd">  :type splay_bool_prop: :class:`bool`</span>
+<span class="sd">  :type filename_basis: :class:`str`</span>
+<span class="sd">  :type sele_dict: :class:`dict`</span>
+
+<span class="sd">  :return: A tuple **(lipid_tilt_dict,lipid_normal_dict,splay_dict,b_eh)**, where **lipid_tilt_dict**,</span>
+<span class="sd">          **lipid_normal_dict** and **lipid_splay_dict** are dictionaries with keys corresponding to the elements</span>
+<span class="sd">          in **sele_dict**. For more information about **lipid_tilt_dict** and **lipid_splay_dict**, refer to the</span>
+<span class="sd">          the documentation for the **AnalyzeLipidTilts** and **AnalyzeLipidSplays** functions.</span>
+
+<span class="sd">  WARNING: Removed parameters PBC, cell_center, cell_size</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="kn">import</span> <span class="nn">time</span>
+  <span class="n">t0</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+  <span class="n">eh</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">GetEntity</span><span class="p">()</span>
+  <span class="n">t</span><span class="o">.</span><span class="n">CopyFrame</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+  <span class="c">#first we build the interafce between water and membrane</span>
+  <span class="c">#and assign a normal for each lipid in each frame</span>
+  <span class="k">print</span> <span class="s">&#39;Generating the water and lipid densities and boundary surface&#39;</span>
+  <span class="n">lipid_sele</span><span class="o">=</span><span class="s">&#39;rname=&#39;</span><span class="o">+</span><span class="s">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lipid_names</span><span class="p">)</span>
+  <span class="n">water_sele</span><span class="o">=</span><span class="s">&#39;rname=&#39;</span><span class="o">+</span><span class="n">water_name</span>
+  <span class="n">lipids</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">lipid_sele</span><span class="p">)</span>
+  <span class="n">waters</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">water_sele</span><span class="p">)</span>
+  <span class="p">(</span><span class="n">water_filtered</span><span class="p">,</span><span class="n">lipid_filtered</span><span class="p">,</span><span class="n">b_eh</span><span class="p">)</span><span class="o">=</span><span class="n">GetBoundaryBetweenViews</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">waters</span><span class="p">,</span><span class="n">lipids</span><span class="p">,</span><span class="n">outdir</span><span class="p">,</span><span class="n">density_cutoff</span><span class="p">,</span>
+                                                               <span class="n">density_stride</span><span class="p">,</span><span class="n">within_size_normals</span><span class="p">,</span><span class="n">filename_basis</span><span class="p">)</span>
+  <span class="c">#Protein center of mass</span>
+  <span class="k">if</span> <span class="n">prot_sele</span><span class="p">:</span><span class="n">prot_cm</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">AnalyzeCenterOfMassPos</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">prot_sele</span><span class="p">))</span>
+  <span class="k">else</span><span class="p">:</span><span class="n">prot_cm</span><span class="o">=</span><span class="bp">None</span>
+  <span class="c">#From here we separate into the sub categories defined in sele_dict, which could be upper and lower leaflets</span>
+  <span class="n">s</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;(rname=&#39;</span><span class="o">+</span><span class="n">ln</span><span class="o">+</span><span class="s">&#39; and &#39;</span><span class="o">+</span><span class="n">head_group_dict</span><span class="p">[</span><span class="n">ln</span><span class="p">]</span><span class="o">+</span><span class="s">&#39;)&#39;</span> <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">lipid_names</span><span class="p">]</span>
+  <span class="n">lipid_sele_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">sele_dict</span><span class="p">:</span>
+    <span class="n">sele_dict</span><span class="p">[</span><span class="s">&#39;all&#39;</span><span class="p">]</span><span class="o">=</span><span class="s">&#39;&#39;</span>
+  <span class="k">for</span> <span class="n">sele_name</span> <span class="ow">in</span> <span class="n">sele_dict</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">sele_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">]:</span>
+      <span class="n">lipid_sele_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">]</span><span class="o">=</span><span class="s">&#39; or &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; and &#39;</span><span class="o">+</span><span class="n">sele_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="n">lipid_sele_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">]</span><span class="o">=</span><span class="s">&#39; or &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+  <span class="k">print</span> <span class="n">sele_dict</span><span class="p">,</span><span class="n">lipid_sele_dict</span>
+  <span class="n">lipid_normal_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="n">lipid_tilt_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="k">if</span> <span class="n">tilt_bool_prop</span><span class="p">:</span><span class="n">lipid_tilt_dict_sele</span><span class="o">=</span><span class="p">{}</span>
+  <span class="n">splay_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="k">for</span> <span class="n">sele_name</span> <span class="ow">in</span> <span class="n">sele_dict</span><span class="p">:</span>
+    <span class="n">lipid_sele</span><span class="o">=</span><span class="n">lipid_sele_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">]</span>
+    <span class="n">sele</span><span class="o">=</span><span class="n">sele_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">]</span>
+    <span class="n">sele_ev</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">lipid_sele</span><span class="p">,</span><span class="n">mol</span><span class="o">.</span><span class="n">MATCH_RESIDUES</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">lipid_names</span><span class="p">:</span>
+      <span class="n">v</span><span class="o">=</span><span class="n">sele_ev</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="s">&#39;rname={0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ln</span><span class="p">))</span>
+      <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">residues</span><span class="p">):</span><span class="n">r</span><span class="o">.</span><span class="n">SetIntProp</span><span class="p">(</span><span class="s">&#39;index&#39;</span><span class="p">,</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;Assigning normals for&#39;</span><span class="p">,</span><span class="n">sele_name</span><span class="p">,</span><span class="n">sele</span><span class="p">,</span><span class="n">lipid_sele</span>
+    <span class="n">lipid_normal_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">]</span><span class="o">=</span><span class="n">AssignNormalsToLipids</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">sele_ev</span><span class="p">,</span><span class="n">b_eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">sele</span><span class="p">),</span><span class="n">lipid_names</span><span class="p">,</span><span class="n">head_group_dict</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;lipid normal dict&#39;</span><span class="p">,</span><span class="n">lipid_normal_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="k">print</span> <span class="s">&#39;Done in&#39;</span><span class="p">,</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">,</span><span class="s">&#39;seconds&#39;</span>
+    <span class="n">t0</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">print</span> <span class="s">&#39;calculating tilts for&#39;</span><span class="p">,</span><span class="n">sele</span>
+    <span class="n">lipid_tilt_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">]</span><span class="o">=</span><span class="n">AnalyzeLipidTilts</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">lipid_sele</span><span class="p">,</span><span class="n">mol</span><span class="o">.</span><span class="n">MATCH_RESIDUES</span><span class="p">),</span><span class="n">lipid_names</span><span class="p">,</span><span class="n">lipid_normal_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">],</span>
+                                                  <span class="n">head_group_dict</span><span class="p">,</span><span class="n">tail_dict</span><span class="p">,</span><span class="n">prot_cm</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tilt_bool_prop</span><span class="p">:</span>
+      <span class="k">print</span> <span class="s">&quot;Caalculating tilts again only for the lipids with bool prop&quot;</span><span class="p">,</span><span class="n">tilt_bool_prop</span>
+      <span class="n">lipid_tilt_dict_sele</span><span class="p">[</span><span class="n">sele_name</span><span class="p">]</span><span class="o">=</span><span class="n">AnalyzeLipidTilts</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">lipid_sele</span><span class="p">,</span><span class="n">mol</span><span class="o">.</span><span class="n">MATCH_RESIDUES</span><span class="p">),</span><span class="n">lipid_names</span><span class="p">,</span><span class="n">lipid_normal_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">],</span>
+                                                  <span class="n">head_group_dict</span><span class="p">,</span><span class="n">tail_dict</span><span class="p">,</span><span class="n">prot_cm</span><span class="p">,</span><span class="n">tilt_bool_prop</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;Done in&#39;</span><span class="p">,</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">,</span><span class="s">&#39;seconds&#39;</span>
+    <span class="n">t0</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">print</span> <span class="s">&#39;calculating splay for&#39;</span><span class="p">,</span><span class="n">sele</span>
+    <span class="n">splay_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">]</span><span class="o">=</span><span class="n">AnalyzeLipidSplays</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">lipid_sele</span><span class="p">,</span><span class="n">mol</span><span class="o">.</span><span class="n">MATCH_RESIDUES</span><span class="p">),</span><span class="n">lipid_names</span><span class="p">,</span><span class="n">head_group_dict</span><span class="p">,</span><span class="n">tail_dict</span><span class="p">,</span>
+                                            <span class="n">lipid_normal_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">],</span><span class="n">lipid_tilt_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">],</span><span class="n">distance_sele_dict</span><span class="p">,</span><span class="n">distance_cutoff</span><span class="p">,</span><span class="n">splay_bool_prop</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;Done in&#39;</span><span class="p">,</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">,</span><span class="s">&#39;seconds&#39;</span>
+    <span class="k">if</span> <span class="n">outdir</span><span class="p">:</span>
+      <span class="k">try</span><span class="p">:</span><span class="n">WriteSplayDict</span><span class="p">(</span><span class="n">splay_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">],</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">+</span><span class="n">sele_name</span><span class="o">+</span><span class="s">&#39;_&#39;</span><span class="p">)</span>
+      <span class="k">except</span><span class="p">:</span><span class="k">print</span> <span class="s">&#39;could not write dict&#39;</span>
+      <span class="k">if</span> <span class="n">tilt_bool_prop</span><span class="p">:</span><span class="n">WriteTiltDict</span><span class="p">(</span><span class="n">lipid_tilt_dict_sele</span><span class="p">[</span><span class="n">sele_name</span><span class="p">],</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">+</span><span class="n">sele_name</span><span class="o">+</span><span class="s">&#39;_&#39;</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span><span class="n">WriteTiltDict</span><span class="p">(</span><span class="n">lipid_tilt_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">],</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">+</span><span class="n">sele_name</span><span class="o">+</span><span class="s">&#39;_&#39;</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">tilt_bool_prop</span><span class="p">:</span> <span class="k">return</span> <span class="p">(</span><span class="n">lipid_tilt_dict_sele</span><span class="p">,</span><span class="n">lipid_normal_dict</span><span class="p">,</span><span class="n">splay_dict</span><span class="p">,</span><span class="n">b_eh</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span> <span class="k">return</span> <span class="p">(</span><span class="n">lipid_tilt_dict</span><span class="p">,</span><span class="n">lipid_normal_dict</span><span class="p">,</span><span class="n">splay_dict</span><span class="p">,</span><span class="n">b_eh</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="WriteTiltDict"><a class="viewcode-back" href="../lipid_analysis.html#lipid_analysis.WriteTiltDict">[docs]</a><span class="k">def</span> <span class="nf">WriteTiltDict</span><span class="p">(</span><span class="n">lipid_tilt_dict</span><span class="p">,</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function writes out the *lipid_tilt_dict* to the firectory *outdir*.</span>
+<span class="sd">  It writes out one file for every key in *lipid_tilt_dict*, i.e. for every lipid type.</span>
+<span class="sd">  Filenames are preceded by the *filename_basis*.</span>
+
+<span class="sd">  :param lipid_tilt_dict: the lipid tilt dictionary as produced by :func:`AnalyzeLipidTiltAndSplay`.</span>
+<span class="sd">  :param outdir: the directory to which the files will be written</span>
+<span class="sd">  :param filename_basis: Will be prepended to all file names.</span>
+
+<span class="sd">  :type lipid_tilt_dict: :class:`dict`</span>
+<span class="sd">  :type outdir: :class:`str`</span>
+<span class="sd">  :type filename_basis: :class:`str`</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">lipid_tilt_dict</span><span class="p">:</span>
+    <span class="n">tl</span><span class="o">=</span><span class="p">[</span><span class="mf">180.</span><span class="o">*</span><span class="n">el</span><span class="o">/</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span>  <span class="k">for</span> <span class="n">lt</span> <span class="ow">in</span> <span class="n">lipid_tilt_dict</span><span class="p">[</span><span class="n">ln</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">lt</span><span class="p">]</span>
+    <span class="n">dl</span><span class="o">=</span><span class="p">[</span><span class="n">el</span>  <span class="k">for</span> <span class="n">lt</span> <span class="ow">in</span> <span class="n">lipid_tilt_dict</span><span class="p">[</span><span class="n">ln</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">lt</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dl</span><span class="p">)</span><span class="o">!=</span><span class="mi">0</span><span class="p">:</span>
+      <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dl</span><span class="p">)</span><span class="o">!=</span><span class="nb">len</span><span class="p">(</span><span class="n">tl</span><span class="p">):</span><span class="k">print</span> <span class="s">&#39;not the same number of tilts and distances&#39;</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">tl</span><span class="p">),</span><span class="nb">len</span><span class="p">(</span><span class="n">dl</span><span class="p">)</span>
+      <span class="n">ll</span><span class="o">=</span><span class="p">[</span><span class="n">tl</span><span class="p">,</span><span class="n">dl</span><span class="p">]</span>
+      <span class="n">titles</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;tilt&#39;</span><span class="p">,</span><span class="s">&#39;dist from prot&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="n">ll</span><span class="o">=</span><span class="p">[</span><span class="n">tl</span><span class="p">]</span>
+      <span class="n">titles</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;tilt&#39;</span><span class="p">]</span>
+    <span class="n">file_utilities</span><span class="o">.</span><span class="n">WriteListOfListsInColumns</span><span class="p">(</span><span class="n">titles</span><span class="p">,</span><span class="n">ll</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">+</span><span class="s">&#39;tilt_&#39;</span><span class="o">+</span><span class="n">ln</span><span class="o">+</span><span class="s">&#39;.txt&#39;</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="WriteSplayDict"><a class="viewcode-back" href="../lipid_analysis.html#lipid_analysis.WriteSplayDict">[docs]</a><span class="k">def</span> <span class="nf">WriteSplayDict</span><span class="p">(</span><span class="n">splay_dict</span><span class="p">,</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function writes out the *splay_dict* to the firectory *outdir*.</span>
+<span class="sd">  It writes out one file for every key in *splay_dict*, i.e. for every lipid type pair.</span>
+<span class="sd">  Filenames are preceded by the *filename_basis*.</span>
+
+<span class="sd">  :param splay_dict: the lipid splay dictionary as produced by :func:`AnalyzeLipidTiltAndSplay`.</span>
+<span class="sd">  :param outdir: the directory to which the files will be written</span>
+<span class="sd">  :param filename_basis: Will be prepended to all file names.</span>
+
+<span class="sd">  :type splay_dict: :class:`dict`</span>
+<span class="sd">  :type outdir: :class:`str`</span>
+<span class="sd">  :type filename_basis: :class:`str`</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">splay_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span><span class="k">return</span>
+  <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">splay_dict</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">splay_dict</span><span class="p">[</span><span class="n">ln</span><span class="p">])</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span><span class="k">continue</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">splay_dict</span><span class="p">[</span><span class="n">ln</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">==</span><span class="mi">3</span><span class="p">:</span><span class="n">prot_dist_flag</span><span class="o">=</span><span class="bp">True</span>
+    <span class="k">else</span><span class="p">:</span><span class="n">prot_dist_flag</span><span class="o">=</span><span class="bp">False</span>
+    <span class="k">if</span> <span class="n">prot_dist_flag</span><span class="p">:</span>
+      <span class="n">sl</span><span class="o">=</span><span class="p">[[</span><span class="n">el</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">el</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">el</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">splay_dict</span><span class="p">[</span><span class="n">ln</span><span class="p">]]</span>
+      <span class="n">file_utilities</span><span class="o">.</span><span class="n">WriteListOfListsInLines</span><span class="p">([</span><span class="s">&#39;splay&#39;</span><span class="p">,</span><span class="s">&#39;dist&#39;</span><span class="p">,</span><span class="s">&#39;ProtDist&#39;</span><span class="p">],</span><span class="n">sl</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">+</span><span class="s">&#39;splay_&#39;</span><span class="o">+</span><span class="n">ln</span><span class="o">+</span><span class="s">&#39;.txt&#39;</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="n">sl</span><span class="o">=</span><span class="p">[[</span><span class="n">el</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">el</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">splay_dict</span><span class="p">[</span><span class="n">ln</span><span class="p">]]</span>
+      <span class="n">file_utilities</span><span class="o">.</span><span class="n">WriteListOfListsInLines</span><span class="p">([</span><span class="s">&#39;splay&#39;</span><span class="p">,</span><span class="s">&#39;dist&#39;</span><span class="p">],</span><span class="n">sl</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">+</span><span class="s">&#39;splay_&#39;</span><span class="o">+</span><span class="n">ln</span><span class="o">+</span><span class="s">&#39;.txt&#39;</span><span class="p">))</span>
+  <span class="k">return</span>
+
+</div>
+<span class="k">def</span> <span class="nf">_gauss</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">*</span><span class="n">p</span><span class="p">):</span>
+  <span class="n">A</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="n">p</span>
+  <span class="k">return</span> <span class="n">A</span><span class="o">*</span><span class="n">npy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">mu</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">_parabole</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="o">*</span><span class="n">p</span><span class="p">):</span>
+  <span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">x0</span><span class="o">=</span><span class="n">p</span>
+  <span class="k">return</span> <span class="n">a</span><span class="o">+</span><span class="n">b</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">x0</span><span class="p">)</span><span class="o">**</span><span class="mf">2.0</span>
+  
+<span class="k">def</span> <span class="nf">_centered_parabole</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="o">*</span><span class="n">p</span><span class="p">):</span>
+  <span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="o">=</span><span class="n">p</span>
+  <span class="k">return</span> <span class="n">a</span><span class="o">+</span><span class="n">b</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="mf">2.0</span>
+
+<span class="k">def</span> <span class="nf">_FindIndexOfClosestValue</span><span class="p">(</span><span class="n">l</span><span class="p">,</span><span class="n">v</span><span class="p">):</span>
+  <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">l</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">v</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_FitGaussian</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">pa</span><span class="p">):</span>
+  <span class="n">mu0</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">bincenters</span><span class="o">*</span><span class="n">pa</span><span class="p">)</span><span class="o">/</span><span class="n">npy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">pa</span><span class="p">)</span>
+  <span class="n">A0</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">pa</span><span class="p">)</span>
+  <span class="n">sigma0</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">npy</span><span class="o">.</span><span class="n">sum</span><span class="p">(((</span><span class="n">bincenters</span><span class="o">-</span><span class="n">mu0</span><span class="p">)</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span><span class="o">*</span><span class="n">pa</span><span class="p">)</span><span class="o">/</span><span class="n">npy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">pa</span><span class="p">))</span>
+  <span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">mu</span><span class="p">,</span><span class="n">sigma</span><span class="p">),</span><span class="n">v</span><span class="o">=</span><span class="n">curve_fit</span><span class="p">(</span><span class="n">_gauss</span><span class="p">,</span><span class="n">bincenters</span><span class="p">,</span><span class="n">pa</span><span class="p">,[</span><span class="n">A0</span><span class="p">,</span><span class="n">mu0</span><span class="p">,</span><span class="n">sigma0</span><span class="p">])</span>
+  <span class="c">#print A0,mu0,sigma0,A,mu,abs(sigma)</span>
+  <span class="k">return</span> <span class="n">A</span><span class="p">,</span><span class="n">mu</span><span class="p">,</span><span class="nb">abs</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_PlotGaussian</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">pa</span><span class="p">,</span><span class="n">A</span><span class="p">,</span><span class="n">mu</span><span class="p">,</span><span class="n">sigma</span><span class="p">,</span><span class="n">outfile</span><span class="p">,</span><span class="n">title</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">xlabel</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">pa</span><span class="p">,</span><span class="s">&#39;o&#39;</span><span class="p">)</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">_gauss</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">A</span><span class="p">,</span><span class="n">mu</span><span class="p">,</span><span class="n">sigma</span><span class="p">),</span><span class="s">&#39;-&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s">&#39;g&#39;</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s">&#39;$\mu={0}\ ;\ \sigma={1}$&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">mu</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span><span class="nb">round</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">sigma</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)))</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">],</span><span class="n">linestyle</span><span class="o">=</span><span class="s">&#39;--&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">([</span><span class="n">mu</span><span class="o">+</span><span class="n">sigma</span><span class="p">,</span><span class="n">mu</span><span class="o">-</span><span class="n">sigma</span><span class="p">],</span><span class="mi">0</span><span class="p">,</span><span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">],</span><span class="n">linestyle</span><span class="o">=</span><span class="s">&#39;--&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s">&#39;c&#39;</span><span class="p">)</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="p">)</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;Probability&#39;</span><span class="p">)</span>
+  <span class="c">#plt.show()</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">outfile</span><span class="p">)</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+  
+<span class="k">def</span> <span class="nf">_FitParabole</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">fa</span><span class="p">,</span><span class="n">fitting_range</span><span class="p">,</span><span class="n">centered</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+  <span class="n">first</span><span class="o">=</span><span class="n">_FindIndexOfClosestValue</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">fitting_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+  <span class="n">last</span><span class="o">=</span><span class="n">_FindIndexOfClosestValue</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">fitting_range</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+  <span class="n">mask</span><span class="o">=</span><span class="n">fa</span><span class="o">!=</span><span class="n">npy</span><span class="o">.</span><span class="n">inf</span>
+  <span class="n">a</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">fa</span><span class="p">)</span>
+  <span class="n">x0</span><span class="o">=</span><span class="n">bincenters</span><span class="p">[</span><span class="n">npy</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">fa</span><span class="p">)]</span>
+  <span class="n">xm</span><span class="o">=</span><span class="n">bincenters</span><span class="p">[</span><span class="n">mask</span><span class="p">][</span><span class="n">npy</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">fa</span><span class="p">[</span><span class="n">mask</span><span class="p">])]</span>
+  <span class="n">fm</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">fa</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span>
+  <span class="n">b</span><span class="o">=</span><span class="p">(</span><span class="n">fm</span><span class="o">-</span><span class="n">a</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">xm</span><span class="o">-</span><span class="n">x0</span><span class="p">)</span><span class="o">**</span><span class="mf">2.0</span>
+  <span class="k">if</span> <span class="n">centered</span><span class="p">:</span><span class="n">r</span><span class="p">,</span><span class="n">v</span><span class="o">=</span><span class="n">curve_fit</span><span class="p">(</span><span class="n">_centered_parabole</span><span class="p">,</span><span class="n">bincenters</span><span class="p">[</span><span class="n">first</span><span class="p">:</span><span class="n">last</span><span class="p">],</span><span class="n">fa</span><span class="p">[</span><span class="n">first</span><span class="p">:</span><span class="n">last</span><span class="p">],[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">])</span>
+  <span class="k">else</span><span class="p">:</span><span class="n">r</span><span class="p">,</span><span class="n">v</span><span class="o">=</span><span class="n">curve_fit</span><span class="p">(</span><span class="n">_parabole</span><span class="p">,</span><span class="n">bincenters</span><span class="p">[</span><span class="n">first</span><span class="p">:</span><span class="n">last</span><span class="p">],</span><span class="n">fa</span><span class="p">[</span><span class="n">first</span><span class="p">:</span><span class="n">last</span><span class="p">],[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">x0</span><span class="p">])</span>
+  <span class="k">return</span> <span class="n">r</span>
+
+<span class="k">def</span> <span class="nf">_PlotParabola</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">fa</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">x0</span><span class="p">,</span><span class="n">fitting_range</span><span class="p">,</span><span class="n">outfile</span><span class="p">,</span><span class="n">title</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">xlabel</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">ylabel</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">fit_label</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">fa</span><span class="p">,</span><span class="s">&#39;o&#39;</span><span class="p">)</span>
+  <span class="n">ymax</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+  <span class="n">ymin</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,[</span><span class="n">_parabole</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">x0</span><span class="p">)</span> <span class="k">for</span> <span class="n">xi</span> <span class="ow">in</span> <span class="n">bincenters</span><span class="p">],</span><span class="s">&#39;--&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="n">fit_label</span><span class="p">)</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="p">)</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="n">ylabel</span><span class="p">)</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">fit_label</span><span class="p">:</span><span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s">&#39;best&#39;</span><span class="p">)</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">fitting_range</span><span class="p">,</span><span class="n">ymin</span><span class="p">,</span><span class="n">ymax</span><span class="p">,</span><span class="n">linestyle</span><span class="o">=</span><span class="s">&#39;--&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s">&#39;c&#39;</span><span class="p">)</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="n">ymin</span><span class="p">,</span><span class="n">ymax</span><span class="p">)</span>
+  <span class="c">#plt.show()</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">outfile</span><span class="p">)</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+  <span class="k">return</span>
+
+<div class="viewcode-block" id="ExtractTiltAndSplayModuli"><a class="viewcode-back" href="../lipid_analysis.html#lipid_analysis.ExtractTiltAndSplayModuli">[docs]</a><span class="k">def</span> <span class="nf">ExtractTiltAndSplayModuli</span><span class="p">(</span><span class="n">tilt_dict</span><span class="p">,</span><span class="n">splay_dict</span><span class="p">,</span><span class="n">lipid_area</span><span class="p">,</span><span class="n">outdir</span><span class="p">,</span><span class="n">nbins</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function extracts the tilt and splay moduli from the dictionaries of tilts and splays</span>
+<span class="sd">  obtained from the *AnalyzeLipidTiltAndSplay* function.</span>
+<span class="sd">  It will first fit a gaussian y=A exp[(x-mu)/sigma^2] to the distribution of tilts and the distribution of splays </span>
+<span class="sd">  to determine the fitting range then used to fit the corresponding potential of mean force (PMF).</span>
+<span class="sd">  Different fitting ranges are used to estimate the error on the extracted tilt and splay moduli.</span>
+<span class="sd">  The function will calculate one tilt modulus for each lipid species and one splay modulus for each pair</span>
+<span class="sd">  of lipid species. It will then combine these to calculate the overall tilt modulus and splay modulus (bending rigidity).</span>
+<span class="sd">  More details about this procedure can be found in ref. [2]_</span>
+
+<span class="sd">  :param tilt_dict: A dictionary of lipid tilts as returned by the *AnalyzeLipidTiltAndSplay* function.</span>
+<span class="sd">  :param splay_dict: A dictionary of lipid splays as returned by the *AnalyzeLipidTiltAndSplay* function.</span>
+<span class="sd">  :param lipid_area: The area per lipid.</span>
+<span class="sd">  :param outdir:  the directory to which output files will be written, i.e. plots of tilt and splay distributions and PMFs.</span>
+<span class="sd">                  and text files containing the elastic moduli</span>
+<span class="sd">  :param nbins:    The number of bins used when determining the distributions of tilts and splays</span>
+
+<span class="sd">  :type tilt_dict: :class:`dict`</span>
+<span class="sd">  :type splay_dict: :class:`dict`</span>
+<span class="sd">  :type outdir: :class:`str`</span>
+<span class="sd">  :type nbins: :class:`int`</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="k">for</span> <span class="n">sele_name</span> <span class="ow">in</span> <span class="n">tilt_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="n">outfile</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="n">sele_name</span><span class="o">+</span><span class="s">&#39;_tilt_constants.txt&#39;</span><span class="p">),</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+    <span class="n">k_list</span><span class="o">=</span><span class="n">FloatList</span><span class="p">()</span>
+    <span class="n">deltak_list</span><span class="o">=</span><span class="n">FloatList</span><span class="p">()</span>
+    <span class="n">nl_list</span><span class="o">=</span><span class="n">FloatList</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">lipid_name</span> <span class="ow">in</span> <span class="n">tilt_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+      <span class="n">fname</span><span class="o">=</span><span class="s">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">sele_name</span><span class="p">,</span><span class="n">lipid_name</span><span class="p">])</span>
+      <span class="n">tilt_list</span><span class="o">=</span><span class="n">FloatList</span><span class="p">()</span>
+      <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">tilt_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">][</span><span class="n">lipid_name</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">tilt_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">el</span><span class="p">)</span>
+      <span class="n">k</span><span class="p">,</span><span class="n">dk</span><span class="p">,</span><span class="n">kl</span><span class="o">=</span><span class="n">FitTiltDistribution</span><span class="p">(</span><span class="n">tilt_list</span><span class="p">,</span><span class="n">nbins</span><span class="p">,</span><span class="n">outdir</span><span class="o">=</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">=</span><span class="n">fname</span><span class="p">,</span><span class="n">title_complement</span><span class="o">=</span><span class="s">&#39;for &#39;</span><span class="o">+</span><span class="n">sele_name</span><span class="o">+</span><span class="s">&quot; &quot;</span><span class="o">+</span><span class="n">lipid_name</span><span class="p">)</span>
+      <span class="k">print</span> <span class="s">&quot;Tilt modulus for {0} {1} is k={2:1.2f} +/- {3:1.2f}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sele_name</span><span class="p">,</span><span class="n">lipid_name</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">dk</span><span class="p">)</span>
+      <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">lipid_name</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">kl</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">1</span><span class="p">)),</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">dk</span><span class="p">,</span><span class="mi">1</span><span class="p">))])</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+      <span class="n">k_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+      <span class="n">deltak_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dk</span><span class="p">)</span>
+      <span class="n">nl_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tilt_list</span><span class="p">))</span>
+    <span class="n">ntot</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">nl_list</span><span class="p">)</span>
+    <span class="n">k</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">ni</span><span class="o">/</span><span class="n">ki</span> <span class="k">for</span> <span class="n">ni</span><span class="p">,</span><span class="n">ki</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">nl_list</span><span class="p">,</span><span class="n">k_list</span><span class="p">)])</span><span class="o">/</span><span class="n">ntot</span>
+    <span class="n">k</span><span class="o">=</span><span class="mf">1.</span><span class="o">/</span><span class="n">k</span>
+    <span class="n">dk</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">sum</span><span class="p">([((</span><span class="n">k</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">ki</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span><span class="o">*</span><span class="n">ni</span><span class="o">/</span><span class="n">ntot</span><span class="p">)</span><span class="o">**</span><span class="mf">2.0</span><span class="o">*</span><span class="p">(</span><span class="n">dki</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">ni</span><span class="p">,</span><span class="n">ki</span><span class="p">,</span><span class="n">dki</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">nl_list</span><span class="p">,</span><span class="n">k_list</span><span class="p">,</span><span class="n">deltak_list</span><span class="p">)])</span>
+    <span class="n">dk</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dk</span><span class="p">)</span>
+    <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;agregated&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="mi">1</span><span class="p">)),</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">dk</span><span class="p">,</span><span class="mi">1</span><span class="p">))])</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+    <span class="n">outfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">k_list</span><span class="p">)):</span><span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+  <span class="k">for</span> <span class="n">sele_name</span> <span class="ow">in</span> <span class="n">splay_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="n">outfile</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="n">sele_name</span><span class="o">+</span><span class="s">&#39;_splay_constants.txt&#39;</span><span class="p">),</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+    <span class="n">k_list</span><span class="o">=</span><span class="n">FloatList</span><span class="p">()</span>
+    <span class="n">nl_list</span><span class="o">=</span><span class="n">FloatList</span><span class="p">()</span>
+    <span class="n">deltak_list</span><span class="o">=</span><span class="n">FloatList</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">splay_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">]:</span>
+      <span class="n">fname</span><span class="o">=</span><span class="s">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">sele_name</span><span class="p">,</span><span class="n">key</span><span class="p">])</span>
+      <span class="n">splay_list</span><span class="o">=</span><span class="p">[</span><span class="n">el</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">splay_dict</span><span class="p">[</span><span class="n">sele_name</span><span class="p">][</span><span class="n">key</span><span class="p">]]</span>
+      <span class="n">k</span><span class="p">,</span><span class="n">dk</span><span class="p">,</span><span class="n">kl</span><span class="o">=</span><span class="n">FitSplayDistribution</span><span class="p">(</span><span class="n">splay_list</span><span class="p">,</span><span class="n">lipid_area</span><span class="p">,</span><span class="n">nbins</span><span class="p">,</span><span class="n">outdir</span><span class="o">=</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">=</span><span class="n">fname</span><span class="p">,</span><span class="n">title_complement</span><span class="o">=</span><span class="s">&#39;for &#39;</span><span class="o">+</span><span class="n">sele_name</span><span class="o">+</span><span class="s">&quot; &quot;</span><span class="o">+</span><span class="n">key</span><span class="p">)</span>
+      <span class="k">print</span> <span class="s">&quot;Splay modulus for {0} {1} is k={2:1.2f} +/- {3:1.2f}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sele_name</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">dk</span><span class="p">)</span>
+      <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">key</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">kl</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">1</span><span class="p">)),</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">dk</span><span class="p">,</span><span class="mi">1</span><span class="p">))])</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+      <span class="n">k_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+      <span class="n">deltak_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dk</span><span class="p">)</span>
+      <span class="n">nl_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">splay_list</span><span class="p">))</span>
+    <span class="n">ntot</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">nl_list</span><span class="p">)</span>
+    <span class="n">k</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">ni</span><span class="o">/</span><span class="n">ki</span> <span class="k">for</span> <span class="n">ni</span><span class="p">,</span><span class="n">ki</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">nl_list</span><span class="p">,</span><span class="n">k_list</span><span class="p">)])</span><span class="o">/</span><span class="n">ntot</span>
+    <span class="n">k</span><span class="o">=</span><span class="mf">1.</span><span class="o">/</span><span class="n">k</span>
+    <span class="n">dk</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">sum</span><span class="p">([((</span><span class="n">k</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">ki</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span><span class="o">*</span><span class="n">ni</span><span class="o">/</span><span class="n">ntot</span><span class="p">)</span><span class="o">**</span><span class="mf">2.0</span><span class="o">*</span><span class="p">(</span><span class="n">dki</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">ni</span><span class="p">,</span><span class="n">ki</span><span class="p">,</span><span class="n">dki</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">nl_list</span><span class="p">,</span><span class="n">k_list</span><span class="p">,</span><span class="n">deltak_list</span><span class="p">)])</span>
+    <span class="n">dk</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dk</span><span class="p">)</span>
+    <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;agregated&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="mi">1</span><span class="p">)),</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">dk</span><span class="p">,</span><span class="mi">1</span><span class="p">))])</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+    <span class="n">outfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">k_list</span><span class="p">)):</span><span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="FitSplayDistribution"><a class="viewcode-back" href="../lipid_analysis.html#lipid_analysis.FitSplayDistribution">[docs]</a><span class="k">def</span> <span class="nf">FitSplayDistribution</span><span class="p">(</span><span class="n">splay_list</span><span class="p">,</span><span class="n">lipid_area</span><span class="p">,</span><span class="n">nbins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="n">x_range</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">outdir</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">title_complement</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>  
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function extracts the bending modulus from a list of splays.</span>
+<span class="sd">  It will first fit a gaussian y=A exp[(x-mu)/sigma^2] to the distribution of splays to determine</span>
+<span class="sd">  the fitting range used to fit the potential of mean force (PMF).</span>
+<span class="sd">  Different fitting ranges are used to estimate the error on the extracted bending rigidity</span>
+
+<span class="sd">  :param splay_list: A list of lipid splays.</span>
+<span class="sd">  :param lipid_area: The area per lipid.</span>
+<span class="sd">  :param nbins:   The number of bins used when determining the distribution of splays</span>
+<span class="sd">  :param x_range:  The range in which the distribution will be calculated. Defaults to [mean-3*std,mean+3*std].</span>
+<span class="sd">  :param outdir:  the directory to which output files will be written, i.e. plots of splay distribution and PMF.</span>
+<span class="sd">                  if it is not defined, plots will not be generated</span>
+<span class="sd">  :param filename_basis: Will be prepended to all file names.</span>
+<span class="sd">  :param title_complement: will be added in the title of the plots</span>
+
+<span class="sd">  :type splay_list: :class:`list`</span>
+<span class="sd">  :type lipid_area: :class:`float`</span>
+<span class="sd">  :type nbins: :class:`int`</span>
+<span class="sd">  :type x_range: :class:`tuple` of 2 floats</span>
+<span class="sd">  :type outdir: :class:`str`</span>
+<span class="sd">  :type filename_basis: :class:`str`</span>
+<span class="sd">  :type title_complement: :class:`str`</span>
+
+<span class="sd">  :return: A tuple **(K, DeltaK,K_list)**, containing the bending rigidity *K*,</span>
+<span class="sd">           the estimated uncertainty on *K*, and the list of *K* values obtained from the different fitting ranges.</span>
+<span class="sd">  :rtype: (:class:`float`,:class:`float`,:class:`list`)</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">x_range</span><span class="p">:</span>
+    <span class="n">w</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">splay_list</span><span class="p">)</span>
+    <span class="n">m</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">splay_list</span><span class="p">)</span>
+    <span class="n">x_range</span><span class="o">=</span><span class="p">[</span><span class="n">m</span><span class="o">-</span><span class="mi">3</span><span class="o">*</span><span class="n">w</span><span class="p">,</span><span class="n">m</span><span class="o">+</span><span class="mi">3</span><span class="o">*</span><span class="n">w</span><span class="p">]</span>
+  <span class="n">pa</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">splay_list</span><span class="p">,</span><span class="n">nbins</span><span class="p">,</span><span class="nb">range</span><span class="o">=</span><span class="n">x_range</span><span class="p">,</span><span class="n">density</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+  <span class="n">bincenters</span><span class="o">=</span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">pa</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span><span class="o">+</span><span class="n">pa</span><span class="p">[</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+  <span class="n">fa</span><span class="o">=-</span><span class="n">npy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">pa</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+  <span class="n">A</span><span class="p">,</span><span class="n">mu</span><span class="p">,</span><span class="n">sigma</span><span class="o">=</span><span class="n">_FitGaussian</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">pa</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+  <span class="n">ranges</span><span class="o">=</span><span class="p">[(</span><span class="n">mu</span><span class="o">-</span><span class="n">i</span><span class="o">*</span><span class="n">sigma</span><span class="p">,</span><span class="n">mu</span><span class="o">+</span><span class="n">i</span><span class="o">*</span><span class="n">sigma</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mf">1.25</span><span class="p">,</span><span class="mf">1.5</span><span class="p">,</span><span class="mf">1.75</span><span class="p">,</span><span class="mi">2</span><span class="p">]]</span>
+  <span class="k">print</span> <span class="s">&quot;Gaussian y=A exp[(x-mu)/sigma^2] fitted to tilt distribution with A={0},mu={1} and sigma={2}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span><span class="nb">round</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span><span class="nb">round</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+  <span class="k">print</span> <span class="s">&quot;Using the following ranges to fit the PMF:&quot;</span><span class="p">,</span><span class="n">ranges</span>
+  <span class="n">res_list</span><span class="o">=</span><span class="p">[]</span>
+  <span class="k">for</span> <span class="n">fitting_range</span> <span class="ow">in</span> <span class="n">ranges</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span><span class="n">r</span><span class="o">=</span><span class="n">_FitParabole</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">fa</span><span class="p">,</span><span class="n">fitting_range</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span><span class="n">r</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">res_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+  <span class="n">K_list</span><span class="o">=</span><span class="p">[</span><span class="mf">2.</span><span class="o">*</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">lipid_area</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">res_list</span><span class="p">]</span>
+  <span class="n">DeltaK</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">std</span><span class="p">([</span><span class="n">el</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">K_list</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">el</span><span class="o">==</span><span class="mf">0.0</span><span class="p">])</span>
+  <span class="n">K</span><span class="o">=</span><span class="n">K_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+  <span class="k">if</span> <span class="n">outdir</span><span class="p">:</span>
+    <span class="n">file_utilities</span><span class="o">.</span><span class="n">WriteListOfListsInColumns</span><span class="p">([</span><span class="s">&#39;bin&#39;</span><span class="p">,</span><span class="s">&#39;distribution&#39;</span><span class="p">,</span><span class="s">&#39;pmf&#39;</span><span class="p">],[</span><span class="n">bincenters</span><span class="p">,</span><span class="n">pa</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">fa</span><span class="p">],</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="s">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">filename_basis</span><span class="p">,</span><span class="s">&#39;splay&#39;</span><span class="p">,</span><span class="s">&#39;distribution&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&#39;.txt&#39;</span><span class="p">),</span><span class="n">separator</span><span class="o">=</span><span class="s">&#39; &#39;</span><span class="p">)</span>
+    <span class="n">title</span><span class="o">=</span><span class="s">&#39;Splay distribution {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">title_complement</span><span class="p">)</span>
+    <span class="n">outfile</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="s">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">filename_basis</span><span class="p">,</span><span class="s">&#39;splay&#39;</span><span class="p">,</span><span class="s">&#39;distribution&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&#39;.png&#39;</span><span class="p">)</span>
+    <span class="n">_PlotGaussian</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">pa</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">A</span><span class="p">,</span><span class="n">mu</span><span class="p">,</span><span class="n">sigma</span><span class="p">,</span><span class="n">outfile</span><span class="p">,</span><span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span><span class="n">xlabel</span><span class="o">=</span><span class="s">&#39;Splay&#39;</span><span class="p">)</span>
+    <span class="n">outfile</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="s">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">filename_basis</span><span class="p">,</span><span class="s">&#39;splay&#39;</span><span class="p">,</span><span class="s">&#39;fit&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&#39;.png&#39;</span><span class="p">)</span>
+    <span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">x0</span><span class="o">=</span><span class="n">res_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">title</span><span class="o">=</span><span class="s">&#39;Splay PMF {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">title_complement</span><span class="p">)</span>
+    <span class="n">_PlotParabola</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">fa</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">x0</span><span class="p">,</span><span class="n">ranges</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">outfile</span><span class="p">,</span><span class="n">title</span><span class="p">,</span><span class="s">&#39;Splay&#39;</span><span class="p">,</span><span class="s">r&#39;$-\log\left[P(\alpha)\right]$&#39;</span><span class="p">,</span><span class="s">&#39;$\chi^{{12}}={0}\pm {1}  k_BT$&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">K</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">K</span><span class="p">))</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span><span class="nb">round</span><span class="p">(</span><span class="n">DeltaK</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">DeltaK</span><span class="p">))</span><span class="o">+</span><span class="mi">1</span><span class="p">)))</span>
+  <span class="k">return</span> <span class="n">K</span><span class="p">,</span><span class="n">DeltaK</span><span class="p">,</span><span class="n">K_list</span>
+  </div>
+<div class="viewcode-block" id="FitTiltDistribution"><a class="viewcode-back" href="../lipid_analysis.html#lipid_analysis.FitTiltDistribution">[docs]</a><span class="k">def</span> <span class="nf">FitTiltDistribution</span><span class="p">(</span><span class="n">tilt_list</span><span class="p">,</span><span class="n">nbins</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span><span class="n">x_range</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">outdir</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">title_complement</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">degrees</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function extracts the tilt modulus from a list of lipid tilts.</span>
+<span class="sd">  It will first fit a gaussian y=A exp[(x-mu)/sigma^2] to the distribution of tilts to determine</span>
+<span class="sd">  the fitting range used to fit the potential of mean force (PMF).</span>
+<span class="sd">  Different fitting ranges are used to estimate the error on the extracted tilt modulus</span>
+
+<span class="sd">  :param tilt_list: A list of lipid splays.</span>
+<span class="sd">  :param nbins:   The number of bins used when determining the distribution of splays</span>
+<span class="sd">  :param x_range:  The range in which the distribution will be calculated. Defaults to [mean-3*std,mean+3*std].</span>
+<span class="sd">  :param outdir:  the directory to which output files will be written, i.e. plots of splay distribution and PMF.</span>
+<span class="sd">                  if it is not defined, plots will not be generated</span>
+<span class="sd">  :param filename_basis: Will be prepended to all file names.</span>
+<span class="sd">  :param title_complement: will be added in the title of the plots</span>
+<span class="sd">  :param degrees: Whether plots should be in degrees or radians.</span>
+
+<span class="sd">  :type tilt_list: :class:`list`</span>
+<span class="sd">  :type nbins: :class:`int`</span>
+<span class="sd">  :type x_range: :class:`tuple` of 2 floats</span>
+<span class="sd">  :type outdir: :class:`str`</span>
+<span class="sd">  :type filename_basis: :class:`str`</span>
+<span class="sd">  :type title_complement: :class:`str`</span>
+<span class="sd">  :type degrees: :class:`bool`</span>
+
+<span class="sd">  :return: A tuple **(Chi, DeltaChi,Chi_list)**, containing the tilt modulus *Chi*,</span>
+<span class="sd">           the estimated uncertainty on *Chi*, and the list of *Chi* values obtained from the different fitting ranges.</span>
+<span class="sd">  :rtype: (:class:`float`,:class:`float`,:class:`list`)</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">if</span> <span class="n">degrees</span><span class="p">:</span><span class="n">ac</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span>
+  <span class="k">else</span><span class="p">:</span><span class="n">ac</span><span class="o">=</span><span class="mi">1</span>
+  <span class="k">if</span> <span class="bp">None</span><span class="p">:</span><span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">ac</span><span class="p">)]</span>
+  <span class="n">pa</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">tilt_list</span><span class="p">,</span><span class="n">nbins</span><span class="p">,</span><span class="nb">range</span><span class="o">=</span><span class="n">x_range</span><span class="p">,</span><span class="n">density</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+  <span class="n">bincenters</span><span class="o">=</span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">pa</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span><span class="o">+</span><span class="n">pa</span><span class="p">[</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+  <span class="n">pa</span><span class="o">=</span><span class="n">pa</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+  <span class="n">pa2</span><span class="o">=</span><span class="n">pa</span><span class="o">/</span><span class="n">npy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">bincenters</span><span class="o">*</span><span class="n">ac</span><span class="p">)</span>
+  <span class="n">fa</span><span class="o">=-</span><span class="n">npy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">pa2</span><span class="p">)</span>
+  <span class="n">A</span><span class="p">,</span><span class="n">mu</span><span class="p">,</span><span class="n">sigma</span><span class="o">=</span><span class="n">_FitGaussian</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">pa</span><span class="p">)</span>
+  <span class="n">ranges</span><span class="o">=</span><span class="p">[(</span><span class="nb">max</span><span class="p">(</span><span class="n">mu</span><span class="o">-</span><span class="n">i</span><span class="o">*</span><span class="n">sigma</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span><span class="n">mu</span><span class="o">+</span><span class="n">i</span><span class="o">*</span><span class="n">sigma</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mf">1.25</span><span class="p">,</span><span class="mf">1.5</span><span class="p">,</span><span class="mf">1.75</span><span class="p">,</span><span class="mf">2.0</span><span class="p">]]</span>
+  <span class="k">print</span> <span class="s">&quot;Gaussian y=A exp[(x-mu)/sigma^2] fitted to tilt distribution with A={0},mu={1} and sigma={2}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span><span class="nb">round</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span><span class="nb">round</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+  <span class="k">print</span> <span class="s">&quot;Using the following ranges to fit the PMF:&quot;</span><span class="p">,</span><span class="n">ranges</span>
+  <span class="n">res_list</span><span class="o">=</span><span class="p">[</span><span class="n">_FitParabole</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">fa</span><span class="p">,</span><span class="n">fitting_range</span><span class="p">,</span><span class="n">centered</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">fitting_range</span> <span class="ow">in</span> <span class="n">ranges</span><span class="p">]</span>
+  <span class="n">K_list</span><span class="o">=</span><span class="p">[</span><span class="mf">2.</span><span class="o">*</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="n">ac</span><span class="o">*</span><span class="n">ac</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">res_list</span><span class="p">]</span>
+  <span class="n">DeltaK</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">K_list</span><span class="p">)</span>
+  <span class="n">K</span><span class="o">=</span><span class="n">K_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+  <span class="k">if</span> <span class="n">outdir</span><span class="p">:</span>
+    <span class="n">file_utilities</span><span class="o">.</span><span class="n">WriteListOfListsInColumns</span><span class="p">([</span><span class="s">&#39;bin&#39;</span><span class="p">,</span><span class="s">&#39;distribution&#39;</span><span class="p">,</span><span class="s">&#39;pmf&#39;</span><span class="p">],[</span><span class="n">bincenters</span><span class="p">,</span><span class="n">pa</span><span class="p">,</span><span class="n">fa</span><span class="p">],</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="s">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">filename_basis</span><span class="p">,</span><span class="s">&#39;tilt&#39;</span><span class="p">,</span><span class="s">&#39;distribution&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&#39;.txt&#39;</span><span class="p">),</span><span class="n">separator</span><span class="o">=</span><span class="s">&#39; &#39;</span><span class="p">)</span>
+    <span class="n">title</span><span class="o">=</span><span class="s">&#39;Tilt distribution {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">title_complement</span><span class="p">)</span>
+    <span class="n">outfile</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="s">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">filename_basis</span><span class="p">,</span><span class="s">&#39;tilt&#39;</span><span class="p">,</span><span class="s">&#39;distribution&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&#39;.png&#39;</span><span class="p">)</span>
+    <span class="n">_PlotGaussian</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">pa</span><span class="p">,</span><span class="n">A</span><span class="p">,</span><span class="n">mu</span><span class="p">,</span><span class="n">sigma</span><span class="p">,</span><span class="n">outfile</span><span class="p">,</span><span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span><span class="n">xlabel</span><span class="o">=</span><span class="s">&#39;Tilt&#39;</span><span class="p">)</span>
+    <span class="n">outfile</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="s">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">filename_basis</span><span class="p">,</span><span class="s">&#39;tilt&#39;</span><span class="p">,</span><span class="s">&#39;fit&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&#39;.png&#39;</span><span class="p">)</span>
+    <span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="o">=</span><span class="n">res_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">r</span><span class="o">=</span><span class="p">[</span><span class="n">el</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">ranges</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+    <span class="n">title</span><span class="o">=</span><span class="s">&#39;Tilt PMF {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">title_complement</span><span class="p">)</span>
+    <span class="n">_PlotParabola</span><span class="p">(</span><span class="n">bincenters</span><span class="p">,</span><span class="n">fa</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="n">r</span><span class="p">,</span><span class="n">outfile</span><span class="p">,</span><span class="n">title</span><span class="p">,</span><span class="s">&#39;Tilt&#39;</span><span class="p">,</span><span class="s">r&#39;$-\log\left[\frac{P(\alpha)}{\sin(\alpha)}\right]$&#39;</span><span class="p">,</span><span class="s">&#39;$\chi={0}\pm {1} k_BT$&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">K</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">K</span><span class="p">))</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span><span class="nb">round</span><span class="p">(</span><span class="n">DeltaK</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">DeltaK</span><span class="p">))</span><span class="o">+</span><span class="mi">1</span><span class="p">)))</span>
+  <span class="k">return</span> <span class="n">K</span><span class="p">,</span><span class="n">DeltaK</span><span class="p">,</span><span class="n">K_list</span>
+
+</div>
+<div class="viewcode-block" id="AnalyzeAreaPerLipid"><a class="viewcode-back" href="../lipid_analysis.html#lipid_analysis.AnalyzeAreaPerLipid">[docs]</a><span class="k">def</span> <span class="nf">AnalyzeAreaPerLipid</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">lipids</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function calculates the area per lipid simply from the number of lipids</span>
+<span class="sd">  and the size of the simulation box.</span>
+<span class="sd">  The area per lipid is calculated for each frame in the simulation and the average</span>
+<span class="sd">  is returned. **This is only suitable for bilayers**</span>
+
+<span class="sd">  :param t: The trajectory</span>
+<span class="sd">  :param lipids: Selection of the lipids in the system</span>
+
+<span class="sd">  :type t: :class:`~ost.mol.CoordGroupHandle`</span>
+<span class="sd">  :type lipid: :class:`~ost.mol.EntityView`</span>
+
+<span class="sd">  :return: The area per lipid</span>
+<span class="sd">  :rtype: :class:`float`</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">n</span><span class="o">=</span><span class="n">lipids</span><span class="o">.</span><span class="n">GetResidueCount</span><span class="p">()</span>
+  <span class="n">Al</span><span class="o">=</span><span class="n">FloatList</span><span class="p">()</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrameCount</span><span class="p">()):</span>
+    <span class="n">f</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrame</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">cell_size</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">GetCellSize</span><span class="p">()</span>
+    <span class="n">Al</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cell_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">cell_size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+  <span class="k">return</span> <span class="mf">2.</span><span class="o">*</span><span class="n">npy</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">Al</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

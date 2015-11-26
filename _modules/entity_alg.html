@@ -1,0 +1,270 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>entity_alg &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for entity_alg</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. codeauthor:: Niklaus Johner &lt;niklaus.johner@a3.epfl.ch&gt;</span>
+
+<span class="sd">This module contains basic functions to work with structures (Entities and EntityViews).</span>
+<span class="sd">It notably functions to generate the biounit or crystal packing from a pdb file</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__all__</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;FindClosestAtom&#39;</span><span class="p">,</span><span class="s">&#39;CreateEntityFromVec3List&#39;</span><span class="p">,</span><span class="s">&quot;GenerateBioUnit&quot;</span>\
+         <span class="s">&#39;WriteFloatPropList&#39;</span><span class="p">,</span><span class="s">&#39;AssignFloatPropToEntityResidues&#39;</span><span class="p">,</span><span class="s">&#39;AssignFloatPropToEntity&#39;</span><span class="p">,</span><span class="s">&#39;GenerateCrystalPackingFromPDB&#39;</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">ost</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;/work/python_modules&#39;</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">file_utilities</span>
+
+<div class="viewcode-block" id="FindClosestAtom"><a class="viewcode-back" href="../entity_alg.html#entity_alg.FindClosestAtom">[docs]</a><span class="k">def</span> <span class="nf">FindClosestAtom</span><span class="p">(</span><span class="n">v1</span><span class="p">,</span><span class="n">v2</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  v1 and v2 need to be an Entity, EntityView, ChainView, ResidueView, ChainHandle or ResidueHandle</span>
+<span class="sd">  Returns the atom of v2 that is closest to v1 (minimal distance to any atom in v1).</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">v2</span><span class="p">)</span><span class="o">==</span><span class="n">mol</span><span class="o">.</span><span class="n">EntityView</span><span class="p">:</span><span class="n">v2</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">CreateViewFromAtoms</span><span class="p">(</span><span class="n">v2</span><span class="o">.</span><span class="n">atoms</span><span class="p">)</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">v1</span><span class="p">)</span><span class="o">==</span><span class="n">mol</span><span class="o">.</span><span class="n">EntityView</span><span class="p">:</span><span class="n">v1</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">CreateViewFromAtoms</span><span class="p">(</span><span class="n">v1</span><span class="o">.</span><span class="n">atoms</span><span class="p">)</span>
+  <span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">MinDistanceIndices</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">GetPosListFromView</span><span class="p">(</span><span class="n">v1</span><span class="p">),</span><span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">GetPosListFromView</span><span class="p">(</span><span class="n">v2</span><span class="p">))</span>
+  <span class="k">return</span> <span class="n">v2</span><span class="o">.</span><span class="n">atoms</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+
+</div>
+<div class="viewcode-block" id="CreateEntityFromVec3List"><a class="viewcode-back" href="../entity_alg.html#entity_alg.CreateEntityFromVec3List">[docs]</a><span class="k">def</span> <span class="nf">CreateEntityFromVec3List</span><span class="p">(</span><span class="n">pos_list</span><span class="p">,</span><span class="n">chain_name</span><span class="o">=</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="n">rname</span><span class="o">=</span><span class="s">&#39;b&#39;</span><span class="p">,</span><span class="n">aname_base</span><span class="o">=</span><span class="s">&#39;C&#39;</span><span class="p">,</span><span class="n">atom_element</span><span class="o">=</span><span class="s">&#39;C&#39;</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Creates an entity with atoms positioned according to vectors in the pos_list (Vec3List).</span>
+<span class="sd">  All atoms are generated in a single chain, with 100 atoms per residue.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">eh</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">CreateEntity</span><span class="p">()</span>
+  <span class="n">edi</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">BUFFERED_EDIT</span><span class="p">)</span>
+  <span class="n">c</span><span class="o">=</span><span class="n">edi</span><span class="o">.</span><span class="n">InsertChain</span><span class="p">(</span><span class="n">chain_name</span><span class="p">)</span>
+  <span class="n">r</span><span class="o">=</span><span class="n">edi</span><span class="o">.</span><span class="n">AppendResidue</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">rname</span><span class="p">)</span>
+  <span class="n">ac</span><span class="o">=</span><span class="mi">0</span>
+  <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">pos_list</span><span class="p">:</span>
+    <span class="n">edi</span><span class="o">.</span><span class="n">InsertAtom</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="n">aname_base</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ac</span><span class="p">),</span><span class="n">v</span><span class="p">,</span><span class="n">atom_element</span><span class="p">)</span>
+    <span class="n">ac</span><span class="o">+=</span><span class="mi">1</span>
+    <span class="k">if</span> <span class="n">ac</span><span class="o">==</span><span class="mi">100</span><span class="p">:</span>
+      <span class="n">ac</span><span class="o">=</span><span class="mi">0</span>
+      <span class="n">r</span><span class="o">=</span><span class="n">edi</span><span class="o">.</span><span class="n">AppendResidue</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="s">&#39;b&#39;</span><span class="p">)</span>
+  <span class="n">edi</span><span class="o">.</span><span class="n">ForceUpdate</span><span class="p">()</span>
+  <span class="k">return</span> <span class="n">eh</span>
+    
+  </div>
+<span class="k">def</span> <span class="nf">WriteFloatPropList</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="n">prop_list</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">index</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">delimiter</span><span class="o">=</span><span class="s">&#39; &#39;</span><span class="p">,</span><span class="n">precision</span><span class="o">=</span><span class="s">&#39;4&#39;</span><span class="p">,</span><span class="n">column_width</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+  <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> 
+    <span class="k">if</span> <span class="n">index</span><span class="p">:</span><span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">((</span><span class="s">&#39;{:^&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">column_width</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;} &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s">&#39;aindex&#39;</span><span class="p">))</span>
+    <span class="n">format</span><span class="o">=</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;{:^&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">column_width</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;}&#39;</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">prop_list</span><span class="p">])</span>
+    <span class="n">format</span><span class="o">+=</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">prop_list</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">index</span><span class="p">:</span><span class="n">format</span><span class="o">=</span><span class="s">&#39;{:^&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">column_width</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;} &#39;</span><span class="o">+</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;{:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">column_width</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;.&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;g}&#39;</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">prop_list</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span><span class="n">format</span><span class="o">=</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;{:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">column_width</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;.&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;g}&#39;</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">prop_list</span><span class="p">])</span>
+    <span class="n">format</span><span class="o">+=</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">eh</span><span class="o">.</span><span class="n">atoms</span><span class="p">:</span>
+      <span class="n">l</span><span class="o">=</span><span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">GetFloatProp</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">prop_list</span><span class="p">]</span>
+      <span class="k">if</span> <span class="n">index</span><span class="p">:</span><span class="n">l</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">a</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+      <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">l</span><span class="p">))</span>
+  <span class="k">return</span>
+
+<span class="k">def</span> <span class="nf">WriteVec3Prop</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="n">prop_name</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">index</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">delimiter</span><span class="o">=</span><span class="s">&#39; &#39;</span><span class="p">,</span><span class="n">precision</span><span class="o">=</span><span class="s">&#39;4&#39;</span><span class="p">,</span><span class="n">column_width</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+  <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> 
+    <span class="k">if</span> <span class="n">index</span><span class="p">:</span><span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">((</span><span class="s">&#39;{:^&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">column_width</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;} &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s">&#39;aindex&#39;</span><span class="p">))</span>
+    <span class="n">col_names</span><span class="o">=</span><span class="p">[</span><span class="n">prop_name</span><span class="o">+</span><span class="n">el</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&quot;.x&quot;</span><span class="p">,</span><span class="s">&quot;.y&quot;</span><span class="p">,</span><span class="s">&quot;.z&quot;</span><span class="p">]]</span>
+    <span class="n">format</span><span class="o">=</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;{:^&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">column_width</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;}&#39;</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">col_names</span><span class="p">])</span>
+    <span class="n">format</span><span class="o">+=</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">col_names</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">index</span><span class="p">:</span><span class="n">format</span><span class="o">=</span><span class="s">&#39;{:^&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">column_width</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;} &#39;</span><span class="o">+</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;{:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">column_width</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;.&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;g}&#39;</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">col_names</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span><span class="n">format</span><span class="o">=</span><span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;{:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">column_width</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;.&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;g}&#39;</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">col_names</span><span class="p">])</span>
+    <span class="n">format</span><span class="o">+=</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">eh</span><span class="o">.</span><span class="n">atoms</span><span class="p">:</span>
+      <span class="n">v</span><span class="o">=</span><span class="n">a</span><span class="o">.</span><span class="n">GetVec3Prop</span><span class="p">(</span><span class="n">prop_name</span><span class="p">)</span>
+      <span class="n">l</span><span class="o">=</span><span class="p">[</span><span class="n">v</span><span class="o">.</span><span class="n">x</span><span class="p">,</span><span class="n">v</span><span class="o">.</span><span class="n">y</span><span class="p">,</span><span class="n">v</span><span class="o">.</span><span class="n">z</span><span class="p">]</span>
+      <span class="k">if</span> <span class="n">index</span><span class="p">:</span><span class="n">l</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">a</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+      <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">l</span><span class="p">))</span>
+  <span class="k">return</span>
+
+
+<div class="viewcode-block" id="AssignFloatPropToEntityResidues"><a class="viewcode-back" href="../entity_alg.html#entity_alg.AssignFloatPropToEntityResidues">[docs]</a><span class="k">def</span> <span class="nf">AssignFloatPropToEntityResidues</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="n">fl</span><span class="p">,</span><span class="n">key</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  That function will not work if the atom indices are not the same as the order of atoms in the entity</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">for</span> <span class="n">r</span><span class="p">,</span><span class="n">f</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">eh</span><span class="o">.</span><span class="n">residues</span><span class="p">,</span><span class="n">fl</span><span class="p">):</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">SetFloatProp</span><span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="n">f</span><span class="p">)</span>
+  <span class="k">return</span>
+
+   </div>
+<div class="viewcode-block" id="AssignFloatPropToEntity"><a class="viewcode-back" href="../entity_alg.html#entity_alg.AssignFloatPropToEntity">[docs]</a><span class="k">def</span> <span class="nf">AssignFloatPropToEntity</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="n">fl</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="n">aindex_list</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  That function will not work if the atom indices are not the same as the order of atoms in the entity</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">aindex_list</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">a</span><span class="p">,</span><span class="n">f</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">eh</span><span class="o">.</span><span class="n">atoms</span><span class="p">,</span><span class="n">fl</span><span class="p">):</span>
+      <span class="n">a</span><span class="o">.</span><span class="n">SetFloatProp</span><span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="n">f</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">ai</span><span class="p">,</span><span class="n">f</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">aindex_list</span><span class="p">,</span><span class="n">fl</span><span class="p">):</span>
+      <span class="n">eh</span><span class="o">.</span><span class="n">atoms</span><span class="p">[</span><span class="n">ai</span><span class="p">]</span><span class="o">.</span><span class="n">SetFloatProp</span><span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="n">f</span><span class="p">)</span>
+  <span class="k">return</span>
+
+</div>
+<span class="k">def</span> <span class="nf">GenerateBioUnit</span><span class="p">(</span><span class="n">pdb_filename</span><span class="p">,</span><span class="n">biounit_id</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function generates the biological unit from a pdb file</span>
+<span class="sd">  by applying the transformations found in the REMARK 350 record of the PDB</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">pdb</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">pdb_filename</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+  <span class="n">Tl</span><span class="p">,</span><span class="n">cnames</span><span class="o">=</span><span class="n">file_utilities</span><span class="o">.</span><span class="n">FindBioUnitTransformations</span><span class="p">(</span><span class="n">pdb</span><span class="p">,</span><span class="n">biounit_id</span><span class="p">)</span>
+  <span class="n">eh</span><span class="o">=</span><span class="n">io</span><span class="o">.</span><span class="n">LoadPDB</span><span class="p">(</span><span class="n">pdb_filename</span><span class="p">)</span>
+  <span class="n">eh2</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">CreateEntity</span><span class="p">()</span>
+  <span class="n">edi</span><span class="o">=</span><span class="n">eh2</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">()</span>
+  <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">T</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Tl</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">cnames</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">i</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span><span class="n">cname_new</span><span class="o">=</span><span class="n">cname</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span><span class="n">cname_new</span><span class="o">=</span><span class="n">cname</span>
+      <span class="n">c</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">FindChain</span><span class="p">(</span><span class="n">cname</span><span class="p">)</span>
+      <span class="n">eh</span><span class="o">.</span><span class="n">SetTransform</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+      <span class="n">edi</span><span class="o">.</span><span class="n">InsertChain</span><span class="p">(</span><span class="n">cname_new</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">deep</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">eh2</span>
+
+<div class="viewcode-block" id="GenerateCrystalPackingFromPDB"><a class="viewcode-back" href="../entity_alg.html#entity_alg.GenerateCrystalPackingFromPDB">[docs]</a><span class="k">def</span> <span class="nf">GenerateCrystalPackingFromPDB</span><span class="p">(</span><span class="n">pdb_filename</span><span class="p">,</span><span class="n">distance_cutoff</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span><span class="n">vec_search_level</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">vec_search_cutoff</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">superpose_sele</span><span class="o">=</span><span class="s">&#39;aname=CA&#39;</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function loads a pdb and generates the crystal packing around the initial structure, including</span>
+<span class="sd">  all structures within *distance_cutoff* of the initial structure.</span>
+<span class="sd">  ref_sele is used to test if a certain structure coming form symmetry operations and translations</span>
+<span class="sd">  is already present in the crystal packing being generated.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">try</span><span class="p">:</span> <span class="kn">import</span> <span class="nn">pbc_utilities</span>
+  <span class="k">except</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;could not load the pbc_utilities module&quot;</span>
+    <span class="k">print</span> <span class="s">&quot;This module is needed in the function GenerateCrystalPackingFromPDB&quot;</span>
+    <span class="k">return</span> <span class="bp">None</span>
+  <span class="nb">reload</span><span class="p">(</span><span class="n">file_utilities</span><span class="p">)</span>
+  <span class="n">pdb</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">pdb_filename</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+  <span class="n">trans</span><span class="o">=</span><span class="n">file_utilities</span><span class="o">.</span><span class="n">ReadSymmetryFromPDB</span><span class="p">(</span><span class="n">pdb</span><span class="p">)</span>
+  <span class="n">uc</span><span class="o">=</span><span class="n">file_utilities</span><span class="o">.</span><span class="n">ReadUnitCellFromPDB</span><span class="p">(</span><span class="n">pdb</span><span class="p">)</span>
+  <span class="p">(</span><span class="n">v1</span><span class="p">,</span><span class="n">v2</span><span class="p">,</span><span class="n">v3</span><span class="p">)</span><span class="o">=</span><span class="n">pbc_utilities</span><span class="o">.</span><span class="n">BuildUnitCellVectors</span><span class="p">(</span><span class="n">uc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">uc</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">uc</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">uc</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="n">uc</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="n">uc</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+  <span class="n">vl</span><span class="o">=</span><span class="n">pbc_utilities</span><span class="o">.</span><span class="n">GenerateSearchVectors</span><span class="p">(</span><span class="n">v1</span><span class="p">,</span><span class="n">v2</span><span class="p">,</span><span class="n">v3</span><span class="p">,</span><span class="n">dist_cutoff</span><span class="o">=</span><span class="n">vec_search_cutoff</span><span class="p">,</span><span class="n">level</span><span class="o">=</span><span class="n">vec_search_level</span><span class="p">)</span>
+  <span class="n">ref_eh</span><span class="o">=</span><span class="n">io</span><span class="o">.</span><span class="n">LoadPDB</span><span class="p">(</span><span class="n">pdb_filename</span><span class="p">)</span>
+  <span class="n">ref_sele</span><span class="o">=</span><span class="n">ref_eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">superpose_sele</span><span class="p">)</span>
+  <span class="n">ref_CM</span><span class="o">=</span><span class="n">ref_eh</span><span class="o">.</span><span class="n">GetCenterOfMass</span><span class="p">()</span>
+  <span class="n">bound_size</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">ref_eh</span><span class="o">.</span><span class="n">GetBoundarySize</span><span class="p">())</span>
+  <span class="n">pdb_list</span><span class="o">=</span><span class="p">[]</span>
+  <span class="n">pdb_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref_eh</span><span class="p">)</span>
+  <span class="n">eh</span><span class="o">=</span><span class="n">ref_eh</span><span class="o">.</span><span class="n">Copy</span><span class="p">()</span>
+  <span class="n">sele</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">superpose_sele</span><span class="p">)</span>
+  <span class="n">edi</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">()</span>
+  <span class="n">n_eh</span><span class="o">=</span><span class="mi">1</span>
+  <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">vl</span><span class="p">):</span>  
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">t2</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">trans</span><span class="p">):</span>
+      <span class="n">t</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Mat4</span><span class="p">()</span>
+      <span class="n">t</span><span class="o">.</span><span class="n">PasteRotation</span><span class="p">(</span><span class="n">t2</span><span class="o">.</span><span class="n">ExtractRotation</span><span class="p">())</span>
+      <span class="n">t</span><span class="o">.</span><span class="n">PasteTranslation</span><span class="p">(</span><span class="n">t2</span><span class="o">.</span><span class="n">ExtractTranslation</span><span class="p">()</span><span class="o">+</span><span class="n">v</span><span class="p">)</span>
+      <span class="n">edi</span><span class="o">.</span><span class="n">SetTransform</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">ref_CM</span><span class="o">-</span><span class="n">eh</span><span class="o">.</span><span class="n">GetCenterOfMass</span><span class="p">())</span><span class="o">&gt;</span><span class="mf">1.5</span><span class="o">*</span><span class="n">bound_size</span><span class="p">:</span><span class="k">continue</span>
+      <span class="n">flag</span><span class="o">=</span><span class="mi">0</span>
+      <span class="k">for</span> <span class="n">eh2</span> <span class="ow">in</span> <span class="n">pdb_list</span><span class="p">:</span>
+        <span class="n">rmsd</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">CalculateRMSD</span><span class="p">(</span><span class="n">eh2</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="s">&#39;aname=CA&#39;</span><span class="p">),</span><span class="n">sele</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rmsd</span><span class="o">&lt;</span><span class="mf">0.1</span><span class="p">:</span>
+          <span class="n">flag</span><span class="o">=</span><span class="mi">1</span>
+          <span class="k">break</span>
+      <span class="k">if</span> <span class="n">flag</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span><span class="k">continue</span>
+      <span class="k">if</span> <span class="n">geom</span><span class="o">.</span><span class="n">MinDistance</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">GetPosListFromView</span><span class="p">(</span><span class="n">ref_sele</span><span class="p">),</span><span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">GetPosListFromView</span><span class="p">(</span><span class="n">sele</span><span class="p">))</span><span class="o">&gt;</span><span class="mf">20.0</span><span class="p">:</span><span class="k">continue</span>
+      <span class="n">n_eh</span><span class="o">+=</span><span class="mi">1</span>
+      <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">eh</span><span class="o">.</span><span class="n">chains</span><span class="p">:</span>
+        <span class="n">edi</span><span class="o">.</span><span class="n">RenameChain</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">n_eh</span><span class="p">))</span>
+      <span class="n">pdb_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eh</span><span class="p">)</span>
+      <span class="n">eh</span><span class="o">=</span><span class="n">ref_eh</span><span class="o">.</span><span class="n">Copy</span><span class="p">()</span>
+      <span class="n">sele</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="s">&#39;aname=CA&#39;</span><span class="p">)</span>
+      <span class="n">edi</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">()</span>
+  <span class="c">#Now we build the final view</span>
+  <span class="n">view</span><span class="o">=</span><span class="n">pdb_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">CreateEmptyView</span><span class="p">()</span>
+  <span class="k">for</span> <span class="n">eh</span> <span class="ow">in</span> <span class="n">pdb_list</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">eh</span><span class="o">.</span><span class="n">chains</span><span class="p">:</span>
+      <span class="n">view</span><span class="o">.</span><span class="n">AddChain</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span>
+  <span class="n">eh</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">CreateEntityFromView</span><span class="p">(</span><span class="n">view</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">eh</span>
+  </div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

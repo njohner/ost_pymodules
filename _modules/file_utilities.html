@@ -1,0 +1,303 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>file_utilities &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for file_utilities</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. codeauthor:: Niklaus Johner &lt;niklaus.johner@a3.epfl.ch&gt;</span>
+
+<span class="sd">This module contains some helper functions for reading and writing files</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">ost</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="n">__all__</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;ReadMissingResiduesFromPDB&#39;</span><span class="p">,</span><span class="s">&#39;ReadSymmetryFromPDB&#39;</span><span class="p">,</span><span class="s">&#39;ParsePDBForCubicPhase&#39;</span><span class="p">,</span>\
+             <span class="s">&#39;ReadUnitCellFromPDB&#39;</span><span class="p">,</span><span class="s">&#39;WriteListOfListsInLines&#39;</span><span class="p">,</span><span class="s">&#39;WriteListOfListsInColumns&#39;</span><span class="p">,</span>\
+             <span class="s">&#39;WriteFloatList&#39;</span><span class="p">,</span><span class="s">&#39;ReadFloatListFile&#39;</span><span class="p">,</span><span class="s">&#39;ReadFile&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ReadMissingResiduesFromPDB"><a class="viewcode-back" href="../file_utilities.html#file_utilities.ReadMissingResiduesFromPDB">[docs]</a><span class="k">def</span> <span class="nf">ReadMissingResiduesFromPDB</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+  <span class="nb">file</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+  <span class="n">missing_res_list</span><span class="o">=</span><span class="p">[]</span>
+  <span class="n">flag</span><span class="o">=</span><span class="bp">False</span>
+  <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">file</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">l</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;REMARK 465   M RES C SSSEQI&#39;</span><span class="p">):</span>
+      <span class="n">flag</span><span class="o">=</span><span class="bp">True</span>
+      <span class="k">continue</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">flag</span><span class="p">:</span><span class="k">continue</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">l</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;REMARK 465&#39;</span><span class="p">):</span>
+      <span class="n">flag</span><span class="o">=</span><span class="bp">False</span>
+      <span class="k">continue</span>
+    <span class="n">s</span><span class="o">=</span><span class="n">l</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span><span class="n">missing_res_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">s</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span><span class="n">s</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+    <span class="k">except</span><span class="p">:</span><span class="k">print</span> <span class="s">&#39;could not add residue for line:&#39;</span><span class="p">,</span><span class="n">l</span>
+  <span class="k">return</span> <span class="n">missing_res_list</span>
+  </div>
+<div class="viewcode-block" id="ReadSymmetryFromPDB"><a class="viewcode-back" href="../file_utilities.html#file_utilities.ReadSymmetryFromPDB">[docs]</a><span class="k">def</span> <span class="nf">ReadSymmetryFromPDB</span><span class="p">(</span><span class="nb">file</span><span class="p">):</span>
+  <span class="nb">file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+  <span class="n">search_string</span><span class="o">=</span><span class="s">&#39;SMTRY1&#39;</span>
+  <span class="n">transformation_list</span><span class="o">=</span><span class="p">[]</span>
+  <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">file</span><span class="p">:</span>
+    <span class="n">sl</span><span class="o">=</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">sl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s">&#39;ATOM&#39;</span><span class="p">:</span> <span class="k">break</span>
+    <span class="k">try</span><span class="p">:</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">sl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s">&#39;REMARK&#39;</span> <span class="ow">and</span> <span class="n">sl</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">==</span><span class="s">&#39;290&#39;</span> <span class="ow">and</span> <span class="n">sl</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">==</span><span class="n">search_string</span><span class="p">):</span>
+        <span class="n">i</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">search_string</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+          <span class="n">a</span><span class="o">=</span><span class="p">[]</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">el</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sl</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">8</span><span class="p">]):</span>
+          <span class="n">a</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">el</span><span class="p">))</span>
+        <span class="n">search_string</span><span class="o">=</span><span class="n">search_string</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">3</span><span class="p">:</span>
+          <span class="n">a</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">])</span>
+          <span class="n">transformation_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Mat4</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="mi">9</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="mi">10</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="mi">11</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="mi">12</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="mi">13</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="mi">14</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="mi">15</span><span class="p">]))</span>
+          <span class="n">search_string</span><span class="o">=</span><span class="n">search_string</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span> <span class="k">continue</span>
+    <span class="k">except</span><span class="p">:</span> <span class="k">continue</span>
+  <span class="k">return</span> <span class="n">transformation_list</span>
+</div>
+<span class="k">def</span> <span class="nf">FindLines</span><span class="p">(</span><span class="nb">file</span><span class="p">,</span><span class="n">search_list</span><span class="p">,</span><span class="n">break_list</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  returns a list of lines in the file which have as successive elements</span>
+<span class="sd">  the elements in search_list</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="nb">file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+  <span class="n">lines</span><span class="o">=</span><span class="p">[]</span>
+  <span class="n">ns</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">search_list</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">file</span><span class="p">:</span>
+    <span class="n">sl</span><span class="o">=</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="n">nl</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">sl</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sl</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span><span class="k">continue</span>
+    <span class="k">if</span> <span class="n">sl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">break_list</span><span class="p">:</span><span class="k">return</span> <span class="n">lines</span>
+    <span class="k">if</span> <span class="n">nl</span><span class="o">&lt;</span><span class="n">ns</span><span class="p">:</span><span class="k">continue</span>
+    <span class="k">if</span> <span class="nb">all</span><span class="p">([</span><span class="n">sli</span><span class="o">==</span><span class="n">el</span> <span class="k">for</span> <span class="n">sli</span><span class="p">,</span><span class="n">el</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">sl</span><span class="p">,</span><span class="n">search_list</span><span class="p">)]):</span><span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">lines</span>
+
+<span class="k">def</span> <span class="nf">FindBioUnitTransformations</span><span class="p">(</span><span class="nb">file</span><span class="p">,</span><span class="n">biounit_id</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+  <span class="n">lines_temp</span><span class="o">=</span><span class="n">FindLines</span><span class="p">(</span><span class="nb">file</span><span class="p">,[</span><span class="s">&#39;REMARK&#39;</span><span class="p">,</span><span class="s">&#39;350&#39;</span><span class="p">],[</span><span class="s">&#39;ATOM&#39;</span><span class="p">])</span>
+  <span class="n">lines</span><span class="o">=</span><span class="p">[]</span>
+  <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">l</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines_temp</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;BIOMOLECULE:{0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">biounit_id</span><span class="p">)</span> <span class="ow">in</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">split</span><span class="p">()):</span><span class="k">continue</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">l2</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines_temp</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">:]):</span>
+      <span class="k">if</span> <span class="s">&#39;BIOMOLECULE:{0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">biounit_id</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="ow">in</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">l2</span><span class="o">.</span><span class="n">split</span><span class="p">()):</span><span class="k">break</span>
+      <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">l2</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+    <span class="k">if</span> <span class="s">&#39;APPLY THE FOLLOWING TO CHAINS&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+      <span class="n">sl</span><span class="o">=</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)</span>
+      <span class="n">cnames</span><span class="o">=</span><span class="p">[</span><span class="n">el</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">sl</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)]</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;cnames&#39;</span> <span class="ow">in</span> <span class="nb">locals</span><span class="p">():</span>
+    <span class="k">print</span> <span class="s">&#39;Chains to apply transformations to are not defined in record&#39;</span>
+    <span class="n">cnames</span><span class="o">=</span><span class="p">[]</span>
+  <span class="n">Tl</span><span class="o">=</span><span class="p">[]</span>
+  <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+    <span class="n">sl</span><span class="o">=</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sl</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">6</span><span class="p">:</span><span class="k">continue</span>
+    <span class="k">if</span> <span class="s">&#39;BIOMT1&#39;</span><span class="o">==</span><span class="n">sl</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+      <span class="n">il</span><span class="o">=</span><span class="p">[]</span>
+      <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">l</span><span class="o">=</span><span class="n">lines</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">sl</span><span class="o">=</span><span class="n">l</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sl</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">==</span><span class="s">&#39;BIOMT{0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+          <span class="k">print</span> <span class="s">&#39;problem in BIOMT record&#39;</span>
+          <span class="k">return</span> <span class="n">Tl</span><span class="p">,</span><span class="n">cnames</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span><span class="n">il</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">sl</span><span class="p">[</span><span class="mi">4</span><span class="o">+</span><span class="n">k</span><span class="p">]))</span>
+      <span class="n">il</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">])</span>
+      <span class="n">M</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Mat4</span><span class="p">(</span><span class="o">*</span><span class="n">il</span><span class="p">)</span>
+      <span class="n">T</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Transform</span><span class="p">()</span>
+      <span class="n">T</span><span class="o">.</span><span class="n">SetMatrix</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+      <span class="n">Tl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">Tl</span><span class="p">,</span><span class="n">cnames</span>
+  
+    
+<div class="viewcode-block" id="ParsePDBForCubicPhase"><a class="viewcode-back" href="../file_utilities.html#file_utilities.ParsePDBForCubicPhase">[docs]</a><span class="k">def</span> <span class="nf">ParsePDBForCubicPhase</span><span class="p">(</span><span class="nb">file</span><span class="p">):</span>
+  <span class="nb">file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+  <span class="n">search_lines</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;REMARK&#39;</span><span class="p">,</span><span class="s">&#39;280&#39;</span><span class="p">]</span>
+  <span class="n">search_strings</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;LIPIDIC MESOPHASE&#39;</span><span class="p">,</span><span class="s">&#39;LIPIDIC CUBIC PHASE&#39;</span><span class="p">,</span><span class="s">&#39;LIPID CUBIC PHASE&#39;</span><span class="p">]</span>
+  <span class="n">flag</span><span class="o">=</span><span class="mi">0</span>
+  <span class="n">file_string</span><span class="o">=</span><span class="s">&#39;&#39;</span>
+  <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">file</span><span class="p">:</span>
+    <span class="n">sl</span><span class="o">=</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">sl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s">&#39;ATOM&#39;</span><span class="p">:</span> <span class="k">break</span>
+    <span class="k">try</span><span class="p">:</span>
+      <span class="n">flag2</span><span class="o">=</span><span class="mi">0</span>
+      <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">el</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">search_lines</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sl</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">!=</span><span class="n">el</span><span class="p">:</span><span class="n">flag2</span><span class="o">=</span><span class="mi">1</span>
+      <span class="k">if</span> <span class="n">flag2</span><span class="p">:</span> <span class="k">continue</span>
+      <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sl</span><span class="p">)</span><span class="o">==</span><span class="mi">2</span><span class="p">:</span>
+        <span class="n">flag</span><span class="o">+=</span><span class="mi">1</span>
+        <span class="k">continue</span>
+      <span class="k">if</span> <span class="n">flag</span><span class="o">==</span><span class="mi">2</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">sl</span><span class="p">[</span><span class="mi">2</span><span class="p">:]:</span>
+          <span class="n">file_string</span><span class="o">+=</span><span class="s">&#39; &#39;</span><span class="o">+</span><span class="n">el</span>
+    <span class="k">except</span><span class="p">:</span><span class="k">continue</span>
+  <span class="c">#sl=file_string.split(&#39;, &#39;)</span>
+  <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">search_strings</span><span class="p">:</span>
+    <span class="c">#if el in sl:</span>
+    <span class="k">if</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">file_string</span><span class="p">:</span>
+      <span class="k">return</span> <span class="bp">True</span>
+  <span class="k">return</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="ReadUnitCellFromPDB"><a class="viewcode-back" href="../file_utilities.html#file_utilities.ReadUnitCellFromPDB">[docs]</a><span class="k">def</span> <span class="nf">ReadUnitCellFromPDB</span><span class="p">(</span><span class="nb">file</span><span class="p">):</span>
+  <span class="nb">file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+  <span class="n">search_string</span><span class="o">=</span><span class="s">&#39;CRYST1&#39;</span>
+  <span class="n">flag</span><span class="o">=</span><span class="mi">0</span>
+  <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">file</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="p">[:</span><span class="mi">6</span><span class="p">]</span><span class="o">==</span><span class="n">search_string</span><span class="p">:</span>
+      <span class="k">continue</span>
+    <span class="n">sl</span><span class="o">=</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="k">print</span> <span class="s">&#39;Cryst1 found:&#39;</span><span class="p">,</span><span class="n">sl</span>
+    <span class="n">uc</span><span class="o">=</span><span class="n">sl</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">7</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">el</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">uc</span><span class="p">):</span>
+      <span class="k">if</span> <span class="n">i</span><span class="o">&lt;</span><span class="mi">3</span><span class="p">:</span>
+        <span class="n">uc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">el</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="n">uc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">el</span><span class="p">)</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">180</span>
+    <span class="k">return</span> <span class="n">uc</span>
+  <span class="k">return</span> <span class="s">&#39;na&#39;</span>
+  </div>
+<div class="viewcode-block" id="WriteListOfListsInLines"><a class="viewcode-back" href="../file_utilities.html#file_utilities.WriteListOfListsInLines">[docs]</a><span class="k">def</span> <span class="nf">WriteListOfListsInLines</span><span class="p">(</span><span class="n">column_titles</span><span class="p">,</span><span class="n">ll</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">separator</span><span class="o">=</span><span class="s">&#39;,&#39;</span><span class="p">):</span>  
+  <span class="n">f</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+  <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">separator</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">column_titles</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">ll</span><span class="p">:</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">separator</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">l</span><span class="p">])</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+  <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+  <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="WriteListOfListsInColumns"><a class="viewcode-back" href="../file_utilities.html#file_utilities.WriteListOfListsInColumns">[docs]</a><span class="k">def</span> <span class="nf">WriteListOfListsInColumns</span><span class="p">(</span><span class="n">column_titles</span><span class="p">,</span><span class="n">ll</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">separator</span><span class="o">=</span><span class="s">&#39;,&#39;</span><span class="p">):</span>  
+  <span class="n">f</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+  <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">separator</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">column_titles</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ll</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+    <span class="n">l</span><span class="o">=</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">el</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">ll</span><span class="p">]</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">separator</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+  <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+  <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="WriteFloatList"><a class="viewcode-back" href="../file_utilities.html#file_utilities.WriteFloatList">[docs]</a><span class="k">def</span> <span class="nf">WriteFloatList</span><span class="p">(</span><span class="n">fl</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">separator</span><span class="o">=</span><span class="s">&#39;,&#39;</span><span class="p">,</span><span class="n">column_title</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+  <span class="n">f</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">column_title</span><span class="p">:</span><span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">column_title</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">fl</span><span class="p">:</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">el</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+  <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+  <span class="k">return</span>
+
+</div>
+<div class="viewcode-block" id="ReadFloatListFile"><a class="viewcode-back" href="../file_utilities.html#file_utilities.ReadFloatListFile">[docs]</a><span class="k">def</span> <span class="nf">ReadFloatListFile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">separator</span><span class="o">=</span><span class="s">&#39;,&#39;</span><span class="p">,</span><span class="n">column_titles</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">comment</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+  <span class="n">float_list_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="n">f</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+  <span class="n">titles</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">next</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+  <span class="n">titles</span><span class="o">=</span><span class="n">titles</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">separator</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">column_titles</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">titles</span><span class="p">:</span><span class="n">float_list_dict</span><span class="p">[</span><span class="n">el</span><span class="p">]</span><span class="o">=</span><span class="n">FloatList</span><span class="p">()</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">titles</span><span class="p">)):</span><span class="n">float_list_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="n">FloatList</span><span class="p">()</span>
+    <span class="n">titles</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">titles</span><span class="p">))</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">comment</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">l</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">comment</span><span class="p">):</span><span class="k">continue</span>
+    <span class="n">sl</span><span class="o">=</span><span class="n">l</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">separator</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">el</span><span class="p">,</span><span class="n">title</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">sl</span><span class="p">,</span><span class="n">titles</span><span class="p">):</span><span class="n">float_list_dict</span><span class="p">[</span><span class="n">title</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">el</span><span class="p">))</span>
+  <span class="k">return</span> <span class="n">float_list_dict</span>
+  </div>
+<div class="viewcode-block" id="ReadFile"><a class="viewcode-back" href="../file_utilities.html#file_utilities.ReadFile">[docs]</a><span class="k">def</span> <span class="nf">ReadFile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">format</span><span class="p">,</span><span class="n">separator</span><span class="o">=</span><span class="s">&#39;,&#39;</span><span class="p">,</span><span class="n">column_titles</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+  <span class="n">float_list_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="n">f</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">column_titles</span><span class="p">:</span>
+    <span class="n">titles</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">next</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+    <span class="n">titles</span><span class="o">=</span><span class="n">titles</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">separator</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span><span class="n">titles</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">format</span><span class="p">))</span>
+  <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">titles</span><span class="p">:</span><span class="n">float_list_dict</span><span class="p">[</span><span class="n">el</span><span class="p">]</span><span class="o">=</span><span class="p">[]</span>
+  <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">sl</span><span class="o">=</span><span class="n">l</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">separator</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">el</span><span class="p">,</span><span class="n">title</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">sl</span><span class="p">,</span><span class="n">titles</span><span class="p">):</span><span class="n">float_list_dict</span><span class="p">[</span><span class="n">title</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">el</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">title</span><span class="p">,</span><span class="n">f</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">titles</span><span class="p">,</span><span class="n">format</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">f</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;float&#39;</span><span class="p">,</span><span class="s">&#39;f&#39;</span><span class="p">]:</span><span class="n">float_list_dict</span><span class="p">[</span><span class="n">title</span><span class="p">]</span><span class="o">=</span><span class="n">FloatList</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">float_list_dict</span><span class="p">[</span><span class="n">title</span><span class="p">]])</span>
+    <span class="k">if</span> <span class="n">f</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;int&#39;</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">]:</span><span class="n">float_list_dict</span><span class="p">[</span><span class="n">title</span><span class="p">]</span><span class="o">=</span><span class="n">IntList</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">float_list_dict</span><span class="p">[</span><span class="n">title</span><span class="p">]])</span>
+    <span class="k">if</span> <span class="n">f</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;bool&#39;</span><span class="p">,</span><span class="s">&#39;b&#39;</span><span class="p">]:</span><span class="n">float_list_dict</span><span class="p">[</span><span class="n">title</span><span class="p">]</span><span class="o">=</span><span class="p">[</span><span class="nb">bool</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">float_list_dict</span><span class="p">[</span><span class="n">title</span><span class="p">]]</span>
+  <span class="k">return</span> <span class="n">float_list_dict</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

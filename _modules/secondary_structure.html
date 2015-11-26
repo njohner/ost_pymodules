@@ -1,0 +1,278 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>secondary_structure &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for secondary_structure</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. codeauthor:: Niklaus Johner &lt;niklaus.johner@a3.epfl.ch&gt;</span>
+
+<span class="sd">This module contains functions to analyze the secondary structure of proteins</span>
+<span class="sd">It uses DSSP, which has to be installed and in the path for OpenStructure</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">ost</span>
+<span class="kn">import</span> <span class="nn">ost.gfx</span> <span class="kn">as</span> <span class="nn">_gfx</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">npy</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="kn">as</span> <span class="nn">mpl</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">ost.bindings</span>
+
+<span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ost</span><span class="o">.</span><span class="n">bindings</span><span class="p">,</span><span class="s">&#39;dssp&#39;</span><span class="p">):</span><span class="k">print</span> <span class="s">&#39;DSSP is not found&#39;</span>
+
+<span class="n">__all__</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;AssignSecondaryStructure&#39;</span><span class="p">,</span><span class="s">&#39;AnalyzeSecondaryStructure&#39;</span><span class="p">,</span><span class="s">&#39;PlotSecStructureList&#39;</span><span class="p">,</span>\
+        <span class="s">&#39;SimplifySecStructure&#39;</span><span class="p">,</span><span class="s">&#39;SimplifySecStructureList&#39;</span><span class="p">,</span><span class="s">&#39;FindSecStrucElements&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_RenameChainsToOneLetter</span><span class="p">(</span><span class="n">prot</span><span class="p">):</span>
+  <span class="n">prot_cnames</span><span class="o">=</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">prot</span><span class="o">.</span><span class="n">chains</span><span class="p">]</span>
+  <span class="n">cnames</span><span class="o">=</span><span class="s">&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;</span>
+  <span class="n">cnames2</span><span class="o">=</span><span class="p">[</span><span class="n">el</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">cnames</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">prot_cnames</span><span class="p">]</span>
+  <span class="k">if</span> <span class="n">prot</span><span class="o">.</span><span class="n">GetChainCount</span><span class="p">()</span><span class="o">&gt;</span><span class="nb">len</span><span class="p">(</span><span class="n">cnames</span><span class="p">):</span><span class="k">return</span> <span class="n">prot</span><span class="p">,</span><span class="bp">None</span>
+  <span class="n">cname_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="n">edi</span><span class="o">=</span><span class="n">prot</span><span class="o">.</span><span class="n">handle</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">()</span>
+  <span class="n">i</span><span class="o">=</span><span class="mi">0</span>
+  <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">prot</span><span class="o">.</span><span class="n">chains</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">cnames</span><span class="p">:</span>
+      <span class="n">cname_dict</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">name</span>
+      <span class="k">continue</span>
+    <span class="n">cname</span><span class="o">=</span><span class="n">cnames2</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">cname_dict</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">name</span>
+    <span class="n">edi</span><span class="o">.</span><span class="n">RenameChain</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">handle</span><span class="p">,</span><span class="n">cname</span><span class="p">)</span>
+    <span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+  <span class="k">return</span> <span class="n">prot</span><span class="p">,</span><span class="n">cname_dict</span>
+
+<span class="k">def</span> <span class="nf">_RenameChainsToInitial</span><span class="p">(</span><span class="n">prot</span><span class="p">,</span><span class="n">cname_dict</span><span class="p">):</span>
+  <span class="n">edi</span><span class="o">=</span><span class="n">prot</span><span class="o">.</span><span class="n">handle</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">()</span>
+  <span class="k">for</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">cname_dict</span><span class="p">:</span>
+    <span class="n">edi</span><span class="o">.</span><span class="n">RenameChain</span><span class="p">(</span><span class="n">prot</span><span class="o">.</span><span class="n">FindChain</span><span class="p">(</span><span class="n">cname</span><span class="p">)</span><span class="o">.</span><span class="n">handle</span><span class="p">,</span><span class="n">cname_dict</span><span class="p">[</span><span class="n">cname</span><span class="p">])</span>
+  <span class="k">return</span> <span class="n">prot</span>
+
+<div class="viewcode-block" id="AssignSecondaryStructure"><a class="viewcode-back" href="../secondary_structure.html#secondary_structure.AssignSecondaryStructure">[docs]</a><span class="k">def</span> <span class="nf">AssignSecondaryStructure</span><span class="p">(</span><span class="n">prot</span><span class="p">,</span><span class="n">nmax</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function calls DSSP to assign the secondary structure to a protein.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">prot</span><span class="p">,</span><span class="n">cname_dict</span><span class="o">=</span><span class="n">_RenameChainsToOneLetter</span><span class="p">(</span><span class="n">prot</span><span class="p">)</span>
+  <span class="n">flag</span><span class="o">=</span><span class="bp">True</span>
+  <span class="n">i</span><span class="o">=</span><span class="mi">0</span>
+  <span class="k">while</span> <span class="n">flag</span> <span class="ow">and</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">nmax</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span><span class="n">ost</span><span class="o">.</span><span class="n">bindings</span><span class="o">.</span><span class="n">dssp</span><span class="o">.</span><span class="n">AssignDSSP</span><span class="p">(</span><span class="n">prot</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+      <span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+      <span class="k">continue</span>
+    <span class="k">except</span><span class="p">:</span>
+      <span class="k">print</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+      <span class="k">break</span>
+    <span class="n">flag</span><span class="o">=</span><span class="bp">False</span>
+  <span class="k">if</span> <span class="n">flag</span><span class="o">==</span><span class="bp">True</span><span class="p">:</span><span class="k">print</span> <span class="s">&#39;could not assign secondary structure&#39;</span>
+  <span class="n">prot</span><span class="o">=</span><span class="n">_RenameChainsToInitial</span><span class="p">(</span><span class="n">prot</span><span class="p">,</span><span class="n">cname_dict</span><span class="p">)</span>
+  <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="AnalyzeSecondaryStructure"><a class="viewcode-back" href="../secondary_structure.html#secondary_structure.AnalyzeSecondaryStructure">[docs]</a><span class="k">def</span> <span class="nf">AnalyzeSecondaryStructure</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">prot</span><span class="p">,</span><span class="n">first</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">last</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function calculates the secondary structure of a protein for each frame in</span>
+<span class="sd">  a trajectory.</span>
+<span class="sd">  Inputs:</span>
+<span class="sd">  t     : Trajectory</span>
+<span class="sd">  prot  : EntityView for which the secondary structure will be computed</span>
+<span class="sd">  first : First frame to be analyzed</span>
+<span class="sd">  last  : Last frame to be analyzed</span>
+<span class="sd">  stride: Number of frames skipped between two analyzed frames</span>
+<span class="sd">  Outputs: </span>
+<span class="sd">  ss_list: A list of lists. Each element of ss_list is a list of letters corresponding</span>
+<span class="sd">  to the secondary structure of a residue for the different frames of the trajectory.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">prot</span><span class="p">,</span><span class="n">cname_dict</span><span class="o">=</span><span class="n">_RenameChainsToOneLetter</span><span class="p">(</span><span class="n">prot</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">last</span><span class="o">==-</span><span class="mi">1</span><span class="p">:</span><span class="n">last</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrameCount</span><span class="p">()</span>
+  <span class="n">ss_list</span><span class="o">=</span><span class="p">[[]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">prot</span><span class="o">.</span><span class="n">residues</span><span class="p">]</span>
+  <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">first</span><span class="p">,</span><span class="n">last</span><span class="p">,</span><span class="n">stride</span><span class="p">):</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">CopyFrame</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="n">AssignSecondaryStructure</span><span class="p">(</span><span class="n">prot</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">prot</span><span class="o">.</span><span class="n">residues</span><span class="p">):</span>
+      <span class="n">ss_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">GetSecStructure</span><span class="p">()))</span>
+  <span class="n">prot</span><span class="o">=</span><span class="n">_RenameChainsToInitial</span><span class="p">(</span><span class="n">prot</span><span class="p">,</span><span class="n">cname_dict</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">ss_list</span>
+</div>
+<span class="k">def</span> <span class="nf">SecStrucColorMap</span><span class="p">(</span><span class="n">ss_list</span><span class="p">,</span><span class="n">color_dict</span><span class="o">=</span><span class="p">{}):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function takes a list of lists of secondary structures and returns</span>
+<span class="sd">  a matrix with corresponding colors that can be used to plot the secondary</span>
+<span class="sd">  structure, for example by using matplotlib.imshow()</span>
+<span class="sd">  Inputs:</span>
+<span class="sd">  ss_list: a list of lists. Each element of ss_list is a list of letters corresponding</span>
+<span class="sd">  to the secondary structure of a residue for different frames of a trajectory.</span>
+<span class="sd">  Such a list can be obtained from the AnalyzeSecondaryStructure function</span>
+<span class="sd">  color_dict: a dicitonary mapping a color given in rgb to each secondary structure type </span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">color_dict</span><span class="p">:</span>
+    <span class="n">color_dict</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;H&#39;</span><span class="p">:</span><span class="n">_gfx</span><span class="o">.</span><span class="n">MAGENTA</span><span class="o">.</span><span class="n">rgb</span><span class="p">,</span><span class="s">&#39;E&#39;</span><span class="p">:</span><span class="n">_gfx</span><span class="o">.</span><span class="n">GREEN</span><span class="o">.</span><span class="n">rgb</span><span class="p">,</span><span class="s">&#39;T&#39;</span><span class="p">:</span><span class="n">_gfx</span><span class="o">.</span><span class="n">CYAN</span><span class="o">.</span><span class="n">rgb</span><span class="p">,</span><span class="s">&#39;B&#39;</span><span class="p">:</span><span class="n">_gfx</span><span class="o">.</span><span class="n">DARKGREEN</span><span class="o">.</span><span class="n">rgb</span><span class="p">,</span><span class="s">&#39;G&#39;</span><span class="p">:</span><span class="n">_gfx</span><span class="o">.</span><span class="n">ORANGE</span><span class="o">.</span><span class="n">rgb</span><span class="p">,</span><span class="s">&#39;I&#39;</span><span class="p">:</span><span class="n">_gfx</span><span class="o">.</span><span class="n">RED</span><span class="o">.</span><span class="n">rgb</span><span class="p">,</span><span class="s">&#39;C&#39;</span><span class="p">:</span><span class="n">_gfx</span><span class="o">.</span><span class="n">WHITE</span><span class="o">.</span><span class="n">rgb</span><span class="p">,</span><span class="s">&#39;S&#39;</span><span class="p">:(</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">)}</span>
+  <span class="n">color_map</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">ss_list</span><span class="p">),</span><span class="nb">len</span><span class="p">(</span><span class="n">ss_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="mi">3</span><span class="p">])</span>
+  <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">ssl</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ss_list</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">el</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ssl</span><span class="p">):</span>
+      <span class="n">color_map</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="n">color_dict</span><span class="p">[</span><span class="n">el</span><span class="p">]</span>
+  <span class="k">return</span> <span class="n">color_map</span><span class="p">,</span><span class="n">color_dict</span>
+  
+<div class="viewcode-block" id="PlotSecStructureList"><a class="viewcode-back" href="../secondary_structure.html#secondary_structure.PlotSecStructureList">[docs]</a><span class="k">def</span> <span class="nf">PlotSecStructureList</span><span class="p">(</span><span class="n">ss_list</span><span class="p">,</span><span class="n">color_dict</span><span class="o">=</span><span class="p">{},</span><span class="n">title</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">labels</span><span class="o">=</span><span class="p">[],</span><span class="n">l</span><span class="o">=</span><span class="mf">0.08</span><span class="p">,</span><span class="n">b</span><span class="o">=</span><span class="mf">0.08</span><span class="p">,</span><span class="n">r</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span><span class="n">t</span><span class="o">=</span><span class="mf">0.95</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function takes a list of lists of secondary structures and plots it.</span>
+<span class="sd">  Inputs:</span>
+<span class="sd">  ss_list: A list of lists of secondary structures as obtained from AnalyzeSecondaryStructure, see SecStrucColorMap.</span>
+<span class="sd">  color_dict: a dicitonary mapping a color given in rgb to each secondary structure type </span>
+<span class="sd">  title: The title of the plot</span>
+<span class="sd">  labels:the labels shown in the colorbar</span>
+<span class="sd">  l,b,r,t:the left, bottom,top and right relative positions for the axes in the plot</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">color_map</span><span class="p">,</span><span class="n">color_dict</span><span class="o">=</span><span class="n">SecStrucColorMap</span><span class="p">(</span><span class="n">ss_list</span><span class="p">,</span><span class="n">color_dict</span><span class="p">)</span>
+  <span class="n">f</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+  <span class="n">w</span><span class="o">=</span><span class="n">r</span><span class="o">-</span><span class="n">l</span>
+  <span class="n">h</span><span class="o">=</span><span class="n">t</span><span class="o">-</span><span class="n">b</span>
+  <span class="n">ax1</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="n">l</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="mf">0.9</span><span class="o">*</span><span class="n">w</span><span class="p">,</span><span class="n">h</span><span class="p">])</span>
+  <span class="n">ax2</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="n">l</span><span class="o">+</span><span class="mf">0.93</span><span class="o">*</span><span class="n">w</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="mf">0.05</span><span class="o">*</span><span class="n">w</span><span class="p">,</span><span class="n">h</span><span class="p">])</span>
+  <span class="n">ax1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">color_map</span><span class="p">,</span><span class="n">interpolation</span><span class="o">=</span><span class="s">&#39;nearest&#39;</span><span class="p">,</span><span class="n">aspect</span><span class="o">=</span><span class="s">&#39;auto&#39;</span><span class="p">)</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">labels</span><span class="p">:</span><span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="s">&#39;I&#39;</span><span class="p">,</span><span class="s">&#39;G&#39;</span><span class="p">,</span><span class="s">&#39;B&#39;</span><span class="p">,</span><span class="s">&#39;E&#39;</span><span class="p">,</span><span class="s">&#39;T&#39;</span><span class="p">,</span><span class="s">&#39;S&#39;</span><span class="p">,</span><span class="s">&#39;C&#39;</span><span class="p">]</span>
+  <span class="n">colors</span><span class="o">=</span><span class="p">[</span><span class="n">color_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">]</span>
+  <span class="n">cmap</span><span class="o">=</span><span class="n">mpl</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">ListedColormap</span><span class="p">(</span><span class="n">colors</span><span class="p">,</span><span class="s">&#39;SecStruc&#39;</span><span class="p">)</span>
+  <span class="n">ncolors</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">colors</span><span class="p">)</span>
+  <span class="n">bounds</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncolors</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+  <span class="n">ticks</span><span class="o">=</span><span class="p">[(</span><span class="n">i</span><span class="o">+</span><span class="mf">0.5</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">ncolors</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncolors</span><span class="p">)]</span>
+  <span class="n">cb2</span> <span class="o">=</span> <span class="n">mpl</span><span class="o">.</span><span class="n">colorbar</span><span class="o">.</span><span class="n">ColorbarBase</span><span class="p">(</span><span class="n">ax2</span><span class="p">,</span><span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span><span class="n">ticks</span><span class="o">=</span><span class="n">ticks</span><span class="p">,</span><span class="n">orientation</span><span class="o">=</span><span class="s">&#39;vertical&#39;</span><span class="p">)</span>
+  <span class="n">cb2</span><span class="o">.</span><span class="n">set_ticklabels</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+  <span class="n">f</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">f</span><span class="p">,</span><span class="n">color_map</span>
+</div>
+<div class="viewcode-block" id="SimplifySecStructure"><a class="viewcode-back" href="../secondary_structure.html#secondary_structure.SimplifySecStructure">[docs]</a><span class="k">def</span> <span class="nf">SimplifySecStructure</span><span class="p">(</span><span class="n">ssl</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function takes in a list ssl of standard dssp secondary structure letters (G,H,I,E,B,T,C,S)</span>
+<span class="sd">  and returns a simplified list where each element is assigned to the broader category of helix, beta or coil (H,E,C).</span>
+<span class="sd">  So it basically maps G,H and I to H; E and B to E; T,C and S to C.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">ss_dict</span><span class="o">=</span><span class="p">{}</span>
+  <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;G&#39;</span><span class="p">,</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="s">&#39;I&#39;</span><span class="p">]:</span><span class="n">ss_dict</span><span class="p">[</span><span class="n">el</span><span class="p">]</span><span class="o">=</span><span class="s">&#39;H&#39;</span>
+  <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;E&#39;</span><span class="p">,</span><span class="s">&#39;B&#39;</span><span class="p">]:</span><span class="n">ss_dict</span><span class="p">[</span><span class="n">el</span><span class="p">]</span><span class="o">=</span><span class="s">&#39;E&#39;</span>
+  <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;T&#39;</span><span class="p">,</span><span class="s">&#39;C&#39;</span><span class="p">,</span><span class="s">&#39;S&#39;</span><span class="p">]:</span><span class="n">ss_dict</span><span class="p">[</span><span class="n">el</span><span class="p">]</span><span class="o">=</span><span class="s">&#39;C&#39;</span>  
+  <span class="k">return</span> <span class="p">[</span><span class="n">ss_dict</span><span class="p">[</span><span class="n">ss</span><span class="p">]</span> <span class="k">for</span> <span class="n">ss</span> <span class="ow">in</span> <span class="n">ssl</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="SimplifySecStructureList"><a class="viewcode-back" href="../secondary_structure.html#secondary_structure.SimplifySecStructureList">[docs]</a><span class="k">def</span> <span class="nf">SimplifySecStructureList</span><span class="p">(</span><span class="n">ss_list</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function takes a list of lists of secondary structures as obtained from AnalyzeSecondaryStructure</span>
+<span class="sd">  and reassigns each element to the broader categories of Helix, Extended and Coil (see SimplifySecStructure)</span>
+<span class="sd">  Inputs:</span>
+<span class="sd">  ss_list: A list of lists of secondary structures as obtained from AnalyzeSecondaryStructure, see SecStrucColorMap.</span>
+<span class="sd">  Outpu:</span>
+<span class="sd">  ss_list: Simplified list of lists of secondary structures</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="p">[</span><span class="n">SimplifySecStructure</span><span class="p">(</span><span class="n">ssl</span><span class="p">)</span> <span class="k">for</span> <span class="n">ssl</span> <span class="ow">in</span> <span class="n">ss_list</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="FindSecStrucElements"><a class="viewcode-back" href="../secondary_structure.html#secondary_structure.FindSecStrucElements">[docs]</a><span class="k">def</span> <span class="nf">FindSecStrucElements</span><span class="p">(</span><span class="n">prot</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function assigns the secondary structure to the EntityView prot</span>
+<span class="sd">  and then searches for structural elements and returns a list of index pairs</span>
+<span class="sd">  corresponding to the begining and end of the secondary structure elements.</span>
+<span class="sd">  Inputs:</span>
+<span class="sd">  prot: EntityView for which the secondary structure should be analyzed</span>
+<span class="sd">  Output: A list of tuples. Each tuple corresponds to a structural element and</span>
+<span class="sd">  has three elements: the start index, the end index and a letter indicating the</span>
+<span class="sd">  secondary structure of that structural element. For example: [(1,5,&#39;H&#39;),(8,15,&#39;E&#39;)]</span>
+<span class="sd">  means that there is a helix spanning prot.residues[1:6] and a beta strand prot.residues[8:16].</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">AssignSecondaryStructure</span><span class="p">(</span><span class="n">prot</span><span class="p">)</span>
+  <span class="n">ssl</span><span class="o">=</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">GetSecStructure</span><span class="p">())</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">prot</span><span class="o">.</span><span class="n">residues</span><span class="p">]</span>
+  <span class="n">ssl</span><span class="o">=</span><span class="n">SimplifySecStructure</span><span class="p">(</span><span class="n">ssl</span><span class="p">)</span>
+  <span class="n">ss_ele_list</span><span class="o">=</span><span class="p">[]</span>
+  <span class="n">current</span><span class="o">=</span><span class="s">&#39;C&#39;</span>
+  <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">el</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ssl</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">el</span><span class="o">!=</span><span class="n">current</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">current</span><span class="o">==</span><span class="s">&#39;C&#39;</span><span class="p">:</span>
+        <span class="n">start</span><span class="o">=</span><span class="n">i</span>
+        <span class="n">current</span><span class="o">=</span><span class="n">el</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="n">stop</span><span class="o">=</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span>
+        <span class="n">ss_ele_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">start</span><span class="p">,</span><span class="n">stop</span><span class="p">,</span><span class="n">current</span><span class="p">))</span>
+        <span class="n">current</span><span class="o">=</span><span class="n">el</span>
+        <span class="k">if</span> <span class="n">el</span><span class="o">!=</span><span class="s">&#39;C&#39;</span><span class="p">:</span><span class="n">start</span><span class="o">=</span><span class="n">i</span>
+  <span class="k">return</span> <span class="n">ss_ele_list</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

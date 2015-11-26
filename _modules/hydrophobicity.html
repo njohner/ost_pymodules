@@ -1,0 +1,230 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>hydrophobicity &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for hydrophobicity</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. codeauthor:: Niklaus Johner &lt;niklaus.johner@a3.epfl.ch&gt;</span>
+
+<span class="sd">This module contains function to calculate hydrophobicity and hydrophobic</span>
+<span class="sd">moments from different hydrophobic scales.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="k">try</span><span class="p">:</span>
+  <span class="kn">from</span> <span class="nn">ost</span> <span class="kn">import</span> <span class="o">*</span>
+  <span class="kn">import</span> <span class="nn">math</span><span class="o">,</span><span class="nn">sys</span>
+  <span class="kn">import</span> <span class="nn">entity_alg</span>
+<span class="k">except</span><span class="p">:</span>
+  <span class="k">print</span> <span class="s">&#39;could not import at least on of the following modules: ost,math,sys,entity_alg&#39;</span>
+
+<span class="n">__all__</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;CalculateCharge&#39;</span><span class="p">,</span><span class="s">&#39;CalculateChargeWithSlidingWindow&#39;</span><span class="p">,</span><span class="s">&#39;GetResidueHydrophobicity&#39;</span><span class="p">,</span>\
+        <span class="s">&#39;CalculateHydrophobicMoment&#39;</span><span class="p">,</span><span class="s">&#39;CalculateHydrophobicMoment2&#39;</span><span class="p">,</span><span class="s">&#39;CalculateHydrophobicMoment3&#39;</span>\
+        <span class="p">,</span><span class="s">&#39;CalculateHydrophobicMomentWithSlidingWindow&#39;</span><span class="p">,</span><span class="s">&#39;CalculateHydrophobicity&#39;</span>\
+        <span class="p">,</span><span class="s">&#39;CalculateHydrophobicityWithSlidingWindow&#39;</span><span class="p">,</span><span class="s">&#39;DetermineAmphipathicity&#39;</span><span class="p">,</span><span class="s">&#39;AnalyzeHydrophobicMoment&#39;</span><span class="p">)</span>
+
+<span class="n">hydrophobicity_dict_kyte</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;A&#39;</span><span class="p">:</span><span class="mf">1.8</span><span class="p">,</span><span class="s">&#39;C&#39;</span><span class="p">:</span><span class="mf">2.5</span><span class="p">,</span><span class="s">&#39;D&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">3.5</span><span class="p">,</span><span class="s">&#39;E&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">3.5</span><span class="p">,</span><span class="s">&#39;F&#39;</span><span class="p">:</span><span class="mf">2.8</span><span class="p">,</span><span class="s">&#39;G&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">0.4</span><span class="p">,</span><span class="s">&#39;H&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">3.2</span><span class="p">,</span><span class="s">&#39;I&#39;</span><span class="p">:</span><span class="mf">4.5</span><span class="p">,</span><span class="s">&#39;K&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">3.9</span><span class="p">,</span><span class="s">&#39;L&#39;</span><span class="p">:</span><span class="mf">3.8</span><span class="p">,</span><span class="s">&#39;M&#39;</span><span class="p">:</span><span class="mf">1.9</span><span class="p">,</span><span class="s">&#39;N&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">3.5</span><span class="p">,</span><span class="s">&#39;P&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">1.6</span><span class="p">,</span><span class="s">&#39;Q&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">3.5</span><span class="p">,</span><span class="s">&#39;R&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">4.5</span><span class="p">,</span><span class="s">&#39;S&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">0.8</span><span class="p">,</span><span class="s">&#39;T&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">0.7</span><span class="p">,</span><span class="s">&#39;V&#39;</span><span class="p">:</span><span class="mf">4.2</span><span class="p">,</span><span class="s">&#39;W&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">0.9</span><span class="p">,</span><span class="s">&#39;Y&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">1.3</span><span class="p">}</span>
+<span class="n">hydrophobicity_dict_eisenberg</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;A&#39;</span><span class="p">:</span><span class="mf">0.62</span><span class="p">,</span><span class="s">&#39;C&#39;</span><span class="p">:</span><span class="mf">0.29</span><span class="p">,</span><span class="s">&#39;D&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">0.9</span><span class="p">,</span><span class="s">&#39;E&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">0.74</span><span class="p">,</span><span class="s">&#39;F&#39;</span><span class="p">:</span><span class="mf">1.19</span><span class="p">,</span><span class="s">&#39;G&#39;</span><span class="p">:</span><span class="mf">0.48</span><span class="p">,</span><span class="s">&#39;H&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">0.4</span><span class="p">,</span><span class="s">&#39;I&#39;</span><span class="p">:</span><span class="mf">1.38</span><span class="p">,</span><span class="s">&#39;K&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">1.5</span><span class="p">,</span><span class="s">&#39;L&#39;</span><span class="p">:</span><span class="mf">1.06</span><span class="p">,</span><span class="s">&#39;M&#39;</span><span class="p">:</span><span class="mf">0.64</span><span class="p">,</span><span class="s">&#39;N&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">0.78</span><span class="p">,</span><span class="s">&#39;P&#39;</span><span class="p">:</span><span class="mf">0.12</span><span class="p">,</span><span class="s">&#39;Q&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">0.85</span><span class="p">,</span><span class="s">&#39;R&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">2.53</span><span class="p">,</span><span class="s">&#39;S&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">0.18</span><span class="p">,</span><span class="s">&#39;T&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">0.05</span><span class="p">,</span><span class="s">&#39;V&#39;</span><span class="p">:</span><span class="mf">1.08</span><span class="p">,</span><span class="s">&#39;W&#39;</span><span class="p">:</span><span class="mf">0.81</span><span class="p">,</span><span class="s">&#39;Y&#39;</span><span class="p">:</span><span class="mf">0.26</span><span class="p">}</span>
+
+<span class="n">residue_charge_dict</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;A&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;C&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;D&#39;</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;E&#39;</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;F&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;G&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;H&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;I&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;K&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;L&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;M&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;N&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;P&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;Q&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;R&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;S&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;T&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;V&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;W&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;Y&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">}</span>
+
+<div class="viewcode-block" id="CalculateCharge"><a class="viewcode-back" href="../hydrophobicity.html#hydrophobicity.CalculateCharge">[docs]</a><span class="k">def</span> <span class="nf">CalculateCharge</span><span class="p">(</span><span class="n">sequence</span><span class="p">):</span>
+  <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="o">==</span><span class="nb">type</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">SequenceHandle</span><span class="p">()):</span><span class="n">sequence</span><span class="o">=</span><span class="n">sequence</span><span class="o">.</span><span class="n">GetGaplessString</span><span class="p">()</span>
+  <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="o">!=</span><span class="nb">type</span><span class="p">(</span><span class="nb">str</span><span class="p">()):</span><span class="n">sequence</span><span class="o">=</span><span class="n">entity_alg</span><span class="o">.</span><span class="n">CreateSequenceFromView</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="s">&#39;temp&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">GetGaplessString</span><span class="p">()</span>
+  <span class="n">c</span><span class="o">=</span><span class="mi">0</span>
+  <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">:</span>
+    <span class="n">c</span><span class="o">+=</span><span class="n">residue_charge_dict</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+  <span class="k">return</span> <span class="n">c</span>
+    </div>
+<div class="viewcode-block" id="CalculateChargeWithSlidingWindow"><a class="viewcode-back" href="../hydrophobicity.html#hydrophobicity.CalculateChargeWithSlidingWindow">[docs]</a><span class="k">def</span> <span class="nf">CalculateChargeWithSlidingWindow</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="n">w</span><span class="o">=</span><span class="mi">11</span><span class="p">):</span>
+  <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="o">==</span><span class="nb">type</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">SequenceHandle</span><span class="p">()):</span><span class="n">sequence</span><span class="o">=</span><span class="n">sequence</span><span class="o">.</span><span class="n">GetGaplessString</span><span class="p">()</span>
+  <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="o">!=</span><span class="nb">type</span><span class="p">(</span><span class="nb">str</span><span class="p">()):</span><span class="n">sequence</span><span class="o">=</span><span class="n">entity_alg</span><span class="o">.</span><span class="n">CreateSequenceFromView</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="s">&#39;temp&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">GetGaplessString</span><span class="p">()</span>
+  <span class="n">charge_list</span><span class="o">=</span><span class="p">[]</span>
+  <span class="n">before</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">w</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+  <span class="n">after</span><span class="o">=</span><span class="n">w</span><span class="o">-</span><span class="n">before</span>
+  <span class="n">n</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="n">b</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">i</span><span class="o">-</span><span class="n">before</span><span class="p">)</span>
+    <span class="n">e</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="n">after</span><span class="p">)</span>
+    <span class="n">l</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">e</span><span class="o">-</span><span class="n">b</span><span class="p">)</span>
+    <span class="n">charge_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">CalculateCharge</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="n">b</span><span class="p">:</span><span class="n">e</span><span class="p">])</span><span class="o">/</span><span class="n">l</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">charge_list</span>
+</div>
+<div class="viewcode-block" id="GetResidueHydrophobicity"><a class="viewcode-back" href="../hydrophobicity.html#hydrophobicity.GetResidueHydrophobicity">[docs]</a><span class="k">def</span> <span class="nf">GetResidueHydrophobicity</span><span class="p">(</span><span class="n">res</span><span class="p">,</span><span class="n">hydrophobicity_dict</span><span class="o">=</span><span class="n">hydrophobicity_dict_eisenberg</span><span class="p">):</span>
+  <span class="k">return</span> <span class="n">hydrophobicity_dict</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">GetOneLetterCode</span><span class="p">())</span>
+  </div>
+<div class="viewcode-block" id="CalculateHydrophobicMoment"><a class="viewcode-back" href="../hydrophobicity.html#hydrophobicity.CalculateHydrophobicMoment">[docs]</a><span class="k">def</span> <span class="nf">CalculateHydrophobicMoment</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="n">angle</span><span class="o">=</span><span class="mf">100.</span><span class="o">/</span><span class="mf">180.</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="n">hydrophobicity_dict</span><span class="o">=</span><span class="n">hydrophobicity_dict_eisenberg</span><span class="p">):</span>
+  <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="o">==</span><span class="nb">type</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">SequenceHandle</span><span class="p">()):</span><span class="n">sequence</span><span class="o">=</span><span class="n">sequence</span><span class="o">.</span><span class="n">GetGaplessString</span><span class="p">()</span>
+  <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="o">!=</span><span class="nb">type</span><span class="p">(</span><span class="nb">str</span><span class="p">()):</span><span class="n">sequence</span><span class="o">=</span><span class="n">entity_alg</span><span class="o">.</span><span class="n">CreateSequenceFromView</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="s">&#39;temp&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">GetGaplessString</span><span class="p">()</span>
+  <span class="n">v</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Rotate</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec2</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">),</span><span class="o">-</span><span class="n">angle</span><span class="p">)</span>
+  <span class="n">moment</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec2</span><span class="p">()</span>
+  <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">:</span>
+    <span class="n">v</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Rotate</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">angle</span><span class="p">)</span>
+    <span class="n">moment</span><span class="o">+=</span><span class="n">hydrophobicity_dict</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">*</span><span class="n">v</span>
+  <span class="k">return</span> <span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">moment</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CalculateHydrophobicMoment2"><a class="viewcode-back" href="../hydrophobicity.html#hydrophobicity.CalculateHydrophobicMoment2">[docs]</a><span class="k">def</span> <span class="nf">CalculateHydrophobicMoment2</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="n">angle</span><span class="o">=</span><span class="mf">100.</span><span class="o">/</span><span class="mf">180.</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="n">hydrophobicity_dict</span><span class="o">=</span><span class="n">hydrophobicity_dict_eisenberg</span><span class="p">):</span>
+  <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="o">==</span><span class="nb">type</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">SequenceHandle</span><span class="p">()):</span><span class="n">sequence</span><span class="o">=</span><span class="n">sequence</span><span class="o">.</span><span class="n">GetGaplessString</span><span class="p">()</span>
+  <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="o">!=</span><span class="nb">type</span><span class="p">(</span><span class="nb">str</span><span class="p">()):</span><span class="n">sequence</span><span class="o">=</span><span class="n">entity_alg</span><span class="o">.</span><span class="n">CreateSequenceFromView</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="s">&#39;temp&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">GetGaplessString</span><span class="p">()</span>
+  <span class="n">v</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Rotate</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec2</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">),</span><span class="o">-</span><span class="n">angle</span><span class="p">)</span>
+  <span class="n">moment</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec2</span><span class="p">()</span>
+  <span class="n">hm</span><span class="o">=</span><span class="n">CalculateHydrophobicity</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="n">hydrophobicity_dict</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">:</span>
+    <span class="n">v</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Rotate</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">angle</span><span class="p">)</span>
+    <span class="n">moment</span><span class="o">+=</span><span class="p">(</span><span class="n">hydrophobicity_dict</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">-</span><span class="n">hm</span><span class="p">)</span><span class="o">*</span><span class="n">v</span>
+  <span class="k">return</span> <span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">moment</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CalculateHydrophobicMoment3"><a class="viewcode-back" href="../hydrophobicity.html#hydrophobicity.CalculateHydrophobicMoment3">[docs]</a><span class="k">def</span> <span class="nf">CalculateHydrophobicMoment3</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="n">angle</span><span class="o">=</span><span class="mf">100.</span><span class="o">/</span><span class="mf">180.</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="n">hydrophobicity_dict</span><span class="o">=</span><span class="n">hydrophobicity_dict_eisenberg</span><span class="p">):</span>
+  <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="o">==</span><span class="nb">type</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">SequenceHandle</span><span class="p">()):</span><span class="n">sequence</span><span class="o">=</span><span class="n">sequence</span><span class="o">.</span><span class="n">GetGaplessString</span><span class="p">()</span>
+  <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="o">!=</span><span class="nb">type</span><span class="p">(</span><span class="nb">str</span><span class="p">()):</span><span class="n">sequence</span><span class="o">=</span><span class="n">entity_alg</span><span class="o">.</span><span class="n">CreateSequenceFromView</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="s">&#39;temp&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">GetGaplessString</span><span class="p">()</span>
+  <span class="n">v</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Rotate</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec2</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">),</span><span class="o">-</span><span class="n">angle</span><span class="p">)</span>
+  <span class="n">moment</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec2</span><span class="p">()</span>
+  <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">:</span>
+    <span class="n">v</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Rotate</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">angle</span><span class="p">)</span>
+    <span class="n">moment</span><span class="o">+=</span><span class="n">hydrophobicity_dict</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">*</span><span class="n">v</span>
+  <span class="n">vm</span><span class="o">=</span><span class="n">moment</span><span class="o">/</span><span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">moment</span><span class="p">)</span>
+  <span class="n">m_max</span><span class="o">=</span><span class="n">moment</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">v</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Rotate</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec2</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">),</span><span class="o">-</span><span class="n">angle</span><span class="p">)</span>
+    <span class="n">moment</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec2</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">:</span>
+      <span class="n">v</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Rotate</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">angle</span><span class="p">)</span>
+      <span class="n">v2</span><span class="o">=</span><span class="n">v</span><span class="o">-</span><span class="mf">0.2</span><span class="o">*</span><span class="n">i</span><span class="o">*</span><span class="n">vm</span>
+      <span class="n">v2</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Dot</span><span class="p">(</span><span class="n">v2</span><span class="p">,</span><span class="n">vm</span><span class="p">)</span><span class="o">/</span><span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">v2</span><span class="p">)</span><span class="o">*</span><span class="n">vm</span>
+      <span class="n">moment</span><span class="o">+=</span><span class="n">hydrophobicity_dict</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">*</span><span class="n">v2</span>
+    <span class="k">if</span> <span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">moment</span><span class="p">)</span><span class="o">&gt;</span><span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">m_max</span><span class="p">):</span><span class="n">m_max</span><span class="o">=</span><span class="n">moment</span>
+  <span class="k">return</span> <span class="n">geom</span><span class="o">.</span><span class="n">Length</span><span class="p">(</span><span class="n">m_max</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="CalculateHydrophobicMomentWithSlidingWindow"><a class="viewcode-back" href="../hydrophobicity.html#hydrophobicity.CalculateHydrophobicMomentWithSlidingWindow">[docs]</a><span class="k">def</span> <span class="nf">CalculateHydrophobicMomentWithSlidingWindow</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="n">w</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span><span class="n">angle</span><span class="o">=</span><span class="mf">100.</span><span class="o">/</span><span class="mf">180.</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="n">hydrophobicity_dict</span><span class="o">=</span><span class="n">hydrophobicity_dict_eisenberg</span><span class="p">):</span>
+  <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="o">==</span><span class="nb">type</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">SequenceHandle</span><span class="p">()):</span><span class="n">sequence</span><span class="o">=</span><span class="n">sequence</span><span class="o">.</span><span class="n">GetGaplessString</span><span class="p">()</span>
+  <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="o">!=</span><span class="nb">type</span><span class="p">(</span><span class="nb">str</span><span class="p">()):</span><span class="n">sequence</span><span class="o">=</span><span class="n">entity_alg</span><span class="o">.</span><span class="n">CreateSequenceFromView</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="s">&#39;temp&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">GetGaplessString</span><span class="p">()</span>
+  <span class="n">moment_list</span><span class="o">=</span><span class="p">[]</span>
+  <span class="n">before</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">w</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+  <span class="n">after</span><span class="o">=</span><span class="n">w</span><span class="o">-</span><span class="n">before</span>
+  <span class="n">n</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="n">b</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">i</span><span class="o">-</span><span class="n">before</span><span class="p">)</span>
+    <span class="n">e</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="n">after</span><span class="p">)</span>
+    <span class="n">l</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">e</span><span class="o">-</span><span class="n">b</span><span class="p">)</span>
+    <span class="n">moment_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">CalculateHydrophobicMoment3</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="n">b</span><span class="p">:</span><span class="n">e</span><span class="p">],</span><span class="n">angle</span><span class="p">,</span><span class="n">hydrophobicity_dict</span><span class="p">)</span><span class="o">/</span><span class="n">l</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">moment_list</span>
+</div>
+<div class="viewcode-block" id="CalculateHydrophobicity"><a class="viewcode-back" href="../hydrophobicity.html#hydrophobicity.CalculateHydrophobicity">[docs]</a><span class="k">def</span> <span class="nf">CalculateHydrophobicity</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="n">hydrophobicity_dict</span><span class="o">=</span><span class="n">hydrophobicity_dict_eisenberg</span><span class="p">):</span>
+  <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="o">==</span><span class="nb">type</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">SequenceHandle</span><span class="p">()):</span><span class="n">sequence</span><span class="o">=</span><span class="n">sequence</span><span class="o">.</span><span class="n">GetGaplessString</span><span class="p">()</span>
+  <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="o">!=</span><span class="nb">type</span><span class="p">(</span><span class="nb">str</span><span class="p">()):</span><span class="n">sequence</span><span class="o">=</span><span class="n">entity_alg</span><span class="o">.</span><span class="n">CreateSequenceFromView</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="s">&#39;temp&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">GetGaplessString</span><span class="p">()</span>
+  <span class="n">hydrophobicity</span><span class="o">=</span><span class="mf">0.0</span>
+  <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">:</span>
+    <span class="n">hydrophobicity</span><span class="o">+=</span><span class="n">hydrophobicity_dict</span><span class="p">[</span><span class="n">r</span><span class="p">]</span>
+  <span class="k">return</span> <span class="n">hydrophobicity</span>
+</div>
+<div class="viewcode-block" id="CalculateHydrophobicityWithSlidingWindow"><a class="viewcode-back" href="../hydrophobicity.html#hydrophobicity.CalculateHydrophobicityWithSlidingWindow">[docs]</a><span class="k">def</span> <span class="nf">CalculateHydrophobicityWithSlidingWindow</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="n">w</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span><span class="n">hydrophobicity_dict</span><span class="o">=</span><span class="n">hydrophobicity_dict_eisenberg</span><span class="p">):</span>
+  <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="o">==</span><span class="nb">type</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">SequenceHandle</span><span class="p">()):</span><span class="n">sequence</span><span class="o">=</span><span class="n">sequence</span><span class="o">.</span><span class="n">GetGaplessString</span><span class="p">()</span>
+  <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="o">!=</span><span class="nb">type</span><span class="p">(</span><span class="nb">str</span><span class="p">()):</span><span class="n">sequence</span><span class="o">=</span><span class="n">entity_alg</span><span class="o">.</span><span class="n">CreateSequenceFromView</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="s">&#39;temp&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">GetGaplessString</span><span class="p">()</span>
+  <span class="n">hydrophobicity_list</span><span class="o">=</span><span class="p">[]</span>
+  <span class="n">before</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">w</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+  <span class="n">after</span><span class="o">=</span><span class="n">w</span><span class="o">-</span><span class="n">before</span>
+  <span class="n">n</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="n">b</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">i</span><span class="o">-</span><span class="n">before</span><span class="p">)</span>
+    <span class="n">e</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="n">after</span><span class="p">)</span>
+    <span class="n">l</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">e</span><span class="o">-</span><span class="n">b</span><span class="p">)</span>
+    <span class="n">hydrophobicity_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">CalculateHydrophobicity</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="n">b</span><span class="p">:</span><span class="n">e</span><span class="p">],</span><span class="n">hydrophobicity_dict_eisenberg</span><span class="p">)</span><span class="o">/</span><span class="n">l</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">hydrophobicity_list</span>
+</div>
+<div class="viewcode-block" id="DetermineAmphipathicity"><a class="viewcode-back" href="../hydrophobicity.html#hydrophobicity.DetermineAmphipathicity">[docs]</a><span class="k">def</span> <span class="nf">DetermineAmphipathicity</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="n">w</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span><span class="n">angle</span><span class="o">=</span><span class="mf">100.</span><span class="o">/</span><span class="mf">180.</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">):</span>
+  <span class="n">hydrophobicity_list</span><span class="o">=</span><span class="n">CalculateHydrophobicityWithSlidingWindow</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="n">w</span><span class="p">,</span><span class="n">hydrophobicity_dict_eisenberg</span><span class="p">)</span>
+  <span class="n">moment_list</span><span class="o">=</span><span class="n">CalculateHydrophobicMomentWithSlidingWindow</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="n">w</span><span class="p">,</span><span class="n">angle</span><span class="p">,</span><span class="n">hydrophobicity_dict_eisenberg</span><span class="p">)</span>
+  <span class="c">#return [m/w for m,h in zip(moment_list,hydrophobicity_list)]</span>
+  <span class="k">return</span> <span class="p">[</span><span class="n">m</span><span class="o">-</span><span class="mf">0.6</span><span class="o">-</span><span class="mf">0.382</span><span class="o">*</span><span class="n">h</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span><span class="n">h</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">moment_list</span><span class="p">,</span><span class="n">hydrophobicity_list</span><span class="p">)]</span>
+</div>
+<div class="viewcode-block" id="AnalyzeHydrophobicMoment"><a class="viewcode-back" href="../hydrophobicity.html#hydrophobicity.AnalyzeHydrophobicMoment">[docs]</a><span class="k">def</span> <span class="nf">AnalyzeHydrophobicMoment</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="n">w</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span><span class="n">angle_min</span><span class="o">=</span><span class="mf">1.39</span><span class="p">,</span><span class="n">angle_max</span><span class="o">=</span><span class="mf">3.14</span><span class="p">,</span><span class="n">step</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span><span class="n">hydrophobicity_dict</span><span class="o">=</span><span class="n">hydrophobicity_dict_eisenberg</span><span class="p">):</span>
+  <span class="n">moment_list</span><span class="o">=</span><span class="p">[]</span>
+  <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">npy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">angle_min</span><span class="p">,</span><span class="n">angle_max</span><span class="p">,</span><span class="n">step</span><span class="p">):</span>
+    <span class="n">moment_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">CalculateHydrophobicMomentWithSlidingWindow</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span><span class="n">w</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">hydrophobicity_dict_eisenberg</span><span class="p">))</span>
+  <span class="k">return</span> <span class="n">moment_list</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

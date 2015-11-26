@@ -1,0 +1,197 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>coarse_grained_conop &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for coarse_grained_conop</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. codeauthor: Niklaus Johner &lt;niklaus.johner@a3.epfl.ch&gt;</span>
+
+<span class="sd">This module contains some funcitons to connect coarse-grained martini structures</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">ost</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">__all__</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;GenerateConnectivityDictFromITPFile&#39;</span><span class="p">,</span><span class="s">&#39;ConnectAtomsFromDict&#39;</span><span class="p">,</span>\
+         <span class="s">&#39;ConnectMartiniProteinAtoms&#39;</span><span class="p">,</span><span class="s">&#39;ConnectMartiniAtomsHeuristic&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GenerateConnectivityDictFromITPFile"><a class="viewcode-back" href="../coarse_grained_conop.html#coarse_grained_conop.GenerateConnectivityDictFromITPFile">[docs]</a><span class="k">def</span> <span class="nf">GenerateConnectivityDictFromITPFile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">connectivity_dict</span><span class="o">=</span><span class="p">{}):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function reads in a martini itp file and generates a dicionary containing</span>
+<span class="sd">  the connectivity information for the residues defined in the ITP file </span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">itp_file</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">itp_file</span><span class="p">:</span>
+    <span class="n">s</span><span class="o">=</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span><span class="k">continue</span>
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;;&#39;</span><span class="p">):</span><span class="k">continue</span>
+    <span class="n">b</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;[&#39;</span><span class="p">)</span>
+    <span class="n">e</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;]&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">b</span><span class="o">!=-</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">e</span><span class="o">!=-</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">e</span><span class="o">&gt;</span><span class="n">b</span><span class="p">:</span>
+      <span class="n">block</span><span class="o">=</span><span class="n">s</span><span class="p">[</span><span class="n">b</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="n">e</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+      <span class="k">if</span> <span class="n">block</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;moleculetype&#39;</span><span class="p">,</span><span class="s">&#39;atoms&#39;</span><span class="p">,</span><span class="s">&#39;bonds&#39;</span><span class="p">]:</span><span class="n">skip</span><span class="o">=</span><span class="bp">False</span>
+      <span class="k">else</span><span class="p">:</span> <span class="n">skip</span><span class="o">=</span><span class="bp">True</span>
+      <span class="k">continue</span>
+    <span class="k">if</span> <span class="n">skip</span><span class="p">:</span><span class="k">continue</span>
+    <span class="n">sp</span><span class="o">=</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">block</span><span class="o">==</span><span class="s">&#39;moleculetype&#39;</span><span class="p">:</span>
+      <span class="n">molecule</span><span class="o">=</span><span class="n">sp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+      <span class="n">connectivity_dict</span><span class="p">[</span><span class="n">molecule</span><span class="p">]</span><span class="o">=</span><span class="p">[]</span>
+      <span class="n">atom_dict</span><span class="o">=</span><span class="p">{}</span>
+      <span class="n">skip</span><span class="o">=</span><span class="bp">True</span>
+      <span class="k">continue</span>
+    <span class="k">if</span> <span class="n">block</span><span class="o">==</span><span class="s">&#39;atoms&#39;</span><span class="p">:</span>
+      <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sp</span><span class="p">)</span><span class="o">!=</span><span class="mi">7</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&#39;problem for atom definition from&#39;</span><span class="p">,</span><span class="n">line</span>
+        <span class="k">continue</span>
+      <span class="n">atom_dict</span><span class="p">[</span><span class="n">sp</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">=</span><span class="n">sp</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">block</span><span class="o">==</span><span class="s">&#39;bonds&#39;</span><span class="p">:</span>
+      <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sp</span><span class="p">)</span><span class="o">!=</span><span class="mi">5</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&#39;problem for bond definition from&#39;</span><span class="p">,</span><span class="n">line</span>
+        <span class="k">continue</span>
+      <span class="n">i1</span><span class="o">=</span><span class="n">sp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+      <span class="n">i2</span><span class="o">=</span><span class="n">sp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+      <span class="n">connectivity_dict</span><span class="p">[</span><span class="n">molecule</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">atom_dict</span><span class="p">[</span><span class="n">i1</span><span class="p">],</span><span class="n">atom_dict</span><span class="p">[</span><span class="n">i2</span><span class="p">]])</span>
+  <span class="k">return</span> <span class="n">connectivity_dict</span>
+</div>
+<div class="viewcode-block" id="ConnectAtomsFromDict"><a class="viewcode-back" href="../coarse_grained_conop.html#coarse_grained_conop.ConnectAtomsFromDict">[docs]</a><span class="k">def</span> <span class="nf">ConnectAtomsFromDict</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="n">connectivity_dict</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function uses a connectivity dictionary to connect atoms of an Entity or EntityView</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">eh</span><span class="p">)</span><span class="o">==</span><span class="n">mol</span><span class="o">.</span><span class="n">EntityView</span><span class="p">:</span><span class="n">edi</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">GetHandle</span><span class="p">()</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">BUFFERED_EDIT</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span><span class="n">edi</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">BUFFERED_EDIT</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">eh</span><span class="o">.</span><span class="n">residues</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">r</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">connectivity_dict</span><span class="p">:</span>
+      <span class="k">print</span> <span class="n">r</span><span class="p">,</span><span class="s">&#39;not in connectivity dict&#39;</span>
+      <span class="k">continue</span>
+    <span class="n">bond_list</span><span class="o">=</span><span class="n">connectivity_dict</span><span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">bond</span> <span class="ow">in</span> <span class="n">bond_list</span><span class="p">:</span>
+      <span class="n">a1</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">FindAtom</span><span class="p">(</span><span class="n">bond</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+      <span class="n">a2</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">FindAtom</span><span class="p">(</span><span class="n">bond</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+      <span class="n">edi</span><span class="o">.</span><span class="n">Connect</span><span class="p">(</span><span class="n">a1</span><span class="o">.</span><span class="n">handle</span><span class="p">,</span><span class="n">a2</span><span class="o">.</span><span class="n">handle</span><span class="p">)</span>
+  <span class="n">edi</span><span class="o">.</span><span class="n">ForceUpdate</span><span class="p">()</span>
+  <span class="k">return</span>
+
+  </div>
+<div class="viewcode-block" id="ConnectMartiniProteinAtoms"><a class="viewcode-back" href="../coarse_grained_conop.html#coarse_grained_conop.ConnectMartiniProteinAtoms">[docs]</a><span class="k">def</span> <span class="nf">ConnectMartiniProteinAtoms</span><span class="p">(</span><span class="n">eh</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Heuristic connection builder for Martini proteins generated by the martinize.py script</span>
+<span class="sd">  The backbone atoms have to be named BB</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">eh</span><span class="p">)</span><span class="o">==</span><span class="n">mol</span><span class="o">.</span><span class="n">EntityView</span><span class="p">:</span><span class="n">edi</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">GetHandle</span><span class="p">()</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">BUFFERED_EDIT</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span><span class="n">edi</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">BUFFERED_EDIT</span><span class="p">)</span>
+  <span class="n">r1</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">residues</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+  <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">eh</span><span class="o">.</span><span class="n">residues</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+    <span class="n">a1</span><span class="o">=</span><span class="n">r1</span><span class="o">.</span><span class="n">FindAtom</span><span class="p">(</span><span class="s">&#39;BB&#39;</span><span class="p">)</span>
+    <span class="n">a2</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">FindAtom</span><span class="p">(</span><span class="s">&#39;BB&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">a1</span><span class="o">.</span><span class="n">IsValid</span><span class="p">()</span> <span class="ow">and</span> <span class="n">a2</span><span class="o">.</span><span class="n">IsValid</span><span class="p">()):</span><span class="k">continue</span>
+    <span class="k">if</span> <span class="n">geom</span><span class="o">.</span><span class="n">Distance</span><span class="p">(</span><span class="n">a1</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span><span class="n">a2</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span><span class="o">&lt;=</span><span class="mf">10.0</span><span class="p">:</span><span class="n">edi</span><span class="o">.</span><span class="n">Connect</span><span class="p">(</span><span class="n">a1</span><span class="o">.</span><span class="n">handle</span><span class="p">,</span><span class="n">a2</span><span class="o">.</span><span class="n">handle</span><span class="p">)</span>
+    <span class="n">r1</span><span class="o">=</span><span class="n">r</span>
+  <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">eh</span><span class="o">.</span><span class="n">residues</span><span class="p">:</span>
+    <span class="c">#if r.name==&#39;ILE&#39;:d=4.0</span>
+    <span class="c">#else:d=3.5</span>
+    <span class="n">d</span><span class="o">=</span><span class="mf">4.0</span>
+    <span class="k">for</span> <span class="n">a1</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">atoms</span><span class="p">:</span>
+      <span class="k">for</span> <span class="n">a2</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">atoms</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">geom</span><span class="o">.</span><span class="n">Distance</span><span class="p">(</span><span class="n">a1</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span><span class="n">a2</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span><span class="o">&lt;=</span><span class="n">d</span><span class="p">:</span><span class="n">edi</span><span class="o">.</span><span class="n">Connect</span><span class="p">(</span><span class="n">a1</span><span class="o">.</span><span class="n">handle</span><span class="p">,</span><span class="n">a2</span><span class="o">.</span><span class="n">handle</span><span class="p">)</span>
+  <span class="n">edi</span><span class="o">.</span><span class="n">ForceUpdate</span><span class="p">()</span>
+  <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="ConnectMartiniAtomsHeuristic"><a class="viewcode-back" href="../coarse_grained_conop.html#coarse_grained_conop.ConnectMartiniAtomsHeuristic">[docs]</a><span class="k">def</span> <span class="nf">ConnectMartiniAtomsHeuristic</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="n">d</span><span class="o">=</span><span class="mf">5.0</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function simply connects atoms from the same resdiue and closer than the cutoff distance d</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">eh</span><span class="p">)</span><span class="o">==</span><span class="n">mol</span><span class="o">.</span><span class="n">EntityView</span><span class="p">:</span><span class="n">edi</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">GetHandle</span><span class="p">()</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">BUFFERED_EDIT</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span><span class="n">edi</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">BUFFERED_EDIT</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">eh</span><span class="o">.</span><span class="n">residues</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">a1</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">atoms</span><span class="p">):</span>
+      <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">a2</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">atoms</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">i</span><span class="o">&lt;=</span><span class="n">j</span><span class="p">:</span><span class="k">continue</span>
+        <span class="k">if</span> <span class="n">geom</span><span class="o">.</span><span class="n">Distance</span><span class="p">(</span><span class="n">a1</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span><span class="n">a2</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span><span class="o">&lt;=</span><span class="n">d</span><span class="p">:</span><span class="n">edi</span><span class="o">.</span><span class="n">Connect</span><span class="p">(</span><span class="n">a1</span><span class="o">.</span><span class="n">handle</span><span class="p">,</span><span class="n">a2</span><span class="o">.</span><span class="n">handle</span><span class="p">)</span>
+  <span class="n">edi</span><span class="o">.</span><span class="n">ForceUpdate</span><span class="p">()</span>
+  <span class="k">return</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

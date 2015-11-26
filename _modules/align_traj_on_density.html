@@ -1,0 +1,376 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>align_traj_on_density &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for align_traj_on_density</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. codeauthor: Niklaus Johner &lt;niklaus.johner@a3.epfl.ch&gt;</span>
+
+<span class="sd">This module is used to align trajectories on a density. It was designed </span>
+<span class="sd">for complex lipidic phases such as the lipid cubic phase. It maximizes the overlap</span>
+<span class="sd">of a selection of atoms with a reference density while minimizing the overlap</span>
+<span class="sd">of a second selection with that same density. Typically the reference density is water.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="k">try</span><span class="p">:</span>
+  <span class="kn">import</span> <span class="nn">time</span>
+  <span class="kn">import</span> <span class="nn">math</span>
+  <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">npy</span>
+  <span class="kn">import</span> <span class="nn">scipy</span>
+  <span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">optimize</span>
+  <span class="kn">import</span> <span class="nn">density_alg</span><span class="o">,</span><span class="nn">file_utilities</span>
+<span class="k">except</span><span class="p">:</span> 
+  <span class="k">print</span> <span class="s">&#39;module needs time, math, numpy, scipy and scipy.optimize and density_alg modules but could not import them&#39;</span>
+  
+<span class="kn">import</span> <span class="nn">os</span>  
+<span class="kn">from</span> <span class="nn">ost</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">__all__</span><span class="o">=</span><span class="p">(</span><span class="s">&quot;TransformViewWithPeriodicBoundaries&quot;</span><span class="p">,</span><span class="s">&#39;AlignTrajectoryOnDensity&#39;</span><span class="p">,</span><span class="s">&#39;AlignTrajectoryOnFirstFrame&#39;</span><span class="p">,</span><span class="s">&quot;WrapTransformedView&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_sign</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+  <span class="k">if</span> <span class="n">x</span><span class="o">&gt;=</span><span class="mf">0.0</span><span class="p">:</span><span class="k">return</span> <span class="mf">1.</span>
+  <span class="k">else</span><span class="p">:</span> <span class="k">return</span> <span class="o">-</span><span class="mf">1.</span>
+  
+<div class="viewcode-block" id="TransformViewWithPeriodicBoundaries"><a class="viewcode-back" href="../align_traj_on_density.html#align_traj_on_density.TransformViewWithPeriodicBoundaries">[docs]</a><span class="k">def</span> <span class="nf">TransformViewWithPeriodicBoundaries</span><span class="p">(</span><span class="n">view</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">cell_center</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">ucell_size</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">ucell_angles</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">group_res</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">follow_bonds</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function applies the transformation given in x to the **view**.</span>
+<span class="sd">  If specified it will warp the transformed **view** using the periodic cell information.</span>
+
+<span class="sd">  To make it more stable, we translate the system to the origin, then do the rotation,</span>
+<span class="sd">  translate back and then add the current translation.</span>
+
+<span class="sd">  WARNING: the translational part of x is multiplied by 10 before applying (meaning x[:3] should be given in [nm])!!</span>
+<span class="sd">  </span>
+<span class="sd">  PBC are applied before the rotation is made.</span>
+
+<span class="sd">  :param view: The view to which the transformation will be applied</span>
+<span class="sd">  :param x: An array of 6 floats. The 3 first ones are the translation in nm and the 3 last ones the rotation angles.</span>
+<span class="sd">  :param cell_center: Center of the unit cell around which **view** will get wrapped</span>
+<span class="sd">  :param ucell_size: Sizes of the unit cell vectors</span>
+<span class="sd">  :param ucell_angles: Angles of the unit cell vectors</span>
+<span class="sd">  :param group_res: Whether residues whould be maintained whole when wrapping</span>
+<span class="sd">  :param follow_bonds: If **group_res** is set to true, some residues might still get split</span>
+<span class="sd">                       if they extend over more than half of the unit cell. If **follow_bonds**</span>
+<span class="sd">                       is set to *True*, then the topology will be used to ensure that all residues are</span>
+<span class="sd">                       properly wrapped. This will slow down the wrapping.</span>
+
+<span class="sd">  :type view: :class:`~ost.mol.EntityView`</span>
+<span class="sd">  :type x: :class:`tuple` (:class:`float`,:class:`float`,:class:`float`,:class:`float`,:class:`float`,:class:`float`)</span>
+<span class="sd">  :type cell_center: :class:`~ost.geom.Vec3`</span>
+<span class="sd">  :type ucell_size: :class:`~ost.geom.Vec3`</span>
+<span class="sd">  :type ucell_angles: :class:`~ost.geom.Vec3`</span>
+<span class="sd">  :type group_res: :class:`bool`</span>
+<span class="sd">  :type follow_bonds: :class:`bool`</span>
+
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">eh</span><span class="o">=</span><span class="n">view</span><span class="o">.</span><span class="n">handle</span>
+  <span class="n">edi</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">()</span>
+  <span class="n">ID</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Mat4</span><span class="p">()</span>
+  <span class="n">edi</span><span class="o">.</span><span class="n">SetTransform</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
+  <span class="n">TT</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Mat4</span><span class="p">()</span>
+  <span class="n">TT</span><span class="o">.</span><span class="n">PasteTranslation</span><span class="p">(</span><span class="mi">10</span><span class="o">*</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+  <span class="n">R</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Rotation3</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="n">x</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="n">x</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+  <span class="n">TR</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Mat4</span><span class="p">()</span>
+  <span class="n">TR</span><span class="o">.</span><span class="n">PasteRotation</span><span class="p">(</span><span class="n">R</span><span class="o">.</span><span class="n">GetRotationMatrix</span><span class="p">())</span>
+  <span class="c">#We center the residues in the cell before the transformation</span>
+  <span class="n">edi</span><span class="o">.</span><span class="n">SetTransform</span><span class="p">(</span><span class="n">TT</span><span class="p">)</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">cell_center</span> <span class="ow">and</span> <span class="n">ucell_size</span> <span class="ow">and</span> <span class="n">ucell_angles</span><span class="p">):</span>
+    <span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">WrapEntityInPeriodicCell</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="n">cell_center</span><span class="p">,</span><span class="n">ucell_size</span><span class="p">,</span><span class="n">ucell_angles</span><span class="p">,</span><span class="n">group_res</span><span class="o">=</span><span class="n">group_res</span><span class="p">,</span><span class="n">follow_bonds</span><span class="o">=</span><span class="n">follow_bonds</span><span class="p">)</span>
+  <span class="n">edi</span><span class="o">.</span><span class="n">SetTransform</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
+  <span class="n">TCM</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Mat4</span><span class="p">()</span>
+  <span class="n">TCM</span><span class="o">.</span><span class="n">PasteTranslation</span><span class="p">(</span><span class="o">-</span><span class="n">view</span><span class="o">.</span><span class="n">GetCenterOfAtoms</span><span class="p">())</span>
+  <span class="n">TCM2</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Mat4</span><span class="p">()</span>
+  <span class="n">TCM2</span><span class="o">.</span><span class="n">PasteTranslation</span><span class="p">(</span><span class="n">view</span><span class="o">.</span><span class="n">GetCenterOfAtoms</span><span class="p">())</span>
+  <span class="n">edi</span><span class="o">.</span><span class="n">SetTransform</span><span class="p">(</span><span class="n">TT</span><span class="o">*</span><span class="n">TCM2</span><span class="o">*</span><span class="n">TR</span><span class="o">*</span><span class="n">TCM</span><span class="p">)</span>
+  <span class="k">return</span>
+</div>
+<span class="k">def</span> <span class="nf">_CalculateDensityOverlapScore</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">den_map</span><span class="p">,</span><span class="n">view1</span><span class="p">,</span><span class="n">view2</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">box_center</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">ucell_size</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">ucell_angles</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+  <span class="n">t1</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+  <span class="n">TransformViewWithPeriodicBoundaries</span><span class="p">(</span><span class="n">view1</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">box_center</span><span class="p">,</span><span class="n">ucell_size</span><span class="p">,</span><span class="n">ucell_angles</span><span class="p">)</span>
+  <span class="n">vl</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">GetPosListFromView</span><span class="p">(</span><span class="n">view1</span><span class="p">)</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">view2</span><span class="p">:</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">CalculateAverageAgreementWithDensityMap</span><span class="p">(</span><span class="n">vl</span><span class="p">,</span><span class="n">den_map</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="n">do</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">CalculateAverageAgreementWithDensityMap</span><span class="p">(</span><span class="n">vl</span><span class="p">,</span><span class="n">den_map</span><span class="p">)</span>
+    <span class="n">vl2</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">GetPosListFromView</span><span class="p">(</span><span class="n">view2</span><span class="p">)</span>
+    <span class="n">do2</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">CalculateAverageAgreementWithDensityMap</span><span class="p">(</span><span class="n">vl2</span><span class="p">,</span><span class="n">den_map</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">do2</span><span class="o">-</span><span class="n">do</span>
+
+<span class="k">def</span> <span class="nf">_PrintX</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+  <span class="k">print</span> <span class="s">&#39;current solution:&#39;</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">FindWithinBox</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="n">xmin</span><span class="p">,</span><span class="n">xmax</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Selects everything from **eh** within a box delimited by **xmin** and **xmax**</span>
+
+<span class="sd">  :param eh: The :class:`~ost.mol.EntityHandle` or :class:`~ost.mol.EntityView` from which the selection will be made</span>
+<span class="sd">  :param xmin: min corner of the box</span>
+<span class="sd">  :param xmax: max corner of the box</span>
+
+<span class="sd">  :type eh: :class:`~ost.mol.EntityView`</span>
+<span class="sd">  :type xmin: :class:`~ost.geom.Vec3`</span>
+<span class="sd">  :type xmax: :class:`~ost.geom.Vec3`</span>
+
+<span class="sd">  :return: Selection of all atoms in the box</span>
+<span class="sd">  :rtype: :class:`~ost.mol.EntityView`</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">sele</span><span class="o">=</span><span class="s">&#39;x&gt;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">xmin</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="s">&#39; and y&gt;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">xmin</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">+</span><span class="s">&#39; and z&gt;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">xmin</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+  <span class="n">sele</span><span class="o">+=</span><span class="s">&#39; and x&lt;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">xmax</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="s">&#39; and y&lt;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">xmax</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">+</span><span class="s">&#39; and z&lt;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">xmax</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+  <span class="k">return</span> <span class="n">eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">sele</span><span class="p">)</span>
+  
+<span class="k">def</span> <span class="nf">_TestPBC</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">PBC</span><span class="p">,</span><span class="n">cell_center</span><span class="p">):</span>
+  <span class="c">#Verify that we have all we need for the periodic boundary conditions</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">PBC</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">cell_center</span><span class="p">):</span>
+    <span class="k">print</span> <span class="s">&#39;You have to provide a cell center around which all the frames will get wrapped&#39;</span>
+    <span class="k">return</span> <span class="bp">False</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">PBC</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrame</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">GetCellSize</span><span class="p">()</span><span class="o">==</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrameCount</span><span class="p">())):</span>
+      <span class="k">print</span> <span class="s">&#39;cell size is 0 for some frames&#39;</span>
+      <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrame</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">GetCellAngles</span><span class="p">()</span><span class="o">==</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrameCount</span><span class="p">())):</span>
+      <span class="k">print</span> <span class="s">&#39;cell angles are 0 for some frames&#39;</span>
+      <span class="k">return</span> <span class="bp">False</span>
+  <span class="k">return</span> <span class="bp">True</span>
+  
+<div class="viewcode-block" id="AlignTrajectoryOnDensity"><a class="viewcode-back" href="../align_traj_on_density.html#align_traj_on_density.AlignTrajectoryOnDensity">[docs]</a><span class="k">def</span> <span class="nf">AlignTrajectoryOnDensity</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">density_map</span><span class="p">,</span><span class="n">water_sele</span><span class="p">,</span><span class="n">not_water_sele</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">initial_translation</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">PBC</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">cell_center</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">skip_first</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function Aligns a trajectory on a density.</span>
+<span class="sd">  It was designed to align trajectories of complex lipidic phases such as the lipid cubic phase.</span>
+<span class="sd">  It maximizes the overlap of a selection of atoms (water_sele) with the density (density_map)</span>
+<span class="sd">  while minimizing the overlap of a second selection (not_water_sele) with that same density. </span>
+<span class="sd">  Typically the reference density is water.</span>
+<span class="sd">  </span>
+<span class="sd">  :param t:  The trajectory</span>
+<span class="sd">  :param density_map: The density used to align the trajectory</span>
+<span class="sd">  :param water_sele: Selection string for the EntityView whose overlap with the density is maximized. If not set, density_sele is used. </span>
+<span class="sd">  :param not_water_sele: Selection string for the EntityView whose overap with the density is minimized.</span>
+<span class="sd">  :param initial_translation: Translation applied before generating the density</span>
+<span class="sd">  :param PBC: Use of periodic boundary conditions on the entity during alignment</span>
+<span class="sd">  :param cell_center: center of the cell for wrapping the entity during alignment</span>
+<span class="sd">  :param skip_first: Only apply initial_translation to the first frame, no optimization</span>
+<span class="sd">  </span>
+<span class="sd">  :type t: :class:`~ost.mol.CoordGroupHandle`</span>
+<span class="sd">  :type density_map: :class:`~ost.img.ImageHandle`</span>
+<span class="sd">  :type water_sele: :class:`str`</span>
+<span class="sd">  :type not_water_sele: :class:`str`</span>
+<span class="sd">  :type initial_translation: :class:`~ost.geom.Vec3`</span>
+<span class="sd">  :type PBC: :class:`bool`</span>
+<span class="sd">  :type cell_center: :class:`~ost.geom.Vec3`</span>
+<span class="sd">  :type skip_first: :class:`bool`</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">_TestPBC</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">PBC</span><span class="p">,</span><span class="n">cell_center</span><span class="p">):</span><span class="k">return</span> <span class="bp">None</span>
+  <span class="n">eh</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">GetEntity</span><span class="p">()</span>
+  <span class="k">print</span> <span class="s">&#39;number of frames to align&#39;</span><span class="p">,</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrameCount</span><span class="p">()</span>
+  <span class="n">xmin_list</span><span class="o">=</span><span class="p">[]</span>
+  <span class="n">x</span><span class="o">=</span><span class="n">scipy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">initial_translation</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="n">initial_translation</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="mf">10.</span>
+  <span class="n">t0</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">PBC</span><span class="p">:</span>
+    <span class="n">ucell_size</span><span class="o">=</span><span class="bp">None</span>
+    <span class="n">ucell_angles</span><span class="o">=</span><span class="bp">None</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrameCount</span><span class="p">()):</span>
+    <span class="n">t1</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">CopyFrame</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrame</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">PBC</span><span class="p">:</span>
+      <span class="n">ucell_size</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">GetCellSize</span><span class="p">()</span>
+      <span class="n">ucell_angles</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">GetCellAngles</span><span class="p">()</span>
+    <span class="n">not_waters</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">not_water_sele</span><span class="p">)</span>
+    <span class="n">waters</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">water_sele</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;frame&#39;</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="s">&#39;out of&#39;</span><span class="p">,</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrameCount</span><span class="p">(),</span><span class="s">&#39;number of W&#39;</span><span class="p">,</span><span class="n">waters</span><span class="o">.</span><span class="n">GetAtomCount</span><span class="p">(),</span><span class="s">&#39;number of not W&#39;</span><span class="p">,</span><span class="n">not_waters</span><span class="o">.</span><span class="n">GetAtomCount</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="n">skip_first</span> <span class="ow">and</span> <span class="n">i</span><span class="o">==</span><span class="mi">0</span><span class="p">):</span>
+      <span class="n">xmin</span><span class="o">=</span><span class="n">optimize</span><span class="o">.</span><span class="n">fmin_powell</span><span class="p">(</span><span class="n">_CalculateDensityOverlapScore</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">density_map</span><span class="p">,</span><span class="n">waters</span><span class="p">,</span><span class="n">not_waters</span><span class="p">,</span><span class="n">cell_center</span><span class="p">,</span><span class="n">ucell_size</span><span class="p">,</span><span class="n">ucell_angles</span><span class="p">),</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span><span class="n">full_output</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">maxfun</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span><span class="n">disp</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">callback</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+      <span class="n">x</span><span class="o">=</span><span class="n">xmin</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+      <span class="n">xmin_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xmin</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&#39;frame&#39;</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="s">&#39;finale solution&#39;</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="s">&#39;time for convergence&#39;</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t1</span><span class="p">),</span><span class="s">&#39;seconds&#39;</span>
+    <span class="n">TransformViewWithPeriodicBoundaries</span><span class="p">(</span><span class="n">waters</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">cell_center</span><span class="p">,</span><span class="n">ucell_size</span><span class="p">,</span><span class="n">ucell_angles</span><span class="p">)</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">Capture</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">eh</span><span class="o">.</span><span class="n">SetTransform</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Transform</span><span class="p">())</span>
+  <span class="k">print</span> <span class="s">&#39;total time&#39;</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">),</span><span class="s">&#39;seconds&#39;</span>
+  <span class="n">xmin</span><span class="o">=</span><span class="p">[]</span>
+  <span class="k">if</span> <span class="n">skip_first</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">initial_translation</span><span class="p">:</span><span class="n">xmin</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">npy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">initial_translation</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mf">10.</span><span class="p">,</span><span class="n">initial_translation</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mf">10.</span><span class="p">,</span><span class="n">initial_translation</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="mf">10.</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">]))</span>
+    <span class="k">else</span><span class="p">:</span><span class="n">xmin</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">npy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">]))</span>
+  <span class="n">xmin</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">xi</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">xi</span> <span class="ow">in</span> <span class="n">xmin_list</span><span class="p">])</span>
+  <span class="k">return</span> <span class="n">xmin</span>
+</div>
+<div class="viewcode-block" id="AlignTrajectoryOnFirstFrame"><a class="viewcode-back" href="../align_traj_on_density.html#align_traj_on_density.AlignTrajectoryOnFirstFrame">[docs]</a><span class="k">def</span> <span class="nf">AlignTrajectoryOnFirstFrame</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">density_sele</span><span class="p">,</span><span class="n">water_sele</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">not_water_sele</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">initial_translation</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">PBC</span><span class="o">=</span><span class="bp">True</span>\
+                                <span class="p">,</span><span class="n">cell_center</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">outdir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">density_margin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">density_cutback</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>\
+                                <span class="n">density_sampling</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">low_pass_filter_level</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">io_profile</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function Aligns a trajectory on the density generated from its first frame.</span>
+<span class="sd">  It was designed to align trajectories of complex lipidic phases such as the lipid cubic phase.</span>
+<span class="sd">  It maximizes the overlap of a selection of atoms (water_sele) with the density of a selection </span>
+<span class="sd">  (density_sele), genreated from the first frame, while minimizing the overlap</span>
+<span class="sd">  of a second selection (not_water_sele) with that same density. Typically the reference density is water.</span>
+<span class="sd">  </span>
+<span class="sd">  :param t:  The trajectory</span>
+<span class="sd">  :param density_sele: Selection string used to select the atoms for the generation of the density</span>
+<span class="sd">  :param water_sele: Selection string for the EntityView whose overlap with the density is maximized. If not set, density_sele is used. </span>
+<span class="sd">  :param not_water_sele: Selection string for the EntityView whose overap with the density is minimized.</span>
+<span class="sd">  :param initial_translation: Translation applied before generating the density</span>
+<span class="sd">  :param PBC: Use of periodic boundary conditions on the entity during alignment</span>
+<span class="sd">  :param cell_center: Center of the cell for wrapping the entity during alignment</span>
+<span class="sd">  :param outdir: Path to the output directory for saving files (densities, aligned trajectory). If not set, files will not be saved.</span>
+<span class="sd">  :param filename_basis: basis name used for all the files being saved</span>
+<span class="sd">  :param density_margin: size by which the Entity gets extended (using PBCs) before generating the density</span>
+<span class="sd">  :param density_cutback: If True, the density is cutback after generation to its initial size (previous to the extension by density_margin)</span>
+<span class="sd">  :param density_sampling: The sampling in real space for the density (# of points per Angstrom).</span>
+<span class="sd">  :param low_pass_filter_level: The density gets filtered after generation by a low pass filter with this level in Angstrom.</span>
+<span class="sd">  :param io_profile: Profile used to save PDB and dcd files.</span>
+<span class="sd">  </span>
+<span class="sd">  :type t: :class:`~ost.mol.CoordGroupHandle`</span>
+<span class="sd">  :type density_sele: :class:`str`</span>
+<span class="sd">  :type water_sele: :class:`str`</span>
+<span class="sd">  :type not_water_sele: :class:`str`</span>
+<span class="sd">  :type initial_translation: :class:`~ost.geom.Vec3`</span>
+<span class="sd">  :type PBC: :class:`bool`</span>
+<span class="sd">  :type cell_center: :class:`~ost.geom.Vec3`</span>
+<span class="sd">  :type outdir: :class:`str`</span>
+<span class="sd">  :type filename_basis: :class:`str`</span>
+<span class="sd">  :type density_margin: :class:`float`</span>
+<span class="sd">  :type density_cutback: :class:`bool`</span>
+<span class="sd">  :type density_sampling: :class:`float`</span>
+<span class="sd">  :type low_pass_filter_level: :class:`float`</span>
+<span class="sd">  :type io_profile: :class:`~ost.io.IOProfile`</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">eh</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">GetEntity</span><span class="p">()</span>
+  <span class="n">t</span><span class="o">.</span><span class="n">CopyFrame</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">cell_center</span><span class="p">:</span><span class="n">cell_center</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">GetCenterOfAtoms</span><span class="p">()</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">_TestPBC</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">PBC</span><span class="p">,</span><span class="n">cell_center</span><span class="p">):</span><span class="k">return</span> <span class="bp">None</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">io_profile</span><span class="p">:</span><span class="n">io_profile</span><span class="o">=</span><span class="n">io</span><span class="o">.</span><span class="n">IOProfile</span><span class="p">(</span><span class="n">dialect</span><span class="o">=</span><span class="s">&#39;CHARMM&#39;</span><span class="p">,</span><span class="n">fault_tolerant</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">water_sele</span><span class="p">:</span><span class="n">water_sele</span><span class="o">=</span><span class="n">density_sele</span>
+  <span class="k">if</span> <span class="n">PBC</span><span class="p">:</span>
+    <span class="n">ucell_size</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrame</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">GetCellSize</span><span class="p">()</span>
+    <span class="n">ucell_angles</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrame</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">GetCellAngles</span><span class="p">()</span>
+    <span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">WrapEntityInPeriodicCell</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="n">cell_center</span><span class="p">,</span><span class="n">ucell_size</span><span class="p">,</span><span class="n">ucell_angles</span><span class="p">,</span><span class="bp">False</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">initial_translation</span><span class="p">:</span>
+    <span class="n">T</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Transform</span><span class="p">()</span>
+    <span class="n">T</span><span class="o">.</span><span class="n">SetTrans</span><span class="p">(</span><span class="n">initial_translation</span><span class="p">)</span>
+    <span class="n">eh</span><span class="o">.</span><span class="n">SetTransform</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+    <span class="n">cell_center</span><span class="o">=</span><span class="n">cell_center</span><span class="o">+</span><span class="n">initial_translation</span>
+  <span class="k">if</span> <span class="n">outdir</span><span class="p">:</span><span class="n">io</span><span class="o">.</span><span class="n">SavePDB</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">+</span><span class="s">&#39;first_frame_centered_wrapped.pdb&#39;</span><span class="p">),</span><span class="n">profile</span><span class="o">=</span><span class="n">io_profile</span><span class="p">)</span>
+  <span class="n">density_view</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">density_sele</span><span class="p">)</span>
+  <span class="n">ucell_vecs</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrame</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">GetCellVectors</span><span class="p">()</span>
+  <span class="n">den_map</span><span class="o">=</span><span class="n">density_alg</span><span class="o">.</span><span class="n">CreateDensityMapFromEntityView</span><span class="p">(</span><span class="n">density_view</span><span class="p">,</span><span class="n">density_sampling</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="n">density_margin</span><span class="p">,</span><span class="n">cell_center</span><span class="p">,</span><span class="n">ucell_vecs</span><span class="p">,</span><span class="n">density_cutback</span><span class="p">)</span>
+  <span class="n">den_map_filtered</span><span class="o">=</span><span class="n">den_map</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">LowPassFilter</span><span class="p">(</span><span class="n">low_pass_filter_level</span><span class="p">))</span>
+  <span class="n">eh</span><span class="o">.</span><span class="n">SetTransform</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Transform</span><span class="p">())</span>
+  <span class="k">if</span> <span class="n">outdir</span><span class="p">:</span>
+    <span class="n">io</span><span class="o">.</span><span class="n">SaveMap</span><span class="p">(</span><span class="n">den_map_filtered</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">+</span><span class="s">&#39;density_first_frame_filtered.mrc&#39;</span><span class="p">))</span>
+    <span class="n">io</span><span class="o">.</span><span class="n">SaveMap</span><span class="p">(</span><span class="n">den_map</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">+</span><span class="s">&#39;density_first_frame.mrc&#39;</span><span class="p">))</span>
+  <span class="n">xmin</span><span class="o">=</span><span class="n">AlignTrajectoryOnDensity</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">den_map_filtered</span><span class="p">,</span><span class="n">water_sele</span><span class="p">,</span><span class="n">not_water_sele</span><span class="p">,</span><span class="n">initial_translation</span><span class="p">,</span><span class="n">PBC</span><span class="p">,</span><span class="n">cell_center</span><span class="p">,</span><span class="n">skip_first</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>  
+  <span class="k">if</span> <span class="n">outdir</span><span class="p">:</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">CopyFrame</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">io</span><span class="o">.</span><span class="n">SaveCHARMMTraj</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">+</span><span class="s">&#39;aligned_trajectory.pdb&#39;</span><span class="p">),</span>\
+    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">+</span><span class="s">&#39;aligned_trajectory.dcd&#39;</span><span class="p">),</span><span class="n">profile</span><span class="o">=</span><span class="n">io_profile</span><span class="p">)</span>
+    <span class="n">file_utilities</span><span class="o">.</span><span class="n">WriteListOfListsInLines</span><span class="p">([</span><span class="s">&#39;x1&#39;</span><span class="p">,</span><span class="s">&#39;x2&#39;</span><span class="p">,</span><span class="s">&#39;x3&#39;</span><span class="p">,</span><span class="s">&#39;r1&#39;</span><span class="p">,</span><span class="s">&#39;r2&#39;</span><span class="p">,</span><span class="s">&#39;r3&#39;</span><span class="p">],</span><span class="n">xmin</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="n">filename_basis</span><span class="o">+</span><span class="s">&#39;aligned_trajectory_transformations.txt&#39;</span><span class="p">))</span>
+  <span class="k">return</span> <span class="n">xmin</span>
+
+</div>
+<div class="viewcode-block" id="WrapTransformedView"><a class="viewcode-back" href="../align_traj_on_density.html#align_traj_on_density.WrapTransformedView">[docs]</a><span class="k">def</span> <span class="nf">WrapTransformedView</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">cell_center</span><span class="p">,</span><span class="n">ucell_size</span><span class="p">,</span><span class="n">ucell_angles</span><span class="p">,</span><span class="n">group_res</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">follow_bonds</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function allows to apply periodic boundaries on a view that has been transformed.</span>
+<span class="sd">  It will apply the inverse of the rotation, then wrap around the rotated cell_center,</span>
+<span class="sd">  and finally reapply the rotation.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">eh</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">handle</span>
+  <span class="n">edi</span><span class="o">=</span><span class="n">eh</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">()</span>
+  <span class="n">ID</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Mat4</span><span class="p">()</span>
+  <span class="n">edi</span><span class="o">.</span><span class="n">SetTransform</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
+  <span class="n">R</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Rotation3</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="n">x</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="n">x</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+  <span class="n">RI</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Rotation3</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Invert</span><span class="p">(</span><span class="n">R</span><span class="o">.</span><span class="n">GetRotationMatrix</span><span class="p">()))</span>
+  <span class="n">TR</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Mat4</span><span class="p">()</span>
+  <span class="n">TR</span><span class="o">.</span><span class="n">PasteRotation</span><span class="p">(</span><span class="n">RI</span><span class="o">.</span><span class="n">GetRotationMatrix</span><span class="p">())</span>
+  <span class="n">edi</span><span class="o">.</span><span class="n">SetTransform</span><span class="p">(</span><span class="n">TR</span><span class="p">)</span>
+  <span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">WrapEntityInPeriodicCell</span><span class="p">(</span><span class="n">eh</span><span class="p">,</span><span class="n">RI</span><span class="o">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">cell_center</span><span class="p">),</span><span class="n">ucell_size</span><span class="p">,</span><span class="n">ucell_angles</span><span class="p">,</span><span class="n">group_res</span><span class="o">=</span><span class="n">group_res</span><span class="p">,</span><span class="n">follow_bonds</span><span class="o">=</span><span class="n">follow_bonds</span><span class="p">)</span>
+  <span class="n">edi</span><span class="o">.</span><span class="n">SetTransform</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
+  <span class="k">return</span>  
+  </div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

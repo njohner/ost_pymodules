@@ -1,0 +1,195 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>principal_components &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for principal_components</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. codeauthor: Niklaus Johner &lt;niklaus.johner@a3.epfl.ch&gt;</span>
+
+<span class="sd">This module contains functions for principal components analysis. </span>
+<span class="sd">It can be used to calculate principal components from a trajectory,</span>
+<span class="sd">graphically display the principal components, reconstruct a trajectory from</span>
+<span class="sd">a chosen set of components and so on.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">ost</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">npy</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">math</span>
+
+<span class="n">__all__</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;RepresentPrincipalComponentOnStruccture&#39;</span><span class="p">,</span> <span class="s">&#39;ProjectOnPrincipalComponentsAtomWise&#39;</span><span class="p">,</span>\
+         <span class="s">&#39;ProjectOnPrincipalComponent&#39;</span><span class="p">,</span><span class="s">&#39;ReconstructTrajFromPrincipalComponents&#39;</span><span class="p">,</span>\
+        <span class="s">&#39;CalculatePrincipalComponents&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_import_numpy</span><span class="p">():</span>
+  <span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">npy</span>
+  <span class="k">except</span><span class="p">:</span> 
+    <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s">&quot;This function uses numpy, which could not be imported&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">False</span>
+  <span class="k">return</span> <span class="bp">True</span>
+
+
+<div class="viewcode-block" id="CalculatePrincipalComponents"><a class="viewcode-back" href="../principal_components.html#principal_components.CalculatePrincipalComponents">[docs]</a><span class="k">def</span> <span class="nf">CalculatePrincipalComponents</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">pc_sele</span><span class="p">,</span><span class="n">superposition_sele</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">first</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">last</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This function calculates the principal components for the positions</span>
+<span class="sd">  of the N atoms in ev, i.e the 3N eigenvalues and eigenvectors.</span>
+<span class="sd">  Specifically it performs an svd decomposition A=U*S*V</span>
+<span class="sd">  Return: a tuple (U,S,V,mean_atom_pos,atom_pos_list) containing:</span>
+<span class="sd">    -The unitary matrix U containing the eigenvectors in its columns</span>
+<span class="sd">    -The singular values S, so that S*S are the eigenvalues</span>
+<span class="sd">    -The unitary matrix V</span>
+<span class="sd">    -A list of the average positions for each atoms in pc_sele</span>
+<span class="sd">    -A list with all the positions for each atom and each frame.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">_import_numpy</span><span class="p">:</span><span class="k">return</span> <span class="bp">False</span>
+  <span class="k">if</span> <span class="n">last</span><span class="o">==-</span><span class="mi">1</span><span class="p">:</span><span class="n">last</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrameCount</span><span class="p">()</span>
+  <span class="n">nframes</span><span class="o">=</span><span class="p">(</span><span class="n">last</span><span class="o">-</span><span class="n">first</span><span class="p">)</span><span class="o">/</span><span class="n">stride</span>
+  <span class="k">if</span> <span class="n">superposition_sele</span><span class="o">!=</span><span class="bp">None</span><span class="p">:</span><span class="n">t2</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">SuperposeFrames</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">t</span><span class="o">.</span><span class="n">GetEntity</span><span class="p">()</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">superposition_sele</span><span class="p">))</span>
+  <span class="k">else</span><span class="p">:</span><span class="n">t2</span><span class="o">=</span><span class="n">t</span>
+  <span class="n">ev</span><span class="o">=</span><span class="n">t2</span><span class="o">.</span><span class="n">GetEntity</span><span class="p">()</span><span class="o">.</span><span class="n">Select</span><span class="p">(</span><span class="n">pc_sele</span><span class="p">)</span>
+  <span class="n">natoms</span><span class="o">=</span><span class="n">ev</span><span class="o">.</span><span class="n">GetAtomCount</span><span class="p">()</span>
+  <span class="n">atom_pos_list</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">3</span><span class="o">*</span><span class="n">natoms</span><span class="p">,</span><span class="n">nframes</span><span class="p">])</span>
+  <span class="n">mean_atom_pos</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">natoms</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ev</span><span class="o">.</span><span class="n">atoms</span><span class="p">):</span>
+    <span class="n">vl</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">AnalyzeAtomPos</span><span class="p">(</span><span class="n">t2</span><span class="p">,</span><span class="n">a</span><span class="o">.</span><span class="n">handle</span><span class="p">,</span><span class="n">stride</span><span class="p">)[</span><span class="n">first</span><span class="p">:</span><span class="n">last</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+      <span class="n">vj</span><span class="o">=</span><span class="p">[</span><span class="n">v</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">vl</span><span class="p">]</span>
+      <span class="n">vjm</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">vj</span><span class="p">)</span>
+      <span class="n">mean_atom_pos</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="n">j</span><span class="p">]</span><span class="o">=</span><span class="n">vjm</span>
+      <span class="n">atom_pos_list</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="n">j</span><span class="p">]</span><span class="o">=</span><span class="n">vj</span><span class="o">-</span><span class="n">vjm</span>
+  <span class="p">(</span><span class="n">U</span><span class="p">,</span><span class="n">S</span><span class="p">,</span><span class="n">VT</span><span class="p">)</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">atom_pos_list</span><span class="p">,</span><span class="n">full_matrices</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+  <span class="k">return</span> <span class="p">(</span><span class="n">U</span><span class="p">,</span><span class="n">S</span><span class="p">,</span><span class="n">VT</span><span class="o">.</span><span class="n">T</span><span class="p">,</span><span class="n">mean_atom_pos</span><span class="p">,</span><span class="n">atom_pos_list</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ReconstructTrajFromPrincipalComponents"><a class="viewcode-back" href="../principal_components.html#principal_components.ReconstructTrajFromPrincipalComponents">[docs]</a><span class="k">def</span> <span class="nf">ReconstructTrajFromPrincipalComponents</span><span class="p">(</span><span class="n">ev</span><span class="p">,</span><span class="n">U</span><span class="p">,</span><span class="n">S</span><span class="p">,</span><span class="n">V</span><span class="p">,</span><span class="n">mean_atom_pos</span><span class="p">,</span><span class="n">pc_indices</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]):</span>
+  <span class="n">natoms</span><span class="o">=</span><span class="n">ev</span><span class="o">.</span><span class="n">GetAtomCount</span><span class="p">()</span>
+  <span class="n">nframes</span><span class="o">=</span><span class="n">V</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+  <span class="n">atom_pos_list</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">U</span><span class="p">[:,</span><span class="n">pc_indices</span><span class="p">],</span><span class="n">npy</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">npy</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">S</span><span class="p">)[</span><span class="n">npy</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">pc_indices</span><span class="p">,</span><span class="n">pc_indices</span><span class="p">)],</span><span class="n">V</span><span class="p">[:,</span><span class="n">pc_indices</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+  <span class="n">atom_pos_list</span><span class="o">=</span><span class="n">npy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">atom_pos_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="n">mean_atom_pos</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">natoms</span><span class="p">)])</span>
+  <span class="n">eh</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">CreateEntityFromView</span><span class="p">(</span><span class="n">ev</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+  <span class="n">t</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">CreateCoordGroup</span><span class="p">(</span><span class="n">eh</span><span class="o">.</span><span class="n">atoms</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nframes</span><span class="p">):</span><span class="n">t</span><span class="o">.</span><span class="n">AddFrame</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3List</span><span class="p">([</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">atom_pos_list</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">],</span><span class="n">atom_pos_list</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">j</span><span class="p">],</span><span class="n">atom_pos_list</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span><span class="n">j</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">natoms</span><span class="p">)]))</span>
+  <span class="k">return</span> <span class="n">t</span>
+</div>
+<div class="viewcode-block" id="ProjectOnPrincipalComponent"><a class="viewcode-back" href="../principal_components.html#principal_components.ProjectOnPrincipalComponent">[docs]</a><span class="k">def</span> <span class="nf">ProjectOnPrincipalComponent</span><span class="p">(</span><span class="n">atom_pos_list</span><span class="p">,</span><span class="n">U</span><span class="p">,</span><span class="n">pc_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">first</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">last</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+  <span class="k">if</span> <span class="n">last</span><span class="o">==-</span><span class="mi">1</span><span class="p">:</span><span class="n">last</span><span class="o">=</span><span class="n">atom_pos_list</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+  <span class="k">return</span> <span class="n">npy</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">U</span><span class="p">[:,</span><span class="n">pc_index</span><span class="p">],</span><span class="n">atom_pos_list</span><span class="p">[:,</span><span class="n">first</span><span class="p">:</span><span class="n">last</span><span class="p">])</span>
+</div>
+<div class="viewcode-block" id="ProjectOnPrincipalComponentsAtomWise"><a class="viewcode-back" href="../principal_components.html#principal_components.ProjectOnPrincipalComponentsAtomWise">[docs]</a><span class="k">def</span> <span class="nf">ProjectOnPrincipalComponentsAtomWise</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">ev</span><span class="p">,</span><span class="n">first</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">last</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Calculates the principal components for each atom and projects the trajectory</span>
+<span class="sd">  on them.</span>
+<span class="sd">  It returns:</span>
+<span class="sd">    - The list of principal axes in which the ith element is a 3x3 matrix</span>
+<span class="sd">    with in its columns the principal axes for the ith atom in ev.</span>
+<span class="sd">    - The positions projected on the principal axes</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">if</span> <span class="n">last</span><span class="o">==-</span><span class="mi">1</span><span class="p">:</span><span class="n">last</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrameCount</span><span class="p">()</span>
+  <span class="n">pvl</span><span class="o">=</span><span class="p">[]</span>
+  <span class="n">pcl</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3List</span><span class="p">()</span>
+  <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ev</span><span class="o">.</span><span class="n">atoms</span><span class="p">:</span>
+    <span class="n">vl</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">alg</span><span class="o">.</span><span class="n">AnalyzeAtomPos</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">a</span><span class="o">.</span><span class="n">handle</span><span class="p">,</span><span class="n">stride</span><span class="p">)[</span><span class="n">first</span><span class="p">:</span><span class="n">last</span><span class="p">]</span>
+    <span class="n">pc</span><span class="o">=</span><span class="n">vl</span><span class="o">.</span><span class="n">principal_axes</span>
+    <span class="n">c</span><span class="o">=</span><span class="n">vl</span><span class="o">.</span><span class="n">center</span>
+    <span class="n">vl</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3List</span><span class="p">([</span><span class="n">el</span><span class="o">-</span><span class="n">c</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">vl</span><span class="p">])</span>
+    <span class="n">pc1</span><span class="o">=</span><span class="n">pc</span><span class="o">.</span><span class="n">GetRow</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">pc2</span><span class="o">=</span><span class="n">pc</span><span class="o">.</span><span class="n">GetRow</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">pc3</span><span class="o">=</span><span class="n">pc</span><span class="o">.</span><span class="n">GetRow</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">pvl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3List</span><span class="p">([</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Dot</span><span class="p">(</span><span class="n">pc1</span><span class="p">,</span><span class="n">v</span><span class="p">),</span><span class="n">geom</span><span class="o">.</span><span class="n">Dot</span><span class="p">(</span><span class="n">pc1</span><span class="p">,</span><span class="n">v</span><span class="p">),</span><span class="n">geom</span><span class="o">.</span><span class="n">Dot</span><span class="p">(</span><span class="n">pc1</span><span class="p">,</span><span class="n">v</span><span class="p">))</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">vl</span><span class="p">]))</span>
+    <span class="n">pcl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pc</span><span class="p">)</span>
+  <span class="k">return</span> <span class="p">(</span><span class="n">pcl</span><span class="p">,</span><span class="n">pvl</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RepresentPrincipalComponentOnStruccture"><a class="viewcode-back" href="../principal_components.html#principal_components.RepresentPrincipalComponentOnStruccture">[docs]</a><span class="k">def</span> <span class="nf">RepresentPrincipalComponentOnStruccture</span><span class="p">(</span><span class="n">ev</span><span class="p">,</span><span class="n">U</span><span class="p">,</span><span class="n">pc_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">go_name</span><span class="o">=</span><span class="s">&#39;pc0&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="n">gfx</span><span class="o">.</span><span class="n">RED</span><span class="p">):</span>
+  <span class="n">go</span><span class="o">=</span><span class="n">gfx</span><span class="o">.</span><span class="n">PrimList</span><span class="p">(</span><span class="n">go_name</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ev</span><span class="o">.</span><span class="n">GetAtomCount</span><span class="p">()):</span>
+    <span class="n">d</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">U</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="p">,</span><span class="n">pc_index</span><span class="p">],</span><span class="n">U</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">pc_index</span><span class="p">],</span><span class="n">U</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span><span class="n">pc_index</span><span class="p">])</span>
+    <span class="n">p</span><span class="o">=</span><span class="n">ev</span><span class="o">.</span><span class="n">atoms</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">pos</span>
+    <span class="n">go</span><span class="o">.</span><span class="n">AddLine</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="n">p</span><span class="o">+</span><span class="mi">50</span><span class="o">*</span><span class="n">d</span><span class="p">,</span><span class="n">color</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">go</span>
+  </div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

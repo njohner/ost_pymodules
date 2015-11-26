@@ -1,0 +1,234 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>hole &mdash; Python modules for OpenStructure 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Python modules for OpenStructure 1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for hole</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. codeauthor:: Niklaus Johner &lt;niklaus.johner@a3.epfl.ch&gt;</span>
+
+<span class="sd">This module contains functions to calculate the radius of a pore </span>
+<span class="sd">from a structure or a trajectory</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">ost</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">npy</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">random</span>
+
+<span class="n">__all__</span><span class="o">=</span><span class="p">(</span><span class="s">&quot;CalculatePoreRadii&quot;</span><span class="p">,</span><span class="s">&quot;AnalyzePoreRadii&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_MinDistanceWithRadii</span><span class="p">(</span><span class="n">ev</span><span class="p">,</span><span class="n">p</span><span class="p">,</span><span class="n">maxr</span><span class="p">):</span>
+  <span class="n">al</span><span class="o">=</span><span class="n">ev</span><span class="o">.</span><span class="n">FindWithin</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="n">maxr</span><span class="p">)</span>
+  <span class="k">return</span> <span class="nb">min</span><span class="p">([</span><span class="n">geom</span><span class="o">.</span><span class="n">Distance</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span><span class="n">p</span><span class="p">)</span><span class="o">-</span><span class="n">a</span><span class="o">.</span><span class="n">radius</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">al</span><span class="p">])</span>
+
+
+<span class="k">def</span> <span class="nf">_CalculatePoreRadius</span><span class="p">(</span><span class="n">ev</span><span class="p">,</span><span class="n">p</span><span class="p">,</span><span class="n">v1</span><span class="p">,</span><span class="n">v2</span><span class="p">,</span><span class="n">step</span><span class="p">,</span><span class="n">nsteps</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">kT</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span><span class="n">cooling_factor</span><span class="o">=</span><span class="mf">0.9</span><span class="p">):</span>
+  <span class="n">maxVDW</span><span class="o">=</span><span class="nb">max</span><span class="p">([</span><span class="n">a</span><span class="o">.</span><span class="n">radius</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ev</span><span class="o">.</span><span class="n">atoms</span><span class="p">])</span>
+  <span class="n">maxr</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Distance</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ev</span><span class="o">.</span><span class="n">atoms</span><span class="p">)</span>
+  <span class="n">r</span><span class="o">=</span><span class="n">_MinDistanceWithRadii</span><span class="p">(</span><span class="n">ev</span><span class="p">,</span><span class="n">p</span><span class="p">,</span><span class="n">maxr</span><span class="o">+</span><span class="mf">1.0</span><span class="p">)</span>
+  <span class="n">plane_center</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+  <span class="n">n</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Cross</span><span class="p">(</span><span class="n">v1</span><span class="p">,</span><span class="n">v2</span><span class="p">)</span>
+  <span class="c">#print &quot;starting with&quot;,r,p,n</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nsteps</span><span class="p">):</span>
+    <span class="n">keep</span><span class="o">=</span><span class="bp">False</span>
+    <span class="n">new_p</span><span class="o">=</span><span class="n">p</span><span class="o">+</span><span class="mf">2.</span><span class="o">*</span><span class="n">step</span><span class="o">*</span><span class="p">((</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span><span class="o">*</span><span class="n">v1</span><span class="o">+</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span><span class="o">*</span><span class="n">v2</span><span class="p">)</span>
+    <span class="n">new_p</span><span class="o">-=</span><span class="n">n</span><span class="o">*</span><span class="n">geom</span><span class="o">.</span><span class="n">Dot</span><span class="p">(</span><span class="n">new_p</span><span class="o">-</span><span class="n">plane_center</span><span class="p">,</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">new_r</span><span class="o">=</span><span class="n">_MinDistanceWithRadii</span><span class="p">(</span><span class="n">ev</span><span class="p">,</span><span class="n">new_p</span><span class="p">,</span><span class="n">r</span><span class="o">+</span><span class="n">maxVDW</span><span class="o">+</span><span class="n">step</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">new_r</span><span class="o">&gt;</span><span class="n">r</span><span class="p">:</span><span class="n">keep</span><span class="o">=</span><span class="bp">True</span>
+    <span class="k">elif</span> <span class="n">kT</span><span class="o">&gt;</span><span class="mf">0.00001</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">&lt;</span><span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="n">new_r</span><span class="o">-</span><span class="n">r</span><span class="p">)</span><span class="o">/</span><span class="n">kT</span><span class="p">):</span><span class="n">keep</span><span class="o">=</span><span class="bp">True</span>
+    <span class="n">kT</span><span class="o">*=</span><span class="n">cooling_factor</span>
+    <span class="k">if</span> <span class="n">keep</span><span class="p">:</span>
+      <span class="c">#print i,p,new_p,r,new_r,new_r-r,kT</span>
+      <span class="n">p</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">new_p</span><span class="p">)</span>
+      <span class="n">r</span><span class="o">=</span><span class="n">new_r</span>
+  <span class="k">return</span> <span class="n">p</span><span class="p">,</span><span class="n">r</span>
+
+<div class="viewcode-block" id="CalculatePoreRadii"><a class="viewcode-back" href="../hole.html#hole.CalculatePoreRadii">[docs]</a><span class="k">def</span> <span class="nf">CalculatePoreRadii</span><span class="p">(</span><span class="n">ev</span><span class="p">,</span><span class="n">pore_center</span><span class="p">,</span><span class="n">pore_direction</span><span class="p">,</span><span class="n">pore_lim</span><span class="p">,</span><span class="n">pore_step</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span><span class="n">mini_nsteps</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">mini_step</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span><span class="n">kT</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span><span class="n">cooling_factor</span><span class="o">=</span><span class="mf">0.9</span><span class="p">):</span>
+  <span class="c">#atom_pos_list=geom.Vec3List([a.pos for a in ev.atoms])</span>
+  <span class="c">#atom_radii=[a.radius for a in ev.atoms]</span>
+  <span class="n">v1</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">OrthogonalVector</span><span class="p">(</span><span class="n">pore_direction</span><span class="p">)</span>
+  <span class="n">v2</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Cross</span><span class="p">(</span><span class="n">pore_direction</span><span class="p">,</span><span class="n">v1</span><span class="p">)</span>
+  <span class="n">step2</span><span class="o">=</span><span class="n">mini_step</span><span class="o">/</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.</span><span class="p">)</span>
+  <span class="n">pore_centers</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3List</span><span class="p">()</span>
+  <span class="n">pore_radii</span><span class="o">=</span><span class="n">FloatList</span><span class="p">()</span>
+  <span class="n">p</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">pore_center</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">npy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">pore_lim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="o">-</span><span class="n">pore_step</span><span class="p">):</span>
+    <span class="n">new_p</span><span class="p">,</span><span class="n">r</span><span class="o">=</span><span class="n">_CalculatePoreRadius</span><span class="p">(</span><span class="n">ev</span><span class="p">,</span><span class="n">p</span><span class="p">,</span><span class="n">v1</span><span class="p">,</span><span class="n">v2</span><span class="p">,</span><span class="n">step2</span><span class="p">,</span><span class="n">mini_nsteps</span><span class="p">,</span><span class="n">kT</span><span class="p">,</span><span class="n">cooling_factor</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">=</span><span class="n">new_p</span><span class="o">-</span><span class="n">pore_step</span><span class="o">*</span><span class="n">pore_direction</span>
+    <span class="c">#print i,new_p,r</span>
+    <span class="n">pore_centers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_p</span><span class="p">)</span>
+    <span class="n">pore_radii</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+  <span class="n">p</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">Vec3</span><span class="p">(</span><span class="n">pore_center</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">npy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">pore_step</span><span class="p">,</span><span class="n">pore_lim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">pore_step</span><span class="p">):</span>
+    <span class="n">new_p</span><span class="p">,</span><span class="n">r</span><span class="o">=</span><span class="n">_CalculatePoreRadius</span><span class="p">(</span><span class="n">ev</span><span class="p">,</span><span class="n">p</span><span class="p">,</span><span class="n">v1</span><span class="p">,</span><span class="n">v2</span><span class="p">,</span><span class="n">step2</span><span class="p">)</span>
+    <span class="c">#print i,new_p,r</span>
+    <span class="n">p</span><span class="o">=</span><span class="n">new_p</span><span class="o">+</span><span class="n">pore_step</span><span class="o">*</span><span class="n">pore_direction</span>
+    <span class="n">pore_centers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_p</span><span class="p">)</span>
+    <span class="n">pore_radii</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">pore_centers</span><span class="p">,</span><span class="n">pore_radii</span>
+
+</div>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">def _MinDistanceWithRadii(atom_pos_list,atom_radii,p):</span>
+<span class="sd">  return min([geom.Distance(ap,p)-r for ap,r in zip(atom_pos_list,atom_radii)])</span>
+
+<span class="sd">def _CalculatePoreRadius(atom_pos_list,atom_radii,p,v1,v2,step,nsteps=1000,kT=0.1,cooling_factor=0.9):</span>
+<span class="sd">  r=_MinDistanceWithRadii(atom_pos_list,atom_radii,p)</span>
+<span class="sd">  plane_center=geom.Vec3(p)</span>
+<span class="sd">  n=geom.Cross(v1,v2)</span>
+<span class="sd">  #print &quot;starting with&quot;,r,p,n</span>
+<span class="sd">  for i in range(nsteps):</span>
+<span class="sd">    keep=False</span>
+<span class="sd">    new_p=p+2.*step*((random.random()-0.5)*v1+(random.random()-0.5)*v2)</span>
+<span class="sd">    new_p-=n*geom.Dot(new_p-plane_center,n)</span>
+<span class="sd">    new_r=_MinDistanceWithRadii(atom_pos_list,atom_radii,new_p)</span>
+<span class="sd">    if new_r&gt;r:keep=True</span>
+<span class="sd">    elif kT&gt;0.00001:</span>
+<span class="sd">      if random.random()&lt;math.exp((new_r-r)/kT):keep=True</span>
+<span class="sd">    kT*=cooling_factor</span>
+<span class="sd">    if keep:</span>
+<span class="sd">      #print i,p,new_p,r,new_r,new_r-r,kT</span>
+<span class="sd">      p=geom.Vec3(new_p)</span>
+<span class="sd">      r=new_r</span>
+<span class="sd">  return p,r</span>
+
+<span class="sd">def CalculatePoreRadii(ev,pore_center,pore_direction,pore_lim,pore_step=0.25,mini_nsteps=1000,mini_step=0.05,kT=0.1,cooling_factor=0.9):</span>
+<span class="sd">  atom_pos_list=geom.Vec3List([a.pos for a in ev.atoms])</span>
+<span class="sd">  atom_radii=[a.radius for a in ev.atoms]</span>
+<span class="sd">  v1=geom.OrthogonalVector(pore_direction)</span>
+<span class="sd">  v2=geom.Cross(pore_direction,v1)</span>
+<span class="sd">  step2=mini_step/math.sqrt(2.)</span>
+<span class="sd">  pore_centers=geom.Vec3List()</span>
+<span class="sd">  pore_radii=FloatList()</span>
+<span class="sd">  p=geom.Vec3(pore_center)</span>
+<span class="sd">  for i in npy.arange(0,pore_lim[0],-pore_step):</span>
+<span class="sd">    new_p,r=_CalculatePoreRadius(atom_pos_list,atom_radii,p,v1,v2,step2,mini_nsteps,kT,cooling_factor)</span>
+<span class="sd">    p=new_p-pore_step*pore_direction</span>
+<span class="sd">    #print i,new_p,r</span>
+<span class="sd">    pore_centers.append(new_p)</span>
+<span class="sd">    pore_radii.append(r)</span>
+<span class="sd">  p=geom.Vec3(pore_center)</span>
+<span class="sd">  for i in npy.arange(pore_step,pore_lim[1],pore_step):</span>
+<span class="sd">    new_p,r=_CalculatePoreRadius(atom_pos_list,atom_radii,p,v1,v2,step2)</span>
+<span class="sd">    #print i,new_p,r</span>
+<span class="sd">    p=new_p+pore_step*pore_direction</span>
+<span class="sd">    pore_centers.append(new_p)</span>
+<span class="sd">    pore_radii.append(r)</span>
+<span class="sd">  return pore_centers,pore_radii</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="AnalyzePoreRadii"><a class="viewcode-back" href="../hole.html#hole.AnalyzePoreRadii">[docs]</a><span class="k">def</span> <span class="nf">AnalyzePoreRadii</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">ev</span><span class="p">,</span><span class="n">pore_center</span><span class="p">,</span><span class="n">pore_direction</span><span class="p">,</span><span class="n">pore_lim</span><span class="p">,</span><span class="n">first</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">last</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">pore_step</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span><span class="n">mini_nsteps</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">mini_step</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span><span class="n">kT</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span><span class="n">cooling_factor</span><span class="o">=</span><span class="mf">0.9</span><span class="p">):</span>
+  <span class="n">pore_centers_list</span><span class="o">=</span><span class="p">[]</span>
+  <span class="n">pore_radii_list</span><span class="o">=</span><span class="p">[]</span>
+  <span class="k">if</span> <span class="n">last</span><span class="o">==-</span><span class="mi">1</span><span class="p">:</span><span class="n">last</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">GetFrameCount</span><span class="p">()</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">first</span><span class="p">,</span><span class="n">last</span><span class="p">,</span><span class="n">stride</span><span class="p">):</span>
+    <span class="k">print</span> <span class="s">&quot;calculating pore for frame {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">CopyFrame</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">pore_centers</span><span class="p">,</span><span class="n">pore_radii</span><span class="o">=</span><span class="n">CalculatePoreRadii</span><span class="p">(</span><span class="n">ev</span><span class="p">,</span><span class="n">pore_center</span><span class="p">,</span><span class="n">pore_direction</span><span class="p">,</span><span class="n">pore_lim</span><span class="p">,</span><span class="n">pore_step</span><span class="p">,</span><span class="n">mini_nsteps</span><span class="p">,</span><span class="n">mini_step</span><span class="p">,</span><span class="n">kT</span><span class="p">,</span><span class="n">cooling_factor</span><span class="p">)</span>
+    <span class="n">pore_centers_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pore_centers</span><span class="p">)</span>
+    <span class="n">pore_radii_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pore_radii</span><span class="p">)</span>
+    <span class="n">pore_center</span><span class="o">=</span><span class="n">pore_centers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+  <span class="n">nframes</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pore_radii_list</span><span class="p">))</span>
+  <span class="n">nsteps</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">pore_centers</span><span class="p">)</span>
+  <span class="n">average_centers</span><span class="o">=</span><span class="nb">sum</span><span class="p">(</span><span class="n">pore_centers_list</span><span class="p">)</span><span class="o">/</span><span class="n">nframes</span>
+  <span class="n">average_radii</span><span class="o">=</span><span class="p">[</span><span class="nb">sum</span><span class="p">([</span><span class="n">el</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">pore_radii_list</span><span class="p">])</span><span class="o">/</span><span class="n">nframes</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nsteps</span><span class="p">)]</span>
+  <span class="k">return</span> <span class="n">pore_centers_list</span><span class="p">,</span><span class="n">pore_radii_list</span><span class="p">,</span><span class="n">average_centers</span><span class="p">,</span><span class="n">average_radii</span>
+</div>
+<span class="k">def</span> <span class="nf">CreatePoreEntity</span><span class="p">(</span><span class="n">pore_centers</span><span class="p">,</span><span class="n">pore_radii</span><span class="p">):</span>
+  <span class="n">pore</span><span class="o">=</span><span class="n">mol</span><span class="o">.</span><span class="n">CreateEntity</span><span class="p">()</span>
+  <span class="n">edi</span><span class="o">=</span><span class="n">pore</span><span class="o">.</span><span class="n">EditXCS</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">BUFFERED_EDIT</span><span class="p">)</span>
+  <span class="n">c</span><span class="o">=</span><span class="n">edi</span><span class="o">.</span><span class="n">InsertChain</span><span class="p">(</span><span class="s">&quot;P&quot;</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">i</span><span class="p">,(</span><span class="n">pos</span><span class="p">,</span><span class="n">radius</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">pore_centers</span><span class="p">,</span><span class="n">pore_radii</span><span class="p">)):</span>
+    <span class="k">if</span> <span class="n">i</span><span class="o">%</span><span class="mi">10</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span><span class="n">r</span><span class="o">=</span><span class="n">edi</span><span class="o">.</span><span class="n">AppendResidue</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="s">&quot;POR&quot;</span><span class="p">)</span>
+    <span class="n">a</span><span class="o">=</span><span class="n">edi</span><span class="o">.</span><span class="n">InsertAtom</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="s">&quot;C&quot;</span><span class="p">,</span><span class="n">pos</span><span class="p">)</span>
+    <span class="n">a</span><span class="o">.</span><span class="n">SetRadius</span><span class="p">(</span><span class="n">radius</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">pore</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Python modules for OpenStructure 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Niklaus Johner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
