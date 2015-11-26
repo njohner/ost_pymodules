@@ -15,7 +15,8 @@ being only used to ascertain correct treatment of the PBCs.
 References
 -------------
 .. [1] Niklaus Johner, D. Harries and G. Khelashvili, 
-       "Release note of the lipid tilt and splay code"
+       "Implementation of a methodology for determining elastic properties of lipid assemblies from molecular dynamics simulations",
+       submitted to BMC bioinformatics (2015).
 .. [2] Niklaus Johner, D. Harries and G. Khelashvili,
        "Curvature and lipid packing modulate the elastic properties of lipid assemblies: comparing the HII and lamellar phases."
        The Journal of Physical Chemistry Letters 5, no. 23 (2014), 4201-6.
@@ -38,7 +39,7 @@ except:
 __all__=('GetBoundaryBetweenViews','AssignNormalsToLipids','AnalyzeLipidTilts',\
         'AnalyzeLipidSplays','AnalyzeLipidTiltAndSplay',\
         'WriteTiltDict','WriteSplayDict',\
-        'FitTiltDistribution','FitSplayDistribution','AnalyzeAreaPerLipid')
+        'FitTiltDistribution','FitSplayDistribution','AnalyzeAreaPerLipid','ExtractTiltAndSplayModuli')
 
 
 def _CalculateSplayAngle(v11,v12,v21,v22,v1p,v2p,n1,n2,distance_cutoff):
@@ -607,6 +608,29 @@ def _PlotParabola(bincenters,fa,a,b,x0,fitting_range,outfile,title='',xlabel='',
   return
 
 def ExtractTiltAndSplayModuli(tilt_dict,splay_dict,lipid_area,outdir,nbins=100):
+  """
+  This function extracts the tilt and splay moduli from the dictionaries of tilts and splays
+  obtained from the *AnalyzeLipidTiltAndSplay* function.
+  It will first fit a gaussian y=A exp[(x-mu)/sigma^2] to the distribution of tilts and the distribution of splays 
+  to determine the fitting range then used to fit the corresponding potential of mean force (PMF).
+  Different fitting ranges are used to estimate the error on the extracted tilt and splay moduli.
+  The function will calculate one tilt modulus for each lipid species and one splay modulus for each pair
+  of lipid species. It will then combine these to calculate the overall tilt modulus and splay modulus (bending rigidity).
+  More details about this procedure can be found in ref. [2]_
+
+  :param tilt_dict: A dictionary of lipid tilts as returned by the *AnalyzeLipidTiltAndSplay* function.
+  :param splay_dict: A dictionary of lipid splays as returned by the *AnalyzeLipidTiltAndSplay* function.
+  :param lipid_area: The area per lipid.
+  :param outdir:  the directory to which output files will be written, i.e. plots of tilt and splay distributions and PMFs.
+                  and text files containing the elastic moduli
+  :param nbins:    The number of bins used when determining the distributions of tilts and splays
+
+  :type tilt_dict: :class:`dict`
+  :type splay_dict: :class:`dict`
+  :type outdir: :class:`str`
+  :type nbins: :class:`int`
+  """
+
   for sele_name in tilt_dict.keys():
     outfile=open(os.path.join(outdir,sele_name+'_tilt_constants.txt'),'w')
     k_list=FloatList()
