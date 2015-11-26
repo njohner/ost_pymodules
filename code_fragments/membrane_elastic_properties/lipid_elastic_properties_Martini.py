@@ -124,79 +124,15 @@ for r in v.residues:
 ########################################################
 # Now we analyze the lipid tilts and splays, fitting the corresponding analytical functions
 # to extract the elastic constants. See documentation and papers cited therein for more information.
-# We will make one fit for each lipid type, and then calculate the overall tilt modulus
+# This can be done with a single function call to ExtractTiltAndSplayModuli.
+# The function will make one fit for each lipid type, and then calculate the overall tilt modulus
 # By taking a weighted average of the individual contributions.
 
 # The number of bins used when making the histograms for the tilts
 nbins=100
 
-# Name of the file where the tilt constants will be written
-outfile=open(os.path.join(outdir,'tilt_constants.txt'),'w')
+#Now we extract the constants
+lipid_analysis.ExtractTiltAndSplayModuli(tilt_dict,splay_dict,lipid_area,outdir,nbins)
 
-# Lists where we will store the tilt moduli, the associated uncertainty and the number of lipids of each type.
-k_list=FloatList()
-deltak_list=FloatList()
-nl_list=FloatList()
-for lipid_name in lipid_names:
-  fname=lipid_name
-  
-  #We make a list containing all the tilts for one type of lipids.
-  #In the dictionary, there is one entry for each lipid so we have to concatenate all of them into one list.
-  tilt_list=FloatList()
-  for el in lipid_tilt_dict['all'][lipid_name][0]:tilt_list.extend(el)
 
-  #Now we make the fit. This will generate plots written to outdir.
-  k,dk,kl=lipid_analysis.FitTiltDistribution(tilt_list,outdir=outdir,filename_basis=fname,title_complement='for '+lipid_name,nbins=nbins)
-  print "Tilt modulus for {0} is k={1:1.2f} +/- {2:1.2f}.".format(lipid_name,k,dk)
-
-  #We write out the tilt modulus into the file
-  outfile.write(' '.join([lipid_name,str(round(kl[0],1)),str(round(dk,1))])+'\n')
-  
-  #Keep the tilt modulus, error and number of lipids of that kind to calculate the overall modulus later.
-  k_list.append(k)
-  deltak_list.append(dk)
-  nl_list.append(len(tilt_list))
-
-#Now we calculate the overall tilt modulus
-ntot=npy.sum(nl_list)
-k=npy.sum([ni/ki for ni,ki in zip(nl_list,k_list)])/ntot
-k=1./k
-dk=npy.sum([((k**2.0)/(ki**2.0)*ni/ntot)**2.0*(dki**2.0) for ni,ki,dki in zip(nl_list,k_list,deltak_list)])
-dk=npy.sqrt(dk)
-#write it out
-outfile.write(' '.join(['agregated',str(round(k,1)),str(round(dk,1))])+'\n')
-outfile.close()
-#Close the generated plots
-for i in range(10):plt.close()
-
-# Now we fit the splays to extract the bending rigidities.
-# The procedure is the same as for the tilts
-# Except that we need the area per lipid to calculate the bending rigidity from the splays
-
-outfile=open(os.path.join(outdir,'splay_constants.txt'),'w')
-k_list=FloatList()
-nl_list=FloatList()
-deltak_list=FloatList()
-nbins=100
-for key in splay_dict['all']:
-  fname=key
-  splay_list=[el[0] for el in splay_dict['all'][key]]
-  w=npy.std(splay_list)
-  x_range=[-4*w,4*w]
-  k,dk,kl=lipid_analysis.FitSplayDistribution(splay_list,lipid_area,outdir=outdir,filename_basis=fname,title_complement='for '+key,nbins=nbins,x_range=x_range)
-  print "Splay modulus for {0} is k={1:1.2f} +/- {2:1.2f}.".format(key,k,dk)
-  outfile.write(' '.join([key,str(round(kl[0],1)),str(round(dk,1))])+'\n')
-  k_list.append(k)
-  deltak_list.append(dk)
-  nl_list.append(len(splay_list))
-ntot=npy.sum(nl_list)
-k=npy.sum([ni/ki for ni,ki in zip(nl_list,k_list)])/ntot
-k=1./k
-dk=npy.sum([((k**2.0)/(ki**2.0)*ni/ntot)**2.0*(dki**2.0) for ni,ki,dki in zip(nl_list,k_list,deltak_list)])
-dk=npy.sqrt(dk)
-outfile.write(' '.join(['agregated',str(round(k,1)),str(round(dk,1))])+'\n')
-outfile.close()
-
-#Close the generated plots
-for i in range(10):plt.close()
 
