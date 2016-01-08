@@ -5,7 +5,6 @@ This module contains functions to analyze the secondary structure of proteins
 It uses DSSP, which has to be installed and in the path for OpenStructure
 """
 import ost
-import ost.gfx as _gfx
 import numpy as npy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -98,7 +97,14 @@ def SecStrucColorMap(ss_list,color_dict={}):
   color_dict: a dicitonary mapping a color given in rgb to each secondary structure type 
   """
   if not color_dict:
-    color_dict={'H':_gfx.MAGENTA.rgb,'E':_gfx.GREEN.rgb,'T':_gfx.CYAN.rgb,'B':_gfx.DARKGREEN.rgb,'G':_gfx.ORANGE.rgb,'I':_gfx.RED.rgb,'C':_gfx.WHITE.rgb,'S':(0.8, 0.8, 0.8)}
+    color_dict={'H':mpl.colors.colorConverter.to_rgb(mpl.colors.cnames['magenta'])}
+    color_dict['E']=mpl.colors.colorConverter.to_rgb(mpl.colors.cnames['lime'])
+    color_dict['T']=mpl.colors.colorConverter.to_rgb(mpl.colors.cnames['cyan'])
+    color_dict['B']=mpl.colors.colorConverter.to_rgb(mpl.colors.cnames['darkgreen'])
+    color_dict['G']=mpl.colors.colorConverter.to_rgb(mpl.colors.cnames['orange'])
+    color_dict['I']=mpl.colors.colorConverter.to_rgb(mpl.colors.cnames['red'])
+    color_dict['C']=mpl.colors.colorConverter.to_rgb(mpl.colors.cnames['white'])
+    color_dict['S']=mpl.colors.colorConverter.to_rgb(mpl.colors.cnames['darkgrey'])
   color_map=npy.zeros([len(ss_list),len(ss_list[0]),3])
   for j,ssl in enumerate(ss_list):
     for i,el in enumerate(ssl):
