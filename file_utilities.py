@@ -28,6 +28,92 @@ __all__=('ReadMissingResiduesFromPDB','ReadSymmetryFromPDB','ParsePDBForCubicPha
              'ReadUnitCellFromPDB','WriteListOfListsInLines','WriteListOfListsInColumns',\
              'WriteFloatList','ReadFloatListFile','ReadFile')
 
+def ReadDXPotentialMap(filename):
+  conversion_factor=25.7#go form kT to e*mV at 300K
+  f=open(filename,"r")
+  for l in f:
+    if l.startswith("#"):continue
+    break
+  s=l.split()
+  nx,ny,nz=int(s[-3]),int(s[-2]),int(s[-1])
+  s=f.next().split()
+  origin=geom.Vec3(float(s[-3]),float(s[-2]),float(s[-1]))
+  dx=float(f.next().split()[1])
+  dy=float(f.next().split()[2])
+  dz=float(f.next().split()[3])
+  print "Reading DX file with {0} elements, origin at {1} and grid spacing {2}".format([nx,ny,nz],origin,[dx,dy,dz])
+  f.next()
+  f.next()
+  ntot=nx*ny*nz
+  n=0
+  values=FloatList()
+  for l in f:
+    s=l.split()
+    for i in range(3):
+      values.append(conversion_factor*float(s[i]))
+      n+=1
+      if n==ntot:break
+    if n==ntot:break
+  pos_list=geom.Vec3List()
+  for i in range(nx):
+    for j in range(ny):
+      for k in range(nz):
+        pos_list.append(origin+geom.Vec3(i*dx,j*dy,k*dz))
+  return pos_list,values,((nx,ny,nz),(dx,dy,dz),origin)
+
+
+def ReadChargesAndMassesFromPSF(filename,eh):
+  file=open(filename,'r')
+  for l in file:
+    if not "!NATOM" in l:continue
+    else:
+      s=l.split()
+      natoms=int(s[0])
+      break
+  if not eh.GetAtomCount()==natoms:
+    raise(RuntimeError("Number of atoms mismatch"))
+  for a in eh.atoms:
+    l=file.next()
+    s=l.split()
+    cname=s[1]
+    rnum=int(s[2])
+    rname=s[3]
+    aname=s[4]
+    if a.residue.name!=rname or a.chain.name!=cname or a.name!=aname:
+      raise(RuntimeError("Wrong atom order. Trying to assign charge from {0} {1} {2} to atom {3}".format(aname,rnum,cname,a.qualified_name)))
+    a.SetCharge(float(s[6]))
+    a.SetMass(float(s[7]))
+  file.close()
+  return
+
+"""
+def ReadChargesFromPSF(filename,eh):
+  file=open(filename,'r')
+  for l in file:
+    if not "!NATOM" in l:continue
+    else:
+      s=l.split()
+      natoms=int(s[0])
+      break
+  skipped=0
+  for i in range(natoms):
+    l=file.next()
+    s=l.split()
+    cname=s[1]
+    rnum=int(s[2])
+    rname=s[3]
+    aname=s[4]
+    a=eh.FindAtom(cname,rnum,aname)
+    if not a.IsValid():
+      if skipped%100==0:print cname,rnum,aname
+      skipped+=1
+      continue
+    a.SetFloatProp("charge",float(s[6]))
+  print "{0} atoms were not found in the entity. Set charge for {1} atoms out of {2}".format(skipped,natoms-skipped,eh.GetAtomCount())
+  file.close()
+  return eh
+"""
+
 def ReadMissingResiduesFromPDB(filename):
   file=open(filename,'r')
   missing_res_list=[]
