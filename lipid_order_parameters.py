@@ -39,6 +39,20 @@ def _MolecularOrderParameter(v1,v2):
   return 0.5*(3.*math.cos(a)**2.0-1)
 
 def CalculateMolecularOrderParameter(res,aname1,aname2,aname3):
+  """
+  This function calculates the order parameter for 3 atoms, it is calculated
+  from the angle between the director vectors between two successive pairs of atoms.
+
+  :param res: the residue
+  :param aname1: First atom name
+  :param aname2: Second atom name
+  :param aname3: Third atom name
+
+  :type res: :class:`~ost.mol.ResidueHandle`
+  :type aname1: :class:`str`
+  :type aname2: :class:`str`
+  :type aname3: :class:`str`
+  """
   a1=res.FindAtom(aname1)
   a2=res.FindAtom(aname2)
   a3=res.FindAtom(aname3)
@@ -48,6 +62,17 @@ def CalculateMolecularOrderParameter(res,aname1,aname2,aname3):
   return _MolecularOrderParameter(v1,v2)
 
 def CalculateMolecularOrderParameters(res,aname_list):
+  """
+  This function calculates the order parameter for each successive triplet of atoms
+  for a residue. The order parameter is calculated from the angle
+  between the director vectors between two successive pairs of atoms.
+
+  :param res: the residue
+  :param aname_list: An ordered list of atom names. An order parameter is calculated for each successive triple of atoms
+
+  :type res: :class:`~ost.mol.ResidueHandle`
+  :type aname_list: :class:`list`
+  """
   natoms=len(aname_list)
   if natoms<3:return
   return [CalculateMolecularOrderParameter(res,*aname_list[i:i+3]) for i in range(natoms-2)]
@@ -57,10 +82,14 @@ def AnalyzeMolecularOrderParameters(t,lipids,aname_list,return_average=True):
   This function calculates the order parameter for each successive triplet of atoms
   for each lipid over a trajectory. The order parameter is calculated from the angle
   between the director vectors between two successive pairs of atoms.
-  Inputs:
-  t : Trajectory
-  lipids : EntityView containing the lipids to be analyzed
-  aname_list: An ordered list of atom names. An order parameter is calculated for each successive triple of atoms
+
+  :param t: The trajectory
+  :param lipids: Selection of the lipids to be analyzed
+  :param aname_list: An ordered list of atom names. An order parameter is calculated for each successive triple of atoms
+  
+  :type t: :class:`~ost.mol.CoordGroupHandle`
+  :type lipids: :class:`~ost.mol.EntityView`
+  :type aname_list: :class:`list`
   """
   atom_triplet_list=[]
   order_parameter_list=[]
