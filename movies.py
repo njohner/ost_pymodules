@@ -63,11 +63,9 @@ def MakeMovieAndCleanImageFiles(outdir,outname,nd='4',image_rate=24,quality=30,c
       os.system('rm '+os.path.join(outdir,filename % i))
   return
 
-def RenderTrajSimple(t,go,outdir,outname,width=500,height=500,first=0,last=-1,stride=1,first_index=0,nd='4'):
+def RenderTrajSimple(t,go,outdir,outname,width=500,height=500,first=0,last=-1,stride=1,first_index=0,nd='4',ffmpeg_bin="/opt/local/bin/ffmpeg",r_in=24):
   import time
   scene=gfx.Scene()
-  width=500
-  height=500
   filename=os.path.join(outdir,outname+'%0'+nd+'d.png')
   if last==-1:last=t.GetFrameCount()
   j=first_index
@@ -75,15 +73,15 @@ def RenderTrajSimple(t,go,outdir,outname,width=500,height=500,first=0,last=-1,st
     scene.StartOffscreenMode(width,height)
     t.CopyFrame(i)
     go.UpdatePositions()
-    go.UpdateView()
+    #go.UpdateView()
     scene.RequestRedraw()
     scene.Export(filename % j,width,height,False)
     scene.StopOffscreenMode()
     j+=1
-  os.system('/opt/local/bin/ffmpeg '+'-f image2 -r 24 -i '+filename+' -r 24 -vb 20M '+os.path.join(outdir,outname+'.mpg'))
+  os.system(ffmpeg_bin+' -f image2 -r '+str(r_in)+' -i '+filename+' -r 24 -vb 20M '+os.path.join(outdir,outname+'.mpg'))
   j=first_index
   for i in range(first,last,stride):
-    os.system('rm '+os.path.join(outdir,filename % j))
+    os.system('rm '+os.path.join(filename % j))
     j+=1
 
 def Fade(go,nsteps,initial_opacity,final_opacity,outdir,outname,width=500,height=500,first_index=0,nd='4'):
