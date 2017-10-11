@@ -123,7 +123,7 @@ for r in v.residues:
 nbins=100
 
 #Now we extract the constants
-k_dict=lipid_analysis.ExtractTiltAndSplayModuli(tilt_dict,splay_dict,lipid_area,outdir,nbins)
+k_dict=lipid_analysis.ExtractTiltAndSplayModuli(lipid_tilt_dict,splay_dict,lipid_area,outdir,nbins)
 
 
 
