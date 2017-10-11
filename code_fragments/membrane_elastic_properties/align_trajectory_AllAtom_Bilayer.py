@@ -84,7 +84,7 @@ io.SaveCHARMMTraj(extended_t,os.path.join(outdir,fname_basis+'extended.pdb'),os.
 
 ####################################
 #Now we make the alignment.
-cm=extended_eh.Select(align_sele).GetCenterOfMass()
+cm=mol.alg.AnalyzeCenterOfMassPos(extended_t,extended_eh.Select(align_sele))
 cm=geom.Vec3List([-el for el in cm])
 trajectory_utilities.TranslateFrames(extended_t,cm)
 io.SaveCHARMMTraj(extended_t,os.path.join(outdir,fname_basis+'aligned.pdb'),os.path.join(outdir,fname_basis+'aligned.dcd'),profile=p)
