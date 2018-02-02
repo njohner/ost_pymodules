@@ -146,7 +146,8 @@ def _AssignNormalsFromSurfaceToResidues(t, sele, surface, within_size=10):
     return ln
 
 
-def _CalculateTilts(t, lipids, normals, head_sele, tail_sele, prot_cm=None, bool_prop=''):
+def _CalculateTilts(t, lipids, normals, head_sele, tail_sele,
+                    prot_cm=None, bool_prop=''):
     """
     This function calculates the lipid tilts.
     :param t: the trajectory
@@ -183,18 +184,21 @@ def _CalculateTilts(t, lipids, normals, head_sele, tail_sele, prot_cm=None, bool
     return (npy.array(tilts), npy.array(prot_dist))
 
 
-def GetBoundaryBetweenViews(t, waters, lipids, outdir='', density_cutoff=None, stride=1, within_size_normals=5.0, filename_basis=''):
+def GetBoundaryBetweenViews(t, waters, lipids, outdir='', density_cutoff=None,
+                            stride=1, within_size_normals=5.0, filename_basis=''):
     """
-    This function determines the interface between two views, typically the lipid-water interface and assigns normals
-    to every point on the surface.
+    This function determines the interface between two views, typically the
+    lipid-water interface and assigns normals to every point on the surface.
 
     :param t: the trajectory
     :param waters: First view
     :param lipids: Second view
     :param outdir: Path to output directory
-    :param density_cutoff: Interface will not be calculated for regions where the density is lower than this cutoff.
+    :param density_cutoff: Interface will not be calculated for regions where
+     the density is lower than this cutoff.
     :param stride: stride used to calculate the average density from the trajectory.
-    :param within_size_normals: radius of the patch used to determine the normals on the water-lipid interface.
+    :param within_size_normals: radius of the patch used to determine
+     the normals on the water-lipid interface.
     :param filename_basis: used as first part in the name of all the files generated.
 
     :type t: :class:`~ost.mol.CoordGroupHandle`
@@ -207,11 +211,12 @@ def GetBoundaryBetweenViews(t, waters, lipids, outdir='', density_cutoff=None, s
     :type filename_basis: :class:`str`
 
     :return: A tuple **(water_filtered,lipid_filtered,b_eh)** containing the density for
-      the first and second views and an entity for the boundary between the two views.
-      Every atom in the boundary has an associated normal vector set as a Vec3 property 'n'.
+     the first and second views and an entity for the boundary between the two views.
+     Every atom in the boundary has an associated normal vector set as a Vec3 property 'n'.
 
-    WARNING: Interface was changed. Taking 2 views instead of a list of lipid names and water name.
-    The order of the two views was also inversed. I also removed the PBC, cell_center and cell_size parameters
+    WARNING: Interface was changed. Taking 2 views instead of a list of lipid
+    names and water name. The order of the two views was also inversed.
+    I also removed the PBC, cell_center and cell_size parameters
 
     """
 
@@ -248,9 +253,10 @@ def AssignNormalsToLipids(t, eh, b_eh, lipid_names, head_group_dict):
     :type head_group_dict: :class:`dict`
 
     :return: A dictionary with one entry for each residue name in **lipid_names**.
-     Each element in the dictionary is a :class:`list`\ (:class:`~ost.geom.Vec3List`\ ). Each element in the list
-     corresponds to one residue and each :class:`~ost.geom.Vec3` in the :class:`~ost.geom.Vec3List` is the normal for one frame
-     of the trajectory.
+     Each element in the dictionary is a :class:`list`\ (:class:`~ost.geom.Vec3List`\ ).
+     Each element in the list corresponds to one residue and each
+     :class:`~ost.geom.Vec3` in the :class:`~ost.geom.Vec3List` is the normal
+     for one frame of the trajectory.
     """
     t0 = time.time()
     # Now we assign a normal for each lipid in each frame
@@ -268,25 +274,40 @@ def AssignNormalsToLipids(t, eh, b_eh, lipid_names, head_group_dict):
     return lipid_normal_dict
 
 
-def AnalyzeLipidTilts(t, eh, lipid_names, lipid_normal_dict, head_group_dict, tail_dict, prot_cm=None, bool_prop=''):
+def AnalyzeLipidTilts(t, eh, lipid_names, lipid_normal_dict, head_group_dict,
+                      tail_dict, prot_cm=None, bool_prop=''):
     """
     This function calculates the lipid tilts from a trajectory.
 
     :param t: The trajectory
+
     :param eh: The associated entity
+
     :param lipid_names: List of the residue names of the different lipids in the system
-    :param lipid_normal_dict: Dictionary of normal vectors. One entry for every lipid type (element in lipid_names)
-     Every entry is a :class:`list`\ (:class:`~ost.geom.Vec3List`\ ) of normals for every frame for every lipid of that type
+
+    :param lipid_normal_dict: Dictionary of normal vectors.
+     One entry for every lipid type (element in lipid_names)
+     Every entry is a :class:`list`\ (:class:`~ost.geom.Vec3List`\ ) of normals
+     for every frame for every lipid of that type
      (size of list:N\ :subscript:`Lipids`\ x N\ :subscript:`Frames`).
+
     :param head_group_dict: Dictionary containing a selection string for each lipid type
      that is used to determine the position of the lipid headgroups (center of mass of the selection).
+
     :param tail_dict: Dictionary containing a selection string for each lipid type
      that is used to determine the position of the lipid tails (center of mass of the selection).
-    :param prot_cm: A list of position (one for each frame). If specified the each tilt the distance between this position
-      and the lipid in question will also be returned. This is typically used to calculate local properties of the membrane around an insertion.
-    :param bool_prop: Boolean property assigned to lipids to determine whether they should be considered in the tilt calculations.
-     This is typically used to treat the periodic boundary conditions, to differentiate lipids from the central unit cell, for which tilt and
-     splay are calculated, from the lipids from neighboring unit cells, used only to ensure correct treatment of PBC.
+
+    :param prot_cm: A list of position (one for each frame).
+     If specified the each tilt the distance between this position
+     and the lipid in question will also be returned. This is typically used
+     to calculate local properties of the membrane around an insertion.
+
+    :param bool_prop: Boolean property assigned to lipids to determine whether
+     they should be considered in the tilt calculations.
+     This is typically used to treat the periodic boundary conditions,
+     to differentiate lipids from the central unit cell, for which tilt and
+     splay are calculated, from the lipids from neighboring unit cells,
+     used only to ensure correct treatment of PBC.
 
     :type t: :class:`~ost.mol.CoordGroupHandle`
     :type eh: :class:`~ost.mol.EntityHandle`
@@ -314,7 +335,9 @@ def AnalyzeLipidTilts(t, eh, lipid_names, lipid_normal_dict, head_group_dict, ta
     return lipid_tilt_dict
 
 
-def AnalyzeLipidSplays(t, eh, lipid_names, head_group_dict, tail_dict, lipid_normal_dict, lipid_tilt_dict, distance_sele_dict, distance_cutoff=10, bool_prop='', prot_cm=None):
+def AnalyzeLipidSplays(t, eh, lipid_names, head_group_dict, tail_dict,
+                       lipid_normal_dict, lipid_tilt_dict, distance_sele_dict,
+                       distance_cutoff=10, bool_prop='', prot_cm=None):
     """
     This function calculates the lipid splays from a trajectory.
 
@@ -649,7 +672,6 @@ def _FitGaussian(bincenters, pa):
     A0 = max(pa)
     sigma0 = npy.sqrt(npy.sum(((bincenters - mu0)**2.0) * pa) / npy.sum(pa))
     (A, mu, sigma), v = curve_fit(_gauss, bincenters, pa, [A0, mu0, sigma0])
-    # print A0,mu0,sigma0,A,mu,abs(sigma)
     return A, mu, abs(sigma)
 
 
@@ -664,7 +686,6 @@ def _PlotGaussian(bincenters, pa, A, mu, sigma, outfile, title='', xlabel=''):
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel('Probability')
-    # plt.show()
     plt.savefig(outfile)
     plt.close()
 
@@ -701,7 +722,6 @@ def _PlotParabola(bincenters, fa, a, b, x0, fitting_range, outfile, title='', xl
         plt.legend(loc='best')
     plt.vlines(fitting_range, ymin, ymax, linestyle='--', color='c')
     plt.ylim(ymin, ymax)
-    # plt.show()
     plt.savefig(outfile)
     plt.close()
     return
