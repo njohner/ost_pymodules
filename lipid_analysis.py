@@ -443,10 +443,10 @@ def AnalyzeLipidSplays(t, eh, lipid_names, head_group_dict, tail_dict,
 
 def AnalyzeLipidTiltAndSplay(t, lipid_names, head_group_dict, tail_dict,
                              distance_cutoff=10.0, within_size_normals=10.0,
-                             distance_sele_dict={}, water_name='TIP3', outdir='',
+                             distance_sele_dict=None, water_name='TIP3', outdir='',
                              density_cutoff=None, prot_sele=None, density_stride=10,
                              tilt_bool_prop='', splay_bool_prop='', filename_basis='',
-                             sele_dict={}):
+                             sele_dict=None):
     """
     This function is a wrapper to determine the membrane elastic moduli from the lipid titls and splays.
     Periodic boundary conditions are not treated explicitely here and should be treated as suggested in the
@@ -503,7 +503,11 @@ def AnalyzeLipidTiltAndSplay(t, lipid_names, head_group_dict, tail_dict,
 
     WARNING: Removed parameters PBC, cell_center, cell_size
     """
-    import time
+    if distance_sele_dict is None:
+        distance_sele_dict = {}
+    if sele_dict is None:
+        sele_dict = {}
+
     t0 = time.time()
     eh = t.GetEntity()
     t.CopyFrame(0)
