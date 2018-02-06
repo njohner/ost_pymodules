@@ -96,14 +96,11 @@ def _CalculateSplayAngle(v11, v12, v21, v22, v1p, v2p, n1, n2, distance_cutoff):
     x = v2p.GetCenterOfMass() - v1p.GetCenterOfMass()
     d = geom.Length(x)
     x = x - geom.Dot(x, n1) * n1
-    # d=geom.Length(x)
     if d > distance_cutoff:
         return None
     x = geom.Normalize(x)
     v1 = geom.Normalize(v11.GetCenterOfMass() - v12.GetCenterOfMass())
     v2 = geom.Normalize(v21.GetCenterOfMass() - v22.GetCenterOfMass())
-    # x=geom.Normalize(v2p.GetCenterOfMass()-v1p.GetCenterOfMass())
-    # d=geom.Length(v2p.GetCenterOfMass()-v1p.GetCenterOfMass())
     return ((geom.Dot(v2, x) - geom.Dot(v1, x) - geom.Dot(n2, x) + geom.Dot(n1, x)) / d, d)
 
 
@@ -129,8 +126,7 @@ def _AssignNormalsFromSurfaceToResidues(t, sele, surface, within_size=10):
 
     :return: A list containing one **Vec3List** for each residue in **sele**.
     """
-    surface = surface.Select(
-        '')  # Make sure we don't have to make that selection each time
+    surface = surface.Select('')
     ln = [geom.Vec3List() for r in sele.residues]
     res_view_list = [r.Select('') for r in sele.residues]
     for i in range(t.GetFrameCount()):
