@@ -337,7 +337,7 @@ def AnalyzeLipidTilts(t, eh, lipid_names, lipid_normal_dict, head_group_dict,
 
 def AnalyzeLipidSplays(t, eh, lipid_names, head_group_dict, tail_dict,
                        lipid_normal_dict, lipid_tilt_dict, distance_sele_dict,
-                       distance_cutoff=10, bool_prop='', prot_cm=None):
+                       distance_cutoff=10, bool_prop='', do_prot_dist=False):
     """
     This function calculates the lipid splays from a trajectory.
 
@@ -423,6 +423,9 @@ def AnalyzeLipidSplays(t, eh, lipid_names, head_group_dict, tail_dict,
                     continue
                 s = _CalculateSplayAngle(
                     v11, v12, v21, v22, v13, v23, n1, n2, distance_cutoff)
+                # Distance to protein
+                if do_prot_dist:
+                    s += (0.5*(lipid_tilt_dict[ln1][0][i][f]+lipid_tilt_dict[ln2][1][j][f]),)
                 if s:
                     splay_dict[ln1 + '-' + ln2].append(s)
     # We finalize the dictionary by merging equivalent entries
@@ -523,8 +526,10 @@ def AnalyzeLipidTiltAndSplay(t, lipid_names, head_group_dict, tail_dict,
     # Protein center of mass
     if prot_sele:
         prot_cm = mol.alg.AnalyzeCenterOfMassPos(t, eh.Select(prot_sele))
+        do_prot_dist = True
     else:
         prot_cm = None
+        do_prot_dist = False
     # From here we separate into the sub categories defined in sele_dict,
     # which could be upper and lower leaflets
     s = ['(rname=' + ln + ' and ' + head_group_dict[ln] + ')' for ln in lipid_names]
@@ -568,12 +573,12 @@ def AnalyzeLipidTiltAndSplay(t, lipid_names, head_group_dict, tail_dict,
         t0 = time.time()
         print 'calculating splay for', sele
         splay_dict[sele_name] = AnalyzeLipidSplays(t, eh.Select(lipid_sele, mol.MATCH_RESIDUES), lipid_names, head_group_dict, tail_dict,
-                                                   lipid_normal_dict[sele_name], lipid_tilt_dict[sele_name], distance_sele_dict, distance_cutoff, splay_bool_prop, prot_cm)
+                                                   lipid_normal_dict[sele_name], lipid_tilt_dict[sele_name], distance_sele_dict, distance_cutoff, splay_bool_prop, do_prot_dist)
         print 'Done in', time.time() - t0, 'seconds'
         if outdir:
             try:
                 WriteSplayDict(
-                    splay_dict[sele_name], outdir, filename_basis + sele_name + '_')
+                    splay_dict[sele_name], outdir, filename_basis + sele_name + '_', do_prot_dist)
             except IOError:
                 print 'could not write dict'
             if tilt_bool_prop:
@@ -618,7 +623,7 @@ def WriteTiltDict(lipid_tilt_dict, outdir, filename_basis=''):
             outdir, filename_basis + 'tilt_' + ln + '.txt'))
 
 
-def WriteSplayDict(splay_dict, outdir, filename_basis):
+def WriteSplayDict(splay_dict, outdir, filename_basis, prot_dist_flag):
     """
     This function writes out the *splay_dict* to the firectory *outdir*.
     It writes out one file for every key in *splay_dict*, i.e. for every lipid type pair.
@@ -637,10 +642,6 @@ def WriteSplayDict(splay_dict, outdir, filename_basis):
     for ln in splay_dict:
         if len(splay_dict[ln]) == 0:
             continue
-        if len(splay_dict[ln][0]) == 3:
-            prot_dist_flag = True
-        else:
-            prot_dist_flag = False
         if prot_dist_flag:
             sl = [[el[0], el[1], el[2]] for el in splay_dict[ln]]
             file_utilities.WriteListOfListsInLines(['splay', 'dist', 'ProtDist'], sl, os.path.join(
